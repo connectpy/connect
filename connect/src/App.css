@@ -48,16 +48,10 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
 }
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-}
+
 
 .container {
-  width: 1200px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 var(--spacing-md);
 }
@@ -98,8 +92,6 @@ body {
   cursor: pointer;
 }
 
-
-
 @media (max-width: 768px) {
   .menu-toggle {
     display: block;
@@ -118,7 +110,7 @@ body {
     transition: var(--transition);
     border-top: 1px solid var(--color-border);
   }
-  .nav-links.active {
+  .nav-links.open {
     transform: translateX(0);
   }
 }

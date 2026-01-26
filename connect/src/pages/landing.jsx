@@ -1,9 +1,8 @@
-import React from "react";
 import { useState, useEffect } from "react";
 import whitelogo from '../assets/whitelogo.svg';
+import './landing.css';
 //barra de navegacion
-
-function navbar (){
+function Navbar (){
     //funcion de navbar scrolleado
     const [scrolled, setScrolled] = useState(false);
     //funcionde menu hamburguesa
@@ -40,12 +39,43 @@ function navbar (){
     )
 }
 
+//////funcion hero//////
+
+function Hero() {
+    return(
+        <section className="hero">
+            <div className="container">
+                <div className="hero-grid">
+                    <div className="hero-content">
+                        <h1 className="hero-title">
+                            Monitorea tu empresa en
+                            <span className="gradient-text"> tiempo real</span>
+                        </h1>
+                        <p className="hero-description">
+                            Dashboards inteligentes que transforman tus datos en decisiones estratégicas. 
+                            Visualiza métricas críticas en tiempo real.
+                        </p>
+                    </div>
+                    <div className="hero-visual">
+                        <div className="device-mockup">
+                            hola
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+
+
 function LandingPage() {
     return (
         <div className="landing-page">
-            {navbar()}
+            <Navbar />    
+            <Hero />
         </div>
-    )
+    );
 }
 
 export default LandingPage;
