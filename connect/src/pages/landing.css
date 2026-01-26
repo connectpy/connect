@@ -130,9 +130,7 @@
   box-shadow: var(--shadow-lg);
   animation: fadeInRight 1s ease-out;
 }
-.contenedor-imagen {
-  mas
-}
+
 /*///////botones///////*/
 .btn-primary {
   background: var(--color-primary);
