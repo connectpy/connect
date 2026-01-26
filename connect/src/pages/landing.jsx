@@ -9,7 +9,7 @@ function navbar (){
             <div className="container">
                 <div className="nav-content">
                     <div className="logo">
-                        <img src={whitelogo} alt="Logo" height="100px" width="auto"/>
+                        <img src={whitelogo} alt="Logo" height="50px" width="auto"/>
                         <h1>Connect</h1>
                     </div>
                     <div className="links">
