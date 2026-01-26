@@ -55,10 +55,18 @@ function Hero() {
                             Dashboards inteligentes que transforman tus datos en decisiones estratégicas. 
                             Visualiza métricas críticas en tiempo real.
                         </p>
+                        <div className="hero-buttons">
+                            <a href="https://app.connectparaguay.com/dashboard" className="btn-primary hero-btn">
+                                Acceder al dashboard
+                            </a>
+                            <a href="https://app.connectparaguay.com/demo" className="btn-secondary hero-btn">
+                                Visitar demo
+                            </a>
+                        </div>
                     </div>
                     <div className="hero-visual">
-                        <div className="device-mockup">
-                            hola
+                        <div className="contenedor-imagen">
+                            <img src="./src/assets/silo.png" alt="Dashboard Mockup" className="dashboard-image"/>
                         </div>
                     </div>
                 </div>
