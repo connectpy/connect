@@ -1,0 +1,20 @@
+{
+  "name": "connect",
+  "version": "1.0.0",
+  "description": "pagina principal de connect",
+  "homepage": "https://github.com/connectpy/connect#readme",
+  "bugs": {
+    "url": "https://github.com/connectpy/connect/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/connectpy/connect.git"
+  },
+  "license": "ISC",
+  "author": "Victor Pohl",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
