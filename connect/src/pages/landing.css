@@ -92,13 +92,21 @@
   position: relative;
 }
 .hero-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   gap: var(--spacing-3xl);
   align-items: center;
 }  
 .hero-content {
+  flex: 1;
+  min-width: 300px;
   animation: fadeInUp 0.8s ease-out;
+}
+.hero-visual {
+  flex: 1;
+  min-width: 300px;
+  animation: fadeInUp 1s ease-out;
 }
 .hero-title {
   font-size: 3.5rem;
