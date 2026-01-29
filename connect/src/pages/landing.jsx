@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import whitelogo from '../assets/whitelogo.svg';
 import './landing.css';
+import imagen from '../assets/silo.png';
 //barra de navegacion
 function Navbar (){
     //funcion de navbar scrolleado
@@ -66,7 +67,7 @@ function Hero() {
                     </div>
                     <div className="hero-visual">
                         <div className="contenedor-imagen">
-                            <img src="./src/assets/silo.png" alt="Dashboard Mockup" className="dashboard-image"/>
+                            <img src={imagen} alt="Dashboard Mockup" className="dashboard-image"/>
                         </div>
                     </div>
                 </div>
