@@ -57,7 +57,7 @@ function Hero() {
                             Visualiza métricas críticas en tiempo real.
                         </p>
                         <div className="hero-buttons">
-                            <a href="https://app.connectparaguay.com/dashboard" className="btn-primary hero-btn">
+                            <a href="/dashboard" className="btn-primary hero-btn">
                                 Acceder al dashboard
                             </a>
                             <a href="https://app.connectparaguay.com/demo" className="btn-secondary hero-btn">
