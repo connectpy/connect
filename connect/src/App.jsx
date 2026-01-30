@@ -2,25 +2,50 @@ import React from 'react';
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/landing.jsx'
-import LoginPage from './pages/login.jsx'
+import Login from './pages/login.jsx'
 import Dashboard from './pages/dashboard.jsx';
 import './App.css';
-import { testConnection } from '../influxService';
 
-const ORG = "CONNECT";
-    const BUCKET = "CONNECT";
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
-    testConnection(ORG, BUCKET);
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{padding: '20px', color: 'red', fontSize: '18px'}}>
+          <h1>Algo salió mal</h1>
+          <p>{this.state.error?.message}</p>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   )
 }
 

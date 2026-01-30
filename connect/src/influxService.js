@@ -6,7 +6,6 @@ const token = import.meta.env.VITE_INFLUX_TOKEN;
 const client = new InfluxDB({ url, token });
 
 export const testConnection = async (org, bucket) => {
-  console.log("Iniciando prueba de conexión a:", url);
   
   const queryApi = client.getQueryApi(org);
   // Esta consulta es súper simple: solo pide 1 registro de cualquier cosa

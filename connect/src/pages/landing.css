@@ -33,6 +33,12 @@
   --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
+.landing-page {
+  min-height: 100vh;
+  background: var(--color-bg-dark);
+  color: var(--color-text-white);
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -55,6 +61,12 @@
   padding: 1.5em;
   will-change: filter;
   transition: filter 300ms;
+  align-items: center;
+  gap: 0.5rem;
+}
+.logo h1 {
+  margin: 0;
+  font-size: 1.5rem;
 }
 .logo:hover {
   filter: drop-shadow(0 0 3em #4c53ced7);

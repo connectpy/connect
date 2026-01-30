@@ -80,7 +80,7 @@ function Hero() {
 
 function LandingPage() {
     return (
-        <div className="landing-page">
+        <div className="landing-page" style={{minHeight: '100vh', backgroundColor: '#0f172a'}}>
             <Navbar />    
             <Hero />
         </div>
