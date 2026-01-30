@@ -5,7 +5,12 @@ import LandingPage from './pages/landing.jsx'
 import LoginPage from './pages/login.jsx'
 import Dashboard from './pages/dashboard.jsx';
 import './App.css';
+import { testConnection } from '../influxService';
 
+const ORG = "CONNECT";
+    const BUCKET = "CONNECT";
+
+    testConnection(ORG, BUCKET);
 function App() {
   return (
     <Router>
