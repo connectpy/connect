@@ -29,7 +29,7 @@ function Navbar (){
                         <a href="#features" onClick={() => setMenuOpen(false)}>Características</a>
                         <a href="#benefits" onClick={() => setMenuOpen(false)}>Beneficios</a>
                         <a href="#contact" onClick={() => setMenuOpen(false)}>Contacto</a>
-                        <a href="./login" className="btn-primary">Ingresar</a>
+                        <a href="/login" className="btn-primary">Ingresar</a>
                     </div>
                     <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
                         {menuOpen ? '✕' : '☰'}
