@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LandingPage from './pages/landing.jsx'
 import Login from './pages/login.jsx'
 import Dashboard from './pages/dashboard.jsx';
+import Register from './pages/register.jsx';
 import './App.css';
 
 class ErrorBoundary extends React.Component {
@@ -42,6 +43,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path='/registro' element={<Register />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import whitelogo from '../assets/whitelogo.svg';
 import './login.css';
 
 function Login() {
@@ -37,9 +38,7 @@ return (
         <div className="login-card">
           <div className="login-header">
             <Link to="/" className="logo">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-              </svg>
+              <img src={whitelogo} alt="Logo" height="50px" width="auto"/>
               <span>Connect Paraguay</span>
             </Link>
             <h1>Iniciar Sesión</h1>
@@ -103,7 +102,7 @@ return (
         </div>
 
         <div className="login-info">
-          <h2>Dashboard en Tiempo Real</h2>
+          <h2>Telemetría en Tiempo Real</h2>
           <ul>
             <li>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="2">
