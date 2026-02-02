@@ -6,6 +6,8 @@ import './Dashboard.css';
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState(null); // Aquí guardamos el JSON de la DB
+  const [activeTabId, setActiveTabId] = useState(null); // Pestaña seleccionada
   const [dashboardData, setDashboardData] = useState({
     production: 12847,
     efficiency: 94,
@@ -17,18 +19,49 @@ function Dashboard() {
   useEffect(() => {
     // Verificar si hay un usuario autenticado
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
-        navigate('/login');
-        return;
-      }
+        if (!user) {
+            navigate('/login');
+            return;
+        }
       
-      setUser(user);
-      setLoading(false);
+        setUser(user);
+        setLoading(false);
+        try {
+            // 1. Buscamos el empresa_id en tu tabla de perfiles/usuarios
+            const { data: perfil, error: perfilError } = await supabase
+              .from('USERS') // Nombre de tu tabla que une auth con empresa
+              .select('empresa_id')
+              .eq('id', user.id)
+              .single();
+
+            if (perfilError) throw perfilError;
+            // 2. Si hay perfil, buscamos la configuración de la empresa
+            const { data: empresa, error: empresaError } = await supabase
+            .from('empresas')
+            .select('dashboard_config')
+            .eq('id', perfil.empresa_id)
+            .maybeSingle();
+
+            if (empresaError) throw empresaError;
+
+            if (empresa?.dashboard_config) {
+                setConfig(empresa.dashboard_config);
+                if (empresa.dashboard_config.tabs?.length > 0) {
+                    setActiveTabId(empresa.dashboard_config.tabs[0].id);
+                }
+            }
+
+        } catch (error) {
+console.error('Error al cargar datos:', error.message);
+         } finally {
+            setLoading(false); // Siempre quitamos el loading al final
+         }
     };
 
     checkUser();
+
 
     // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
