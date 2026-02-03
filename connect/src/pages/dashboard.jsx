@@ -17,6 +17,7 @@ function Dashboard() {
   });
   const navigate = useNavigate();
   const [companyName, setCompanyName] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false); 
 
   useEffect(() => {
     // Verificar si hay un usuario autenticado
@@ -109,6 +110,10 @@ function Dashboard() {
   };
   const activeTab = config?.tabs?.find(tab => tab.id === activeTabId);
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   if (loading) {
     return (
       <div className="dashboard-loading">
@@ -124,6 +129,20 @@ function Dashboard() {
       <header className="dashboard-header">
         <div className="dashboard-container">
           <div className="header-content">
+            <button className="sidebar-toggle" onClick={toggleSidebar} aria-label='Toggle menu'>
+              {sidebarOpen ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              )}
+            </button>
             <div className="logo">
               <div className="empresa-logo">
                 <img src={whitelogo} alt="Logo" height="50px" width="auto"/>
@@ -146,8 +165,15 @@ function Dashboard() {
       </header>
 
       <div className="dashboard-layout">
+        {/* Overlay para cerrar sidebar en mobile */}
+        {sidebarOpen && (
+          <div 
+            className="sidebar-overlay"
+            onClick={() => setSidebarOpen(false)}
+          ></div>
+        )}
         {/* Sidebar */}
-        <aside className="dashboard-sidebar">
+        <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="sidebar-header">
             <h3>Pestañas</h3>
           </div>
