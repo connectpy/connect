@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import whitelogo from '../assets/whitelogo.svg';
 import './Dashboard.css';
+import LineChartWidget from '../components/lineChart'; // Ajusta la ruta según tu carpeta
 
 function Dashboard() {
   const [user, setUser] = useState(null);
@@ -205,8 +206,31 @@ function Dashboard() {
               Última actualización: {new Date().toLocaleTimeString('es-PY')}
             </p>
           </div>
-          <div className="widgets-grid">
-          </div>
+            <div className="widgets-grid">
+              {activeTab?.widgets?.map((widget) => (
+                <div key={widget.id} className="widget-card">
+                  <div className="widget-header">
+                    <h3>{widget.label}</h3>
+                    <span className="widget-type">{widget.tipo}</span>
+                  </div>
+                  <div className="widget-content">
+                    {/* Validamos que sea tipo "line" para usar el componente LineChart */}
+                    {widget.tipo === 'line' ? (
+                      <LineChartWidget 
+                        config={widget}  // CAMBIADO: Antes decía widgetConfig
+                      />
+                    ) : (
+                      <div className="widget-placeholder">
+                        <p>Componente para {widget.tipo} no disponible aún.</p>
+                        <p className="widget-info">
+                          <strong>Field:</strong> {widget.field}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
         </main>
       </div>
     </div>
