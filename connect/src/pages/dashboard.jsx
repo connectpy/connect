@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import whitelogo from '../assets/whitelogo.svg';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -15,49 +16,56 @@ function Dashboard() {
     activeDevices: 18
   });
   const navigate = useNavigate();
+  const [companyName, setCompanyName] = useState('');
 
   useEffect(() => {
     // Verificar si hay un usuario autenticado
     const checkUser = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/login');
+        return;
+      }
       
-        if (!user) {
-            navigate('/login');
-            return;
+      setUser(user);
+      setLoading(false);
+      try {
+        // 1. Buscamos el empresa_id en tu tabla de perfiles/usuarios
+        const { data: perfil, error: perfilError } = await supabase
+        .from('USERS') // Nombre de tu tabla que une auth con empresa
+        .select('empresa_id')
+        .eq('id', user.id)
+        .single();
+
+        if (perfilError) throw perfilError;
+        // 2. Si hay perfil, buscamos la configuración de la empresa
+        const { data: empresa, error: empresaError } = await supabase
+        .from('EMPRESAS') // Nombre de tu tabla de empresas
+        .select('nombre, dashboard_config')
+        .eq('id', perfil.empresa_id)
+        .maybeSingle();
+        if (empresaError) throw empresaError;
+        if (empresa?.dashboard_config) {
+          console.log('Configuración del dashboard cargada:', empresa.dashboard_config);
+          setConfig(empresa.dashboard_config);
+          if (empresa.dashboard_config.tabs?.length > 0) {
+            setActiveTabId(empresa.dashboard_config.tabs[0].id);
+          }
         }
-      
-        setUser(user);
-        setLoading(false);
-        try {
-            // 1. Buscamos el empresa_id en tu tabla de perfiles/usuarios
-            const { data: perfil, error: perfilError } = await supabase
-              .from('USERS') // Nombre de tu tabla que une auth con empresa
-              .select('empresa_id')
-              .eq('id', user.id)
-              .single();
-
-            if (perfilError) throw perfilError;
-            // 2. Si hay perfil, buscamos la configuración de la empresa
-            const { data: empresa, error: empresaError } = await supabase
-            .from('empresas')
-            .select('dashboard_config')
-            .eq('id', perfil.empresa_id)
-            .maybeSingle();
-
-            if (empresaError) throw empresaError;
-
-            if (empresa?.dashboard_config) {
-                setConfig(empresa.dashboard_config);
-                if (empresa.dashboard_config.tabs?.length > 0) {
-                    setActiveTabId(empresa.dashboard_config.tabs[0].id);
-                }
-            }
-
-        } catch (error) {
-console.error('Error al cargar datos:', error.message);
-         } finally {
-            setLoading(false); // Siempre quitamos el loading al final
-         }
+        const { data: nombre_empresa, error: nombreError } = await supabase
+        .from('EMPRESAS')
+        .select('nombre')
+        .eq('id', perfil.empresa_id)
+        .single();
+        if (nombreError) throw nombreError;
+        document.title = `Dashboard - ${nombre_empresa.nombre}`;
+        setCompanyName(nombre_empresa.nombre);
+      } catch (error) {
+      console.error('Error al cargar datos:', error.message);
+      } 
+      finally {
+        setLoading(false); // Siempre quitamos el loading al final
+      }
     };
 
     checkUser();
@@ -72,6 +80,8 @@ console.error('Error al cargar datos:', error.message);
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  
 
   // Simular actualización de datos en tiempo real (cada 5 segundos)
   useEffect(() => {
@@ -94,6 +104,11 @@ console.error('Error al cargar datos:', error.message);
     navigate('/login');
   };
 
+  const handleTabChange = (tabId) => {
+    setActiveTabId(tabId);
+  };
+  const activeTab = config?.tabs?.find(tab => tab.id === activeTabId);
+
   if (loading) {
     return (
       <div className="dashboard-loading">
@@ -110,10 +125,13 @@ console.error('Error al cargar datos:', error.message);
         <div className="dashboard-container">
           <div className="header-content">
             <div className="logo">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-              </svg>
-              <span>Connect Paraguay</span>
+              <div className="empresa-logo">
+                <img src={whitelogo} alt="Logo" height="50px" width="auto"/>
+                <span>Connect Paraguay</span>
+              </div>
+              <div className="logo-cliente">
+                <span>{companyName}</span>
+              </div>
             </div>
             <div className="header-actions">
               <div className="user-info">
@@ -127,121 +145,88 @@ console.error('Error al cargar datos:', error.message);
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="dashboard-main">
-        <div className="dashboard-container">
-          <div className="dashboard-welcome">
-            <h1>Dashboard en Tiempo Real</h1>
-            <p>Última actualización: {new Date().toLocaleTimeString('es-PY')}</p>
+      <div className="dashboard-layout">
+        {/* Sidebar */}
+        <aside className="dashboard-sidebar">
+          <div className="sidebar-header">
+            <h3>Pestañas</h3>
           </div>
-
-          {/* Metrics Grid */}
-          <div className="metrics-grid">
-            <div className="metric-card">
-              <div className="metric-header">
-                <h3>Producción Total</h3>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                  <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
-              </div>
-              <div className="metric-value">{dashboardData.production.toLocaleString()}</div>
-              <div className="metric-label">unidades producidas hoy</div>
-              <div className="metric-trend positive">+5.2% vs ayer</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-header">
-                <h3>Eficiencia</h3>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-              </div>
-              <div className="metric-value">{dashboardData.efficiency.toFixed(1)}%</div>
-              <div className="metric-label">eficiencia operativa</div>
-              <div className="metric-trend positive">+2.1% vs promedio</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-header">
-                <h3>Alertas Activas</h3>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                  <line x1="12" y1="9" x2="12" y2="13"></line>
-                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-              </div>
-              <div className="metric-value">{dashboardData.alerts}</div>
-              <div className="metric-label">requieren atención</div>
-              <div className="metric-trend neutral">Sin cambios</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-header">
-                <h3>Dispositivos Activos</h3>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
-              </div>
-              <div className="metric-value">{dashboardData.activeDevices}</div>
-              <div className="metric-label">en línea ahora</div>
-              <div className="metric-trend positive">100% operativo</div>
-            </div>
+          <nav className="sidebar-nav">
+            {config?.tabs?.map((tab) => (
+              <button
+                key={tab.id}
+                className={`sidebar-tab ${activeTabId === tab.id ? 'active' : ''}`}
+                onClick={() => handleTabChange(tab.id)}
+              >
+                {tab.icon && (
+                  <span className="tab-icon">
+                    {getIcon(tab.icon)}
+                  </span>
+                )}
+                <span className="tab-name">{tab.name}</span>
+                <span className="tab-count">{tab.widgets?.length || 0}</span>
+              </button>
+            ))}
+          </nav>
+        </aside>
+        {/* Main Content */}
+        <main className="dashboard-content">
+          <div className="content-header">
+            <h1>{activeTab?.name || 'Dashboard'}</h1>
+            <p className="last-update">
+              Última actualización: {new Date().toLocaleTimeString('es-PY')}
+            </p>
           </div>
-
-          {/* Charts Section */}
-          <div className="charts-grid">
-            <div className="chart-card">
-              <h3>Producción por Hora</h3>
-              <div className="chart-placeholder">
-                <p>Gráfico de líneas - Producción en tiempo real</p>
-                <p className="chart-note">Integración con InfluxDB próximamente</p>
-              </div>
-            </div>
-
-            <div className="chart-card">
-              <h3>Eficiencia por Línea</h3>
-              <div className="chart-placeholder">
-                <p>Gráfico de barras - Comparativa de líneas</p>
-                <p className="chart-note">Integración con InfluxDB próximamente</p>
-              </div>
-            </div>
+          <div className="widgets-grid">
           </div>
-
-          {/* Recent Activity */}
-          <div className="activity-section">
-            <h3>Actividad Reciente</h3>
-            <div className="activity-list">
-              <div className="activity-item">
-                <div className="activity-icon success">✓</div>
-                <div className="activity-content">
-                  <p className="activity-title">Producción completada</p>
-                  <p className="activity-time">Hace 5 minutos</p>
-                </div>
-              </div>
-              <div className="activity-item">
-                <div className="activity-icon warning">⚠</div>
-                <div className="activity-content">
-                  <p className="activity-title">Alerta: Temperatura alta en Línea 3</p>
-                  <p className="activity-time">Hace 12 minutos</p>
-                </div>
-              </div>
-              <div className="activity-item">
-                <div className="activity-icon info">ℹ</div>
-                <div className="activity-content">
-                  <p className="activity-title">Mantenimiento programado completado</p>
-                  <p className="activity-time">Hace 1 hora</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
+}
+
+function getIcon(iconName) {
+  const icons = {
+    'chart-line': (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+        <polyline points="17 6 23 6 23 12"></polyline>
+      </svg>
+    ),
+    'check-circle': (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+    ),
+    'activity': (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+      </svg>
+    ),
+    'bar-chart': (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="18" y1="20" x2="18" y2="10"></line>
+        <line x1="12" y1="20" x2="12" y2="4"></line>
+        <line x1="6" y1="20" x2="6" y2="14"></line>
+      </svg>
+    ),
+    'settings': (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
+      </svg>
+    ),
+    'default': (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="9" y1="9" x2="15" y2="15"></line>
+        <line x1="15" y1="9" x2="9" y2="15"></line>
+      </svg>
+    )
+  };
+
+  return icons[iconName] || icons['default'];
 }
 
 export default Dashboard;
