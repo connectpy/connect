@@ -34,7 +34,7 @@
   border-bottom: 1px solid #475569;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .dashboard-container {
@@ -133,13 +133,14 @@
 .sidebar-overlay {
   display: none; /* Solo visible en mobile cuando sidebar está abierto */
   position: fixed;
-  top: var(--header-height);
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 998;
   backdrop-filter: blur(2px);
+  z-index: 998;
 }
 
 /* ===== Sidebar ===== */
@@ -151,6 +152,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  z-index: 999;
 }
 
 .sidebar-header {
@@ -491,7 +493,7 @@
     flex-direction: column;
     overflow-y: auto;
   }
-  
+
   .sidebar-tab {
     flex-shrink: 1;
   }

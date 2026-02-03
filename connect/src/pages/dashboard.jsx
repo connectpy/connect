@@ -114,6 +114,8 @@ function Dashboard() {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const closeSidebar = () => setSidebarOpen(false);
+
   if (loading) {
     return (
       <div className="dashboard-loading">
