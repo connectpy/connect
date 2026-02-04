@@ -13,21 +13,32 @@ import { supabase } from './supabaseClient';
  * @param {Object} widgetConfig - Configuración del widget desde dashboard_config
  * @param {string} widgetConfig.bucket - Bucket de InfluxDB
  * @param {string} widgetConfig.measurement - Medición (ej: "temperature")
- * @param {string} widgetConfig.field - Campo (ej: "celsius")
+ * @param {string} [widgetConfig.field] - Campo (ej: "celsius")
+ * @param {Array} [widgetConfig.fields] - Array de campos (ej: ["T1", "T2", ...])
  * @param {string} [widgetConfig.aggregation] - Función de agregación (mean, sum, etc.)
  * @param {string} timeRange - Rango de tiempo (ej: "1h", "24h", "7d")
  * 
  * @returns {Promise<Array>} Array de objetos {time, value}
  * 
  * @example
+ * // Gráfico de línea (un solo field)
  * const widgetConfig = {
  *   bucket: "sensores",
  *   measurement: "temperature",
- *   field: "celsius",
- *   aggregation: "mean"
+ *   field: "celsius"
  * }
  * const data = await fetchWidgetData(widgetConfig, "1h")
- * // Retorna: [{time: "2026-02-03T10:00:00Z", value: 25.5}, ...]
+ * 
+ * @example
+ * // Heatmap (múltiples fields, último valor)
+ * const widgetConfig = {
+ *   bucket: "sensores",
+ *   measurement: "temperature",
+ *   fields: ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8"],
+ *   lastValueOnly: true
+ * }
+ * const data = await fetchWidgetData(widgetConfig, "1h")
+ * // Retorna: [{time, value, field: "T1"}, {time, value, field: "T2"}, ...]
  */
 export async function fetchWidgetData(widgetConfig, timeRange = '1h') {
   
@@ -45,20 +56,30 @@ export async function fetchWidgetData(widgetConfig, timeRange = '1h') {
   // --------------------------------------------------------------------------
   // PASO 2: Validar que la configuración del widget es válida
   // --------------------------------------------------------------------------
-  if (!widgetConfig.bucket || !widgetConfig.measurement || !widgetConfig.field) {
+  if (!widgetConfig.bucket || !widgetConfig.measurement) {
     throw new Error('Configuración de widget inválida. Faltan: bucket, measurement o field');
   }
 
+  if (!widgetConfig.field && !widgetConfig.fields) {
+    throw new Error('Configuración de widget inválida. Debe especificar "field" o "fields"');
+  }
   // --------------------------------------------------------------------------
   // PASO 3: Preparar el body de la request a la Edge Function
   // --------------------------------------------------------------------------
   const requestBody = {
     bucket: widgetConfig.bucket,                    // ej: "sensores"
-    measurement: widgetConfig.measurement,          // ej: "temperature"
-    field: widgetConfig.field,                      // ej: "celsius"
+    measurement: widgetConfig.measurement,          // ej: "temperature"                    // ej: "celsius"
     timeRange: timeRange,                           // ej: "1h"
     aggregation: widgetConfig.aggregation || 'mean' // ej: "mean" (default)
   };
+
+  if (widgetConfig.fields) {
+    requestBody.fields = widgetConfig.fields;
+  }
+
+  if (widgetConfig.lastValueOnly) {
+    requestBody.lastValueOnly = widgetConfig.lastValueOnly;
+  }
 
   console.log('Solicitando datos a Edge Function:', requestBody);
 

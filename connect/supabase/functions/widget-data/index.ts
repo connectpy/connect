@@ -1,29 +1,59 @@
+// supabase/functions/widget-data/index.ts
+// Edge Function que obtiene datos de InfluxDB para un widget específico
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// ============================================================================
+// CONFIGURACIÓN DE CORS (permitir requests desde el frontend)
+// ============================================================================
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// ============================================================================
+// TIPOS DE DATOS
+// ============================================================================
+
+// Datos que envía el frontend en el body de la request
 interface WidgetRequest {
   bucket: string;        // Bucket de InfluxDB donde están los datos
   measurement: string;   // Medición (como "temperature", "pressure")
-  field: string;         // Campo específico (como "celsius", "psi")
+  field?: string;        // Campo específico (como "celsius", "psi") - OPCIONAL ahora
+  fields?: string[];     // Array de campos para heatmap (como ["T1", "T2", ...])
   timeRange: string;     // Rango de tiempo (como "1h", "24h", "7d")
   aggregation?: string;  // Función de agregación (mean, sum, max, min)
+  lastValueOnly?: boolean; // Si true, solo devuelve el último valor de cada field
 }
 
+// Estructura de un punto de dato que devolvemos
 interface DataPoint {
-  time: string;   // Timestamp en formato ISO
-  value: number;  // Valor numérico
+  time: string;    // Timestamp en formato ISO
+  value: number;   // Valor numérico
+  field?: string;  // Campo (para múltiples fields)
 }
 
+// ============================================================================
+// FUNCIÓN PRINCIPAL
+// ============================================================================
 serve(async (req) => {
+  
+  // --------------------------------------------------------------------------
+  // PASO 1: Manejar preflight CORS (peticiones OPTIONS)
+  // --------------------------------------------------------------------------
+  // Cuando el navegador hace una petición POST, primero envía una OPTIONS
+  // para verificar si está permitido. Debemos responder con OK.
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {status: 200, headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
-  try{
+
+  try {
+    // ------------------------------------------------------------------------
+    // PASO 2: Crear cliente de Supabase con autenticación
+    // ------------------------------------------------------------------------
+    // Usamos el SUPABASE_SERVICE_ROLE_KEY para tener permisos de servidor
+    // pero pasamos el Authorization header del usuario para verificar su JWT
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -34,10 +64,17 @@ serve(async (req) => {
         },
       }
     )
+
+    // ------------------------------------------------------------------------
+    // PASO 3: Verificar que el usuario está autenticado
+    // ------------------------------------------------------------------------
+    // getUser() valida el JWT y devuelve los datos del usuario
     const {
       data: { user },
       error: userError,
     } = await supabaseClient.auth.getUser()
+
+    // Si no hay usuario o hay error, devolver 401 Unauthorized
     if (userError || !user) {
       return new Response(
         JSON.stringify({ 
@@ -51,25 +88,43 @@ serve(async (req) => {
       )
     }
 
-    //paso 4 parsear datos de la request
-
+    // ------------------------------------------------------------------------
+    // PASO 4: Parsear los datos de la request
+    // ------------------------------------------------------------------------
+    // El frontend envía JSON con bucket, measurement, field(s), etc.
     const requestData: WidgetRequest = await req.json()
     
     // Extraer datos con valores por defecto
     const { 
-      bucket,           // Requerido
-      measurement,      // Requerido
-      field,            // Requerido
-      timeRange,        // Requerido
-      aggregation = 'mean'  // Opcional, default: mean
+      bucket,                   // Requerido
+      measurement,              // Requerido
+      field,                    // Opcional (para gráficos simples)
+      fields,                   // Opcional (para heatmaps con múltiples fields)
+      timeRange,                // Requerido
+      aggregation = 'mean',     // Opcional, default: mean
+      lastValueOnly = false     // Opcional, default: false
     } = requestData
 
     // Validar que los campos requeridos existen
-    if (!bucket || !measurement || !field || !timeRange) {
+    if (!bucket || !measurement || !timeRange) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Faltan parámetros requeridos: bucket, measurement, field, timeRange' 
+          error: 'Faltan parámetros requeridos: bucket, measurement, timeRange' 
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    // Validar que hay al menos un field o fields
+    if (!field && (!fields || fields.length === 0)) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Debe especificar field o fields' 
         }),
         {
           status: 400,
@@ -146,24 +201,54 @@ serve(async (req) => {
     // PASO 7: Construir query Flux para InfluxDB
     // ------------------------------------------------------------------------
     // Flux es el lenguaje de consulta de InfluxDB 2.x
-    // Esta query hace lo siguiente:
-    // 1. from(bucket) → Selecciona el bucket
-    // 2. range(start) → Filtra por rango de tiempo
-    // 3. filter(measurement) → Filtra por medición (ej: "temperature")
-    // 4. filter(field) → Filtra por campo (ej: "celsius")
-    // 5. aggregateWindow → Agrupa datos cada 1 minuto usando la función especificada
-    // 6. yield → Retorna los resultados
     
-    const fluxQuery = `
+    let fluxQuery = ''
+    
+    // Si es para múltiples fields (heatmap)
+    if (fields && fields.length > 0) {
+      console.log('[Query] Construyendo query para múltiples fields:', fields)
+      
+      // Crear filtro para múltiples fields usando OR
+      // r["_field"] == "T1" or r["_field"] == "T2" or ...
+      const fieldsFilter = fields.map(f => `r["_field"] == "${f}"`).join(' or ')
+      
+      if (lastValueOnly) {
+        // Para heatmap: obtener solo el último valor de cada field
+        fluxQuery = `
+from(bucket: "${bucket}")
+  |> range(start: -${timeRange})
+  |> filter(fn: (r) => r["_measurement"] == "${measurement}")
+  |> filter(fn: (r) => ${fieldsFilter})
+  |> group(columns: ["_field"])
+  |> last()
+  |> group()
+`
+      } else {
+        // Para series temporales de múltiples fields
+        fluxQuery = `
+from(bucket: "${bucket}")
+  |> range(start: -${timeRange})
+  |> filter(fn: (r) => r["_measurement"] == "${measurement}")
+  |> filter(fn: (r) => ${fieldsFilter})
+  |> aggregateWindow(every: 1m, fn: ${aggregation}, createEmpty: false)
+`
+      }
+    } else {
+      // Query para un solo field (gráfico de línea normal)
+      console.log('[Query] Construyendo query para field único:', field)
+      
+      fluxQuery = `
 from(bucket: "${bucket}")
   |> range(start: -${timeRange})
   |> filter(fn: (r) => r["_measurement"] == "${measurement}")
   |> filter(fn: (r) => r["_field"] == "${field}")
-  |> aggregateWindow(every: 1m, fn: ${aggregation}, createEmpty: false)
-  |> yield(name: "result")
+  |> limit(n: 100)
 `
+    }
 
-    console.log('Query Flux construida:', fluxQuery)
+    console.log('====== QUERY FLUX ======')
+    console.log(fluxQuery)
+    console.log('====== FIN QUERY ======')
 
     // ------------------------------------------------------------------------
     // PASO 8: Consultar InfluxDB
@@ -186,17 +271,20 @@ from(bucket: "${bucket}")
         body: fluxQuery,  // La query Flux va en el body
       }
     )
-    console.log(`${influxUrl}/api/v2/query?org=${empresa.influx_org}`);
 
     // Si la consulta a InfluxDB falló
     if (!influxResponse.ok) {
       const errorText = await influxResponse.text()
-      console.error('Error de InfluxDB:', errorText)
+      console.error('====== ERROR HTTP DE INFLUXDB ======')
+      console.error('Status:', influxResponse.status)
+      console.error('StatusText:', influxResponse.statusText)
+      console.error('Response:', errorText)
+      console.error('====== FIN ERROR ======')
       
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Error consultando InfluxDB',
+          error: `Error HTTP ${influxResponse.status} de InfluxDB`,
           details: errorText 
         }),
         {
@@ -211,8 +299,20 @@ from(bucket: "${bucket}")
     // ------------------------------------------------------------------------
     // InfluxDB devuelve los datos en formato CSV
     const csvText = await influxResponse.text()
-    console.log('CSV Text:', csvText)
-    console.log('Respuesta CSV de InfluxDB (primeras 500 chars):', csvText.substring(0, 500))
+    
+    // Verificar si el CSV contiene un error de InfluxDB
+    if (csvText.includes('error') || csvText.includes('Error')) {
+      console.error('====== POSIBLE ERROR EN CSV ======')
+      console.error(csvText)
+      console.error('====== FIN ERROR ======')
+    }
+    
+    // LOG COMPLETO para debug
+    console.log('====== RESPUESTA COMPLETA DE INFLUXDB ======')
+    console.log(csvText)
+    console.log('====== FIN RESPUESTA ======')
+    console.log('Longitud del CSV:', csvText.length)
+    console.log('Primeras 1000 chars:', csvText.substring(0, 1000))
     
     // Convertir CSV a JSON usando función helper (ver abajo)
     const parsedData = parseInfluxCSV(csvText)
@@ -227,9 +327,11 @@ from(bucket: "${bucket}")
         metadata: {
           bucket,
           measurement,
-          field,
+          field: field || null,
+          fields: fields || null,
           timeRange,
           aggregation,
+          lastValueOnly,
           dataPoints: parsedData.length,
         },
       }),
@@ -263,62 +365,109 @@ from(bucket: "${bucket}")
 // FUNCIÓN HELPER: Parsear CSV de InfluxDB a JSON
 // ============================================================================
 /**
- * InfluxDB devuelve datos en formato CSV con este aspecto:
+ * InfluxDB devuelve datos en formato CSV que puede tener varias estructuras:
  * 
+ * Formato Annotated CSV (InfluxDB 2.x):
+ * #group,false,false,true,true,false,false,true,true
+ * #datatype,string,long,dateTime:RFC3339,dateTime:RFC3339,dateTime:RFC3339,double,string,string
+ * #default,_result,,,,,,,
  * ,result,table,_start,_stop,_time,_value,_field,_measurement
- * ,_result,0,2026-01-01T00:00:00Z,2026-01-02T00:00:00Z,2026-01-01T10:00:00Z,25.5,celsius,temperature
- * ,_result,0,2026-01-01T00:00:00Z,2026-01-02T00:00:00Z,2026-01-01T10:01:00Z,25.7,celsius,temperature
+ * ,,0,2026-01-01T00:00:00Z,2026-01-02T00:00:00Z,2026-01-01T10:00:00Z,25.5,celsius,temperature
  * 
- * Necesitamos extraer _time y _value para cada fila
+ * O formato simple sin anotaciones
  */
 function parseInfluxCSV(csv: string): DataPoint[] {
+  console.log('[parseInfluxCSV] Iniciando parseo...')
+  
   // Dividir el CSV en líneas y eliminar vacías
   const lines = csv.split('\n').filter(line => line.trim())
   
+  console.log('[parseInfluxCSV] Total de líneas:', lines.length)
+  
   if (lines.length === 0) {
-    console.log('CSV vacío, devolviendo array vacío')
+    console.log('[parseInfluxCSV] CSV vacío, devolviendo array vacío')
     return []
   }
+
+  // Mostrar las primeras 10 líneas para debug
+  console.log('[parseInfluxCSV] Primeras 10 líneas:')
+  lines.slice(0, 10).forEach((line, i) => {
+    console.log(`  Línea ${i}: ${line}`)
+  })
 
   // --------------------------------------------------------------------------
   // Buscar el índice de la línea que contiene los headers
   // --------------------------------------------------------------------------
-  // El CSV de InfluxDB tiene metadata al inicio, necesitamos encontrar
-  // la línea que empieza con ",result," que contiene los nombres de columnas
   let headerIndex = -1
+  
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith(',result,') || lines[i].startsWith('#datatype')) {
-      // Saltamos la línea de datatype si existe
-      if (lines[i].startsWith('#datatype')) continue
-      
+    const line = lines[i]
+    
+    // Saltar líneas de metadata que empiezan con #
+    if (line.startsWith('#')) {
+      console.log(`  Saltando línea de metadata ${i}: ${line.substring(0, 50)}`)
+      continue
+    }
+    
+    // Buscar línea que tiene _time y _value (el header real)
+    if (line.includes('_time') && line.includes('_value')) {
       headerIndex = i
+      console.log(`[parseInfluxCSV] Header encontrado en línea ${i}`)
+      break
+    }
+    
+    // También buscar formato alternativo
+    if (line.includes('result') || line.includes('table')) {
+      headerIndex = i
+      console.log(`[parseInfluxCSV] Posible header en línea ${i}`)
       break
     }
   }
 
-  // Si no encontramos el header, intentar usar la primera línea
   if (headerIndex === -1) {
-    headerIndex = 0
+    console.error('[parseInfluxCSV] No se encontró línea de header')
+    console.error('[parseInfluxCSV] Intentando con la primera línea no-metadata...')
+    
+    // Buscar primera línea que no sea metadata
+    for (let i = 0; i < lines.length; i++) {
+      if (!lines[i].startsWith('#')) {
+        headerIndex = i
+        console.log(`[parseInfluxCSV] Usando línea ${i} como header`)
+        break
+      }
+    }
   }
 
-  console.log('Header encontrado en línea:', headerIndex)
-  console.log('Contenido del header:', lines[headerIndex])
+  if (headerIndex === -1) {
+    console.error('[parseInfluxCSV] No se pudo determinar el header')
+    return []
+  }
+
+  console.log('[parseInfluxCSV] Contenido del header:', lines[headerIndex])
 
   // --------------------------------------------------------------------------
   // Parsear el header para encontrar índices de columnas
   // --------------------------------------------------------------------------
   const headers = lines[headerIndex].split(',')
   
+  console.log('[parseInfluxCSV] Headers parseados:', headers)
+  console.log('[parseInfluxCSV] Total de columnas:', headers.length)
+  
   // Encontrar en qué posición está cada columna que necesitamos
-  const timeIndex = headers.indexOf('_time')
-  const valueIndex = headers.indexOf('_value')
+  const timeIndex = headers.findIndex(h => h.trim() === '_time')
+  const valueIndex = headers.findIndex(h => h.trim() === '_value')
+  const fieldIndex = headers.findIndex(h => h.trim() === '_field')
 
-  console.log('Índice de _time:', timeIndex)
-  console.log('Índice de _value:', valueIndex)
+  console.log('[parseInfluxCSV] Índice de _time:', timeIndex)
+  console.log('[parseInfluxCSV] Índice de _value:', valueIndex)
+  console.log('[parseInfluxCSV] Índice de _field:', fieldIndex)
 
   // Si no encontramos las columnas necesarias, error
   if (timeIndex === -1 || valueIndex === -1) {
-    console.error('No se encontraron columnas _time o _value en el CSV')
+    console.error('[parseInfluxCSV] Columnas faltantes:')
+    console.error('  _time:', timeIndex === -1 ? 'NO ENCONTRADA' : `columna ${timeIndex}`)
+    console.error('  _value:', valueIndex === -1 ? 'NO ENCONTRADA' : `columna ${valueIndex}`)
+    console.error('[parseInfluxCSV] Headers disponibles:', headers.join(', '))
     return []
   }
 
@@ -327,40 +476,61 @@ function parseInfluxCSV(csv: string): DataPoint[] {
   // --------------------------------------------------------------------------
   const data: DataPoint[] = []
 
+  console.log('[parseInfluxCSV] Procesando datos desde línea', headerIndex + 1)
+
   // Empezar desde la línea siguiente al header
   for (let i = headerIndex + 1; i < lines.length; i++) {
     const line = lines[i]
     
     // Ignorar líneas de comentarios o vacías
-    if (line.startsWith('#') || !line.trim()) continue
+    if (line.startsWith('#') || !line.trim()) {
+      continue
+    }
     
     // Dividir la línea por comas
     const values = line.split(',')
     
+    console.log(`[parseInfluxCSV] Línea ${i}: ${values.length} columnas`)
+    
     // Verificar que la línea tenga suficientes columnas
     if (values.length > Math.max(timeIndex, valueIndex)) {
       // Extraer tiempo y valor
-      const time = values[timeIndex]
-      const valueStr = values[valueIndex]
+      const time = values[timeIndex].trim()
+      const valueStr = values[valueIndex].trim()
+      const fieldName = fieldIndex !== -1 ? values[fieldIndex].trim() : undefined
+      
+      console.log(`  _time: "${time}", _value: "${valueStr}", _field: "${fieldName}"`)
       
       // Parsear el valor a número (puede venir como string)
       const value = parseFloat(valueStr)
       
       // Solo agregar si el valor es un número válido
-      if (!isNaN(value)) {
-        data.push({
+      if (!isNaN(value) && time) {
+        const point: DataPoint = {
           time: time,
           value: value,
-        })
+        }
+        
+        // Agregar field si existe
+        if (fieldName) {
+          point.field = fieldName
+        }
+        
+        data.push(point)
+        console.log(`  ✓ Punto agregado:`, point)
+      } else {
+        console.log(`  ✗ Punto ignorado (valor inválido o tiempo vacío)`)
       }
+    } else {
+      console.log(`  ✗ Línea ignorada (columnas insuficientes: ${values.length})`)
     }
   }
 
-  console.log(`Parseados ${data.length} puntos de datos`)
+  console.log(`[parseInfluxCSV] Total parseado: ${data.length} puntos`)
   
-  // Mostrar los primeros 3 puntos para debug
+  // Mostrar los primeros 3 puntos para verificación
   if (data.length > 0) {
-    console.log('Primeros 3 puntos:', data.slice(0, 3))
+    console.log('[parseInfluxCSV] Primeros 3 puntos:', JSON.stringify(data.slice(0, 3), null, 2))
   }
 
   return data
