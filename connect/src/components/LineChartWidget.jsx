@@ -4,7 +4,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 import { useWidgetData } from '../hooks/useWidgetData';
-import { formatForLineChart } from '../influxService';
 
 /**
  * Widget de gráfico de líneas
