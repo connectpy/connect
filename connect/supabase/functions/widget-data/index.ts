@@ -186,6 +186,7 @@ from(bucket: "${bucket}")
         body: fluxQuery,  // La query Flux va en el body
       }
     )
+    console.log(`${influxUrl}/api/v2/query?org=${empresa.influx_org}`);
 
     // Si la consulta a InfluxDB falló
     if (!influxResponse.ok) {
@@ -210,6 +211,7 @@ from(bucket: "${bucket}")
     // ------------------------------------------------------------------------
     // InfluxDB devuelve los datos en formato CSV
     const csvText = await influxResponse.text()
+    console.log('CSV Text:', csvText)
     console.log('Respuesta CSV de InfluxDB (primeras 500 chars):', csvText.substring(0, 500))
     
     // Convertir CSV a JSON usando función helper (ver abajo)

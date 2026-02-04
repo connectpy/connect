@@ -46,7 +46,7 @@ function LineChartWidget({ config }) {
   // 4. Limpiar al desmontar
   const { data, loading, error } = useWidgetData(
     config,      // Configuración del widget (bucket, measurement, field)
-    '1h',        // Rango de tiempo: última 1 hora
+    '24h',        // Rango de tiempo: última 1 hora
     5000         // Actualizar cada 5 segundos
   );
 
