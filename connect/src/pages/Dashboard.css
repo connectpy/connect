@@ -264,7 +264,7 @@
   border: 1px solid var(--color-border);
   border-radius: 1rem;
   padding: 1.5rem;
-  transition: all 0.3s ease;
+  /*transition: all 0.3s ease;*/
 }
 
 .widget-card:hover {

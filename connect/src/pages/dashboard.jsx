@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import whitelogo from '../assets/whitelogo.svg';
 import './Dashboard.css';
 import WidgetRenderer from '../components/WidgetRenderer.jsx';
+import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx';
 
 function Dashboard() {
   const [user, setUser] = useState(null);
@@ -213,7 +214,7 @@ function Dashboard() {
                     <h3>{widget.label}</h3>
                   </div>
                   <div className="widget-content">
-                    <WidgetRenderer widget={widget} />
+                    <WidgetRendererMulti widget={widget} />
                   </div>
                 </div>
               ))}

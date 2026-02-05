@@ -93,11 +93,23 @@ function HeatmapWidget({ config }) {
       });
       
       console.log('[HeatmapWidget] Datos del heatmap:', heatmapData);
+      console.log('[HeatmapWidget] Ejemplo de punto:', heatmapData[0]);
+      console.log('[HeatmapWidget] Formato esperado: [col, row, value, fieldName]');
       
       // Calcular min y max para la escala de colores
       const values = heatmapData.map(item => item[2]);
       const minValue = Math.min(...values);
       const maxValue = Math.max(...values);
+      
+      console.log('[HeatmapWidget] Rango de valores:', { minValue, maxValue });
+      console.log('[HeatmapWidget] Valores individuales:', values);
+      
+      // Si todos los valores son iguales, agregar un pequeño rango
+      const hasVariation = maxValue - minValue > 0.1;
+      const visualMin = hasVariation ? minValue : minValue - 1;
+      const visualMax = hasVariation ? maxValue : maxValue + 1;
+      
+      console.log('[HeatmapWidget] Rango visual ajustado:', { visualMin, visualMax, hasVariation });
       
       // ==================================================================
       // CONFIGURACIÓN DEL HEATMAP
@@ -137,14 +149,14 @@ function HeatmapWidget({ config }) {
         grid: {
           left: '5%',
           right: '5%',
-          bottom: '15%',
-          top: '20%',
+          bottom: '20%',
+          top: '15%',
           containLabel: true
         },
         
         xAxis: {
           type: 'category',
-          data: Array.from({ length: maxCols }, (_, i) => ''),  // Vacío, no mostrar etiquetas
+          data: Array.from({ length: maxCols }, (_, i) => ''),
           splitArea: {
             show: true,
             areaStyle: {
@@ -171,24 +183,41 @@ function HeatmapWidget({ config }) {
             color: '#94a3b8',
             fontSize: 11
           },
-          inverse: true  // Invertir para que fila 1 esté arriba
+          inverse: true
         },
         
         visualMap: {
-          min: minValue,
-          max: maxValue,
+          min: visualMin,
+          max: visualMax,
+          type: 'continuous',  // Cambiado a continuous
           calculable: true,
+          realtime: true,
           orient: 'horizontal',
           left: 'center',
-          bottom: '5%',
+          bottom: '2%',
           textStyle: { 
             color: '#ffffff',
             fontSize: 11
           },
+          itemWidth: 20,
+          itemHeight: 140,
+          // Color continuo con más contraste
           inRange: {
-            // Escala de colores: azul (frío) -> verde -> amarillo -> rojo (caliente)
-            color: ['#0ea5e9', '#06b6d4', '#10b981', '#f59e0b', '#ef4444']
-          }
+            color: [
+              '#1e3a8a',  // Azul muy oscuro
+              '#3b82f6',  // Azul
+              '#06b6d4',  // Cyan
+              '#10b981',  // Verde
+              '#fbbf24',  // Amarillo
+              '#f97316',  // Naranja
+              '#ef4444'   // Rojo
+            ]
+          },
+          text: [`${visualMax.toFixed(1)}${config.medicion}`, `${visualMin.toFixed(1)}${config.medicion}`],
+          textGap: 10,
+          // Forzar rango específico
+          splitNumber: 5,
+          precision: 1
         },
         
         series: [{
@@ -201,7 +230,6 @@ function HeatmapWidget({ config }) {
             color: '#ffffff',
             fontSize: 14,
             fontWeight: 'bold',
-            // Mostrar nombre del sensor y valor
             formatter: (params) => {
               const fieldName = params.data[3];
               const value = params.data[2];
@@ -219,13 +247,13 @@ function HeatmapWidget({ config }) {
           },
           
           itemStyle: {
-            borderWidth: 1,
+            borderWidth: 2,
             borderColor: '#1e293b'
           }
         }]
       };
       
-      chartInstanceRef.current.setOption(option);
+      chartInstanceRef.current.setOption(option, true); // El 'true' fuerza actualización completa
     }
   }, [data, config]);
 

@@ -44,7 +44,7 @@ function LineChartWidget({ config }) {
   const { data, loading, error } = useWidgetData(
     config,      // Configuración del widget (bucket, measurement, field)
     '24h',        // Rango de tiempo: última 1 hora
-    50000         // Actualizar cada 5 segundos
+    10000         // Actualizar cada 10 segundos
   );
   //console.log(`[LineChartWidget] Config:`, config);
   // ==========================================================================

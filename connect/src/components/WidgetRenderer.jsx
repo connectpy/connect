@@ -4,6 +4,7 @@ import LineChartWidget from './LineChartWidget.jsx';
 import HeatmapWidget from './HeatmapWidget.jsx';
 import GaugeWidget from './GaugeWidget.jsx';
 
+
 function WidgetRenderer({ widget }) {
   const widgetComponents = {
     'line': LineChartWidget,
@@ -25,3 +26,5 @@ function WidgetRenderer({ widget }) {
 }
 
 export default WidgetRenderer;
+
+
