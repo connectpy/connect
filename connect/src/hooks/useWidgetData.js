@@ -31,7 +31,7 @@ export function useWidgetData(widgetConfig, timeRange = '1h', refreshInterval = 
   // ==========================================================================
   // ESTADOS
   // ==========================================================================
-  
+  //console.log(`[useWidgetData] Hook iniciado para widget: ${widgetConfig.label}`);
   // data: Array de {time, value} o null si aún no se cargó
   const [data, setData] = useState(null);
   
@@ -67,24 +67,22 @@ export function useWidgetData(widgetConfig, timeRange = '1h', refreshInterval = 
         setLoading(true);
       }
       
-      //console.log(`[useWidgetData] Cargando datos para widget:`, widgetConfig.label);
-      
       // Llamar al servicio para obtener datos de InfluxDB
+  
       const result = await fetchWidgetData(widgetConfig, timeRange);
-      
+       
       // Solo actualizar estado si el componente sigue montado
       if (isMounted.current) {
         setData(result);
         setError(null); // Limpiar error previo si había
         
-        //console.log(`[useWidgetData] Datos cargados: ${result.length} puntos`);
-        //console.log({result});
+
       }
       
     } catch (err) {
       // Solo actualizar estado si el componente sigue montado
       if (isMounted.current) {
-        //console.error('[useWidgetData] Error cargando datos:', err);
+        console.error('[useWidgetData] Error cargando datos:', err);
         setError(err.message);
       }
     } finally {
@@ -103,8 +101,6 @@ export function useWidgetData(widgetConfig, timeRange = '1h', refreshInterval = 
     // Resetear estado cuando cambia la configuración del widget
     isMounted.current = true;
     
-    //console.log(`[useWidgetData] Iniciando carga para widget: ${widgetConfig.label}`);
-    //console.log(`[useWidgetData] TimeRange: ${timeRange}, RefreshInterval: ${refreshInterval}ms`);
     
     // Cargar datos inmediatamente
     loadData();
@@ -113,7 +109,7 @@ export function useWidgetData(widgetConfig, timeRange = '1h', refreshInterval = 
     // Solo si refreshInterval > 0
     if (refreshInterval > 0) {
       intervalRef.current = setInterval(() => {
-        //console.log(`[useWidgetData] Actualizando datos (polling)...`);
+
         loadData();
       }, refreshInterval);
     }

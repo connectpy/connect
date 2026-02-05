@@ -4,6 +4,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 import { useWidgetData } from '../hooks/useWidgetData';
+import { formatForLineChart } from '../influxService';
 
 /**
  * Widget de gráfico de líneas
@@ -13,9 +14,6 @@ import { useWidgetData } from '../hooks/useWidgetData';
  * 
  * @param {Object} props
  * @param {Object} props.config - Configuración del widget desde dashboard_config
- * @param {string} props.config.id - ID único del widget
- * @param {string} props.config.tipo - Tipo (debe ser "line")
- * @param {string} props.config.label - Título del gráfico
  * @param {string} props.config.bucket - Bucket de InfluxDB
  * @param {string} props.config.measurement - Medición
  * @param {string} props.config.field - Campo
@@ -46,9 +44,9 @@ function LineChartWidget({ config }) {
   const { data, loading, error } = useWidgetData(
     config,      // Configuración del widget (bucket, measurement, field)
     '24h',        // Rango de tiempo: última 1 hora
-    5000         // Actualizar cada 5 segundos
+    50000         // Actualizar cada 5 segundos
   );
-
+  //console.log(`[LineChartWidget] Config:`, config);
   // ==========================================================================
   // EFFECT: Inicializar y actualizar el gráfico
   // ==========================================================================
@@ -61,7 +59,7 @@ function LineChartWidget({ config }) {
     // INICIALIZAR ECHARTS (solo la primera vez)
     // -------------------------------------------------------------------------
     if (!chartInstanceRef.current) {
-      console.log(`[LineChartWidget] Inicializando gráfico: ${config.label}`);
+      //console.log(`[LineChartWidget] Inicializando gráfico: ${config.label}`);
       
       // Crear instancia de ECharts en el div
       chartInstanceRef.current = echarts.init(chartRef.current);
@@ -73,7 +71,7 @@ function LineChartWidget({ config }) {
     
     // Solo actualizar si hay datos disponibles
     if (data && data.length > 0) {
-      console.log(`[LineChartWidget] Actualizando gráfico con ${data.length} puntos`);
+      //console.log(`[LineChartWidget] Actualizando gráfico con ${data.length} puntos`);
       
       // Formatear datos para ECharts
       // formatForLineChart convierte [{time, value}] a {xAxis: [dates], series: [values]}
@@ -272,7 +270,7 @@ function LineChartWidget({ config }) {
       
     } else if (data && data.length === 0) {
       // Si hay data pero está vacía, mostrar mensaje
-      console.log(`[LineChartWidget] No hay datos disponibles`);
+      //console.log(`[LineChartWidget] No hay datos disponibles`);
       
       // Podríamos mostrar un gráfico vacío con un mensaje
       chartInstanceRef.current.setOption({
@@ -298,7 +296,7 @@ function LineChartWidget({ config }) {
     // Función que se ejecuta cuando la ventana cambia de tamaño
     const handleResize = () => {
       if (chartInstanceRef.current) {
-        console.log('[LineChartWidget] Redimensionando gráfico');
+        //console.log('[LineChartWidget] Redimensionando gráfico');
         chartInstanceRef.current.resize();
       }
     };

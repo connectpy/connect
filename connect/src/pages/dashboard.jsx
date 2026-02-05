@@ -211,7 +211,6 @@ function Dashboard() {
                 <div key={widget.id} className="widget-card">
                   <div className="widget-header">
                     <h3>{widget.label}</h3>
-                    <span className="widget-type">{widget.tipo}</span>
                   </div>
                   <div className="widget-content">
                     <WidgetRenderer widget={widget} />

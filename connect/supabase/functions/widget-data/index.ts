@@ -206,7 +206,7 @@ serve(async (req) => {
     
     // Si es para múltiples fields (heatmap)
     if (fields && fields.length > 0) {
-      console.log('[Query] Construyendo query para múltiples fields:', fields)
+      //console.log('[Query] Construyendo query para múltiples fields:', fields)
       
       // Crear filtro para múltiples fields usando OR
       // r["_field"] == "T1" or r["_field"] == "T2" or ...
@@ -235,7 +235,7 @@ from(bucket: "${bucket}")
       }
     } else {
       // Query para un solo field (gráfico de línea normal)
-      console.log('[Query] Construyendo query para field único:', field)
+      //console.log('[Query] Construyendo query para field único:', field)
       
       fluxQuery = `
 from(bucket: "${bucket}")
@@ -246,9 +246,9 @@ from(bucket: "${bucket}")
 `
     }
 
-    console.log('====== QUERY FLUX ======')
+    //console.log('====== QUERY FLUX ======')
     console.log(fluxQuery)
-    console.log('====== FIN QUERY ======')
+    //console.log('====== FIN QUERY ======')
 
     // ------------------------------------------------------------------------
     // PASO 8: Consultar InfluxDB
@@ -308,11 +308,11 @@ from(bucket: "${bucket}")
     }
     
     // LOG COMPLETO para debug
-    console.log('====== RESPUESTA COMPLETA DE INFLUXDB ======')
+    //console.log('====== RESPUESTA COMPLETA DE INFLUXDB ======')
     console.log(csvText)
-    console.log('====== FIN RESPUESTA ======')
-    console.log('Longitud del CSV:', csvText.length)
-    console.log('Primeras 1000 chars:', csvText.substring(0, 1000))
+    //console.log('====== FIN RESPUESTA ======')
+    //console.log('Longitud del CSV:', csvText.length)
+    //console.log('Primeras 1000 chars:', csvText.substring(0, 1000))
     
     // Convertir CSV a JSON usando función helper (ver abajo)
     const parsedData = parseInfluxCSV(csvText)
@@ -345,7 +345,7 @@ from(bucket: "${bucket}")
     // ------------------------------------------------------------------------
     // MANEJO DE ERRORES GLOBALES
     // ------------------------------------------------------------------------
-    console.error('Error general en edge function:', error)
+    //console.error('Error general en edge function:', error)
     
     return new Response(
       JSON.stringify({ 
@@ -377,23 +377,18 @@ from(bucket: "${bucket}")
  * O formato simple sin anotaciones
  */
 function parseInfluxCSV(csv: string): DataPoint[] {
-  console.log('[parseInfluxCSV] Iniciando parseo...')
+  //console.log('[parseInfluxCSV] Iniciando parseo...')
   
   // Dividir el CSV en líneas y eliminar vacías
   const lines = csv.split('\n').filter(line => line.trim())
   
-  console.log('[parseInfluxCSV] Total de líneas:', lines.length)
+  //console.log('[parseInfluxCSV] Total de líneas:', lines.length)
   
   if (lines.length === 0) {
     console.log('[parseInfluxCSV] CSV vacío, devolviendo array vacío')
     return []
   }
 
-  // Mostrar las primeras 10 líneas para debug
-  console.log('[parseInfluxCSV] Primeras 10 líneas:')
-  lines.slice(0, 10).forEach((line, i) => {
-    console.log(`  Línea ${i}: ${line}`)
-  })
 
   // --------------------------------------------------------------------------
   // Buscar el índice de la línea que contiene los headers
@@ -405,34 +400,34 @@ function parseInfluxCSV(csv: string): DataPoint[] {
     
     // Saltar líneas de metadata que empiezan con #
     if (line.startsWith('#')) {
-      console.log(`  Saltando línea de metadata ${i}: ${line.substring(0, 50)}`)
+      //console.log(`  Saltando línea de metadata ${i}: ${line.substring(0, 50)}`)
       continue
     }
     
     // Buscar línea que tiene _time y _value (el header real)
     if (line.includes('_time') && line.includes('_value')) {
       headerIndex = i
-      console.log(`[parseInfluxCSV] Header encontrado en línea ${i}`)
+      //console.log(`[parseInfluxCSV] Header encontrado en línea ${i}`)
       break
     }
     
     // También buscar formato alternativo
     if (line.includes('result') || line.includes('table')) {
       headerIndex = i
-      console.log(`[parseInfluxCSV] Posible header en línea ${i}`)
+      //console.log(`[parseInfluxCSV] Posible header en línea ${i}`)
       break
     }
   }
 
   if (headerIndex === -1) {
-    console.error('[parseInfluxCSV] No se encontró línea de header')
-    console.error('[parseInfluxCSV] Intentando con la primera línea no-metadata...')
+    //console.error('[parseInfluxCSV] No se encontró línea de header')
+    //console.error('[parseInfluxCSV] Intentando con la primera línea no-metadata...')
     
     // Buscar primera línea que no sea metadata
     for (let i = 0; i < lines.length; i++) {
       if (!lines[i].startsWith('#')) {
         headerIndex = i
-        console.log(`[parseInfluxCSV] Usando línea ${i} como header`)
+        //console.log(`[parseInfluxCSV] Usando línea ${i} como header`)
         break
       }
     }
@@ -443,24 +438,24 @@ function parseInfluxCSV(csv: string): DataPoint[] {
     return []
   }
 
-  console.log('[parseInfluxCSV] Contenido del header:', lines[headerIndex])
+  //console.log('[parseInfluxCSV] Contenido del header:', lines[headerIndex])
 
   // --------------------------------------------------------------------------
   // Parsear el header para encontrar índices de columnas
   // --------------------------------------------------------------------------
   const headers = lines[headerIndex].split(',')
   
-  console.log('[parseInfluxCSV] Headers parseados:', headers)
-  console.log('[parseInfluxCSV] Total de columnas:', headers.length)
+  //console.log('[parseInfluxCSV] Headers parseados:', headers)
+  //console.log('[parseInfluxCSV] Total de columnas:', headers.length)
   
   // Encontrar en qué posición está cada columna que necesitamos
   const timeIndex = headers.findIndex(h => h.trim() === '_time')
   const valueIndex = headers.findIndex(h => h.trim() === '_value')
   const fieldIndex = headers.findIndex(h => h.trim() === '_field')
 
-  console.log('[parseInfluxCSV] Índice de _time:', timeIndex)
-  console.log('[parseInfluxCSV] Índice de _value:', valueIndex)
-  console.log('[parseInfluxCSV] Índice de _field:', fieldIndex)
+  //console.log('[parseInfluxCSV] Índice de _time:', timeIndex)
+  //console.log('[parseInfluxCSV] Índice de _value:', valueIndex)
+  //console.log('[parseInfluxCSV] Índice de _field:', fieldIndex)
 
   // Si no encontramos las columnas necesarias, error
   if (timeIndex === -1 || valueIndex === -1) {
@@ -476,7 +471,7 @@ function parseInfluxCSV(csv: string): DataPoint[] {
   // --------------------------------------------------------------------------
   const data: DataPoint[] = []
 
-  console.log('[parseInfluxCSV] Procesando datos desde línea', headerIndex + 1)
+  //console.log('[parseInfluxCSV] Procesando datos desde línea', headerIndex + 1)
 
   // Empezar desde la línea siguiente al header
   for (let i = headerIndex + 1; i < lines.length; i++) {
@@ -490,7 +485,7 @@ function parseInfluxCSV(csv: string): DataPoint[] {
     // Dividir la línea por comas
     const values = line.split(',')
     
-    console.log(`[parseInfluxCSV] Línea ${i}: ${values.length} columnas`)
+    //console.log(`[parseInfluxCSV] Línea ${i}: ${values.length} columnas`)
     
     // Verificar que la línea tenga suficientes columnas
     if (values.length > Math.max(timeIndex, valueIndex)) {
@@ -499,7 +494,7 @@ function parseInfluxCSV(csv: string): DataPoint[] {
       const valueStr = values[valueIndex].trim()
       const fieldName = fieldIndex !== -1 ? values[fieldIndex].trim() : undefined
       
-      console.log(`  _time: "${time}", _value: "${valueStr}", _field: "${fieldName}"`)
+      //console.log(`  _time: "${time}", _value: "${valueStr}", _field: "${fieldName}"`)
       
       // Parsear el valor a número (puede venir como string)
       const value = parseFloat(valueStr)
@@ -517,21 +512,22 @@ function parseInfluxCSV(csv: string): DataPoint[] {
         }
         
         data.push(point)
-        console.log(`  ✓ Punto agregado:`, point)
+        //console.log(`  ✓ Punto agregado:`, point)
       } else {
-        console.log(`  ✗ Punto ignorado (valor inválido o tiempo vacío)`)
+        //console.log(`  ✗ Punto ignorado (valor inválido o tiempo vacío)`)
       }
     } else {
-      console.log(`  ✗ Línea ignorada (columnas insuficientes: ${values.length})`)
+      //console.log(`  ✗ Línea ignorada (columnas insuficientes: ${values.length})`)
     }
   }
 
-  console.log(`[parseInfluxCSV] Total parseado: ${data.length} puntos`)
+  //console.log(`[parseInfluxCSV] Total parseado: ${data.length} puntos`)
   
   // Mostrar los primeros 3 puntos para verificación
   if (data.length > 0) {
-    console.log('[parseInfluxCSV] Primeros 3 puntos:', JSON.stringify(data.slice(0, 3), null, 2))
+    //console.log('[parseInfluxCSV] Primeros 3 puntos:', JSON.stringify(data.slice(0, 3), null, 2))
   }
+  console.log('[parseInfluxCSV] Parseo completado.',data )
 
   return data
 }

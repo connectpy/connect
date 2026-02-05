@@ -81,7 +81,11 @@ export async function fetchWidgetData(widgetConfig, timeRange = '1h') {
     requestBody.lastValueOnly = widgetConfig.lastValueOnly;
   }
 
-  console.log('Solicitando datos a Edge Function:', requestBody);
+  if (widgetConfig.field) {
+    requestBody.field = widgetConfig.field;
+  }
+
+  //console.log('Solicitando datos a Edge Function:', requestBody);
 
   // --------------------------------------------------------------------------
   // PASO 4: Llamar a la Edge Function de Supabase
@@ -115,7 +119,7 @@ export async function fetchWidgetData(widgetConfig, timeRange = '1h') {
     return [];
   }
 
-  console.log(`Datos recibidos: ${data.data.length} puntos`, data.metadata);
+  //console.log(`Datos recibidos: ${data.data.length} puntos`, data.metadata);
 
   // --------------------------------------------------------------------------
   // PASO 7: Retornar los datos
