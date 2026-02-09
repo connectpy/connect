@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import whitelogo from '../assets/whitelogo.svg';
 import './Dashboard.css';
-import WidgetRenderer from '../components/WidgetRenderer.jsx';
 import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx';
 
 function Dashboard() {

@@ -2,9 +2,15 @@
 import LineChartWidget from './LineChartWidget.jsx';
 import HeatmapWidget from './HeatmapWidget.jsx';
 import GaugeWidget from './GaugeWidget.jsx';
+import HistoricalWidget from './HistoricalWidget.jsx';
 
 function WidgetRendererMulti({ widget }) {
-  // 1. Si el widget tiene un array de charts, renderizamos múltiples
+
+    // 1. Si es un widget de tipo histórico
+  if (widget.tipo === 'historical' && widget.charts) {
+    return <HistoricalWidget widget={widget} />;
+  }
+  // 2. Si el widget tiene un array de charts, renderizamos múltiples
   if (widget.tipo === 'container' && widget.charts) {
     return (
       <div className="internal-widget-grid">
@@ -19,7 +25,7 @@ function WidgetRendererMulti({ widget }) {
     );
   }
 
-  // 2. Si es un widget simple (el comportamiento que ya tienes)
+  // 3. Si es un widget simple (el comportamiento que ya tienes)
   return <SingleChartRenderer config={widget} />;
 }
 
