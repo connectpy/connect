@@ -215,51 +215,67 @@ serve(async (req) => {
       // Crear filtro para múltiples fields usando OR
       // r["_field"] == "T1" or r["_field"] == "T2" or ...
       const fieldsFilter = fields.map(f => `r["_field"] == "${f}"`).join(' or ')
-      
+      console.log('[Query] Filtro de fields para Flux:', fieldsFilter)  
       if (lastValueOnly) {
         // Para heatmap: obtener solo el último valor de cada field
         fluxQuery = `
-from(bucket: "${bucket}")
-  |> range(start: -${timeRange})
-  |> filter(fn: (r) => r["_measurement"] == "${measurement}")
-  |> filter(fn: (r) => ${fieldsFilter})
-  |> group(columns: ["_field"])
-  |> last()
-  |> group()
-`
-      } else {
-        // Para series temporales de múltiples fields
+        from(bucket: "${bucket}")
+        |> range(start: -${timeRange})
+        |> filter(fn: (r) => r["_measurement"] == "${measurement}")
+        |> filter(fn: (r) => ${fieldsFilter})
+        |> group(columns: ["_field"])
+        |> last()
+        |> group()
+        `
+        console.log('[Query] Query para heatmap con lastValueOnly', fluxQuery)
+      } else if (dateRange && !lastValueOnly) {
+      //------------------------------------------------------------------------
+      // Query para varios fields con dateRange 
+      //------------------------------------------------------------------------
         fluxQuery = `
-from(bucket: "${bucket}")
-  |> range(start: -${timeRange})
-  |> filter(fn: (r) => r["_measurement"] == "${measurement}")
-  |> filter(fn: (r) => ${fieldsFilter})
-  |> aggregateWindow(every: 1m, fn: ${aggregation}, createEmpty: false)
-`
+        from(bucket: "${bucket}")
+        |> range(start: ${dateRange.start}, stop: ${dateRange.end})
+        |> filter(fn: (r) => r["_measurement"] == "${measurement}")
+        |> filter(fn: (r) => ${fieldsFilter})
+        |> limit(n: 100)
+        `
+      } else if(!dateRange && !lastValueOnly){ 
+      //------------------------------------------------------------------------
+      // Quyery para varios fields con timeRange
+      //------------------------------------------------------------------------
+        fluxQuery = `
+        from(bucket: "${bucket}")
+        |> range(start: -${timeRange})
+        |> filter(fn: (r) => r["_measurement"] == "${measurement}")
+        |> filter(fn: (r) => ${fieldsFilter})
+        |> aggregateWindow(every: 1m, fn: ${aggregation}, createEmpty: false)
+        `
       }
-    } else if (dateRange) {
-      // Query con rango de fechas específicas
-      console.log('[Query] Construyendo query con rango de fechas:', dateRange)
-      
-      fluxQuery = `
-from(bucket: "${bucket}")
-  |> range(start: ${dateRange.start}, stop: ${dateRange.end})
-  |> filter(fn: (r) => r["_measurement"] == "${measurement}")
-  |> filter(fn: (r) => r["_field"] == "${field}")
-  |> limit(n: 100)
-`
-    } else {
-      // Query para un solo field (gráfico de línea normal)
-      //console.log('[Query] Construyendo query para field único:', field)
-      
-      fluxQuery = `
-from(bucket: "${bucket}")
-  |> range(start: -${timeRange})
-  |> filter(fn: (r) => r["_measurement"] == "${measurement}")
-  |> filter(fn: (r) => r["_field"] == "${field}")
-  |> limit(n: 100)
-`
-    }
+    }  
+      else if (dateRange) {
+      //------------------------------------------------------------------------
+      // Query para dateRange con un solo field
+      //------------------------------------------------------------------------      
+        fluxQuery = `
+        from(bucket: "${bucket}")
+        |> range(start: ${dateRange.start}, stop: ${dateRange.end})
+        |> filter(fn: (r) => r["_measurement"] == "${measurement}")
+        |> filter(fn: (r) => r["_field"] == "${field}")
+        |> limit(n: 100)
+        `
+      }  else {
+        //------------------------------------------------------------------------
+        // Query para un solo field con timeRange (gráficos simples)
+        //------------------------------------------------------------------------
+        fluxQuery = `
+        from(bucket: "${bucket}")
+        |> range(start: -${timeRange})
+        |> filter(fn: (r) => r["_measurement"] == "${measurement}")
+        |> filter(fn: (r) => r["_field"] == "${field}")
+        |> limit(n: 100)
+        `
+      } 
+
 
     //console.log('====== QUERY FLUX ======')
     console.log(fluxQuery)
@@ -540,7 +556,7 @@ function parseInfluxCSV(csv: string): DataPoint[] {
   
   // Mostrar los primeros 3 puntos para verificación
   if (data.length > 0) {
-    //console.log('[parseInfluxCSV] Primeros 3 puntos:', JSON.stringify(data.slice(0, 3), null, 2))
+    console.log('[parseInfluxCSV] Primeros 3 puntos:', JSON.stringify(data.slice(0, 3), null, 2))
   }
   console.log('[parseInfluxCSV] Parseo completado.',data )
 

@@ -31,6 +31,7 @@ function HeatmapWidget({ config }) {
       ...config,
       lastValueOnly: true  // Solo queremos el último valor de cada sensor
     },
+    '1h',    // Rango (irrelevante con lastValueOnly, pero necesario)
     10000    // Actualizar cada 10 segundos
   );
 
@@ -54,8 +55,8 @@ function HeatmapWidget({ config }) {
       // Crear un mapa de field -> value para acceso rápido
       const valueMap = {};
       data.forEach(point => {
-        if (point.field) {
-          valueMap[point.field] = point.value;
+        if (point.field && point.value !== undefined) {
+          valueMap[point.field] = parseFloat(point.value); // Asegurar que sea número
         }
       });
       
@@ -67,6 +68,7 @@ function HeatmapWidget({ config }) {
       
       // Datos para ECharts en formato [col, row, value]
       const heatmapData = [];
+      const fieldNameMap = {}; // Para el tooltip
       
       // Calcular el número máximo de columnas
       const maxCols = Math.max(...layout.map(row => row.length));
@@ -79,36 +81,42 @@ function HeatmapWidget({ config }) {
         row.forEach((fieldName, colIndex) => {
           const value = valueMap[fieldName];
           
-          if (value !== undefined) {
-            // [columna, fila, valor]
-            heatmapData.push([
-              colIndex + offset,  // Columna (con offset para centrar)
-              rowIndex,           // Fila
-              value,              // Valor del sensor
-              fieldName           // Guardar el nombre para el tooltip
-            ]);
+          if (value !== undefined && !isNaN(value)) {
+            const col = colIndex + offset;
+            const rowPos = rowIndex;
+            
+            // [columna, fila, valor] - SOLO 3 elementos para que visualMap funcione
+            heatmapData.push([col, rowPos, value]);
+            
+            // Guardar el nombre del field para usarlo en tooltip
+            fieldNameMap[`${col}_${rowPos}`] = fieldName;
           }
         });
       });
       
       console.log('[HeatmapWidget] Datos del heatmap:', heatmapData);
       console.log('[HeatmapWidget] Ejemplo de punto:', heatmapData[0]);
-      console.log('[HeatmapWidget] Formato esperado: [col, row, value, fieldName]');
+      console.log('[HeatmapWidget] FieldNameMap:', fieldNameMap);
       
       // Calcular min y max para la escala de colores
       const values = heatmapData.map(item => item[2]);
+      
+      if (values.length === 0) {
+        console.error('[HeatmapWidget] No hay valores válidos');
+        return;
+      }
+      
       const minValue = Math.min(...values);
       const maxValue = Math.max(...values);
       
-      console.log('[HeatmapWidget] Rango de valores:', { minValue, maxValue });
-      console.log('[HeatmapWidget] Valores individuales:', values);
+      console.log('[HeatmapWidget] Rango de valores:', { minValue, maxValue, values });
       
-      // Si todos los valores son iguales, agregar un pequeño rango
-      const hasVariation = maxValue - minValue > 0.1;
-      const visualMin = hasVariation ? minValue : minValue - 1;
-      const visualMax = hasVariation ? maxValue : maxValue + 1;
+      // Asegurar un rango mínimo para que se vean los colores
+      const range = maxValue - minValue;
+      const visualMin = range > 0 ? minValue : minValue - 5;
+      const visualMax = range > 0 ? maxValue : maxValue + 5;
       
-      console.log('[HeatmapWidget] Rango visual ajustado:', { visualMin, visualMax, hasVariation });
+      console.log('[HeatmapWidget] Rango visual ajustado:', { visualMin, visualMax, range });
       
       // ==================================================================
       // CONFIGURACIÓN DEL HEATMAP
@@ -134,12 +142,16 @@ function HeatmapWidget({ config }) {
           borderColor: '#475569',
           textStyle: { color: '#ffffff' },
           formatter: (params) => {
-            const fieldName = params.data[3]; // Nombre del sensor
-            const value = params.data[2];     // Valor
+            const col = params.data[0];
+            const row = params.data[1];
+            const value = params.data[2];
+            const fieldName = fieldNameMap[`${col}_${row}`] || 'Desconocido';
+            const unit = config.medicion || '';
+            
             return `
-              <div style="padding: 5px;">
-                <strong>${fieldName}</strong><br/>
-                ${value.toFixed(2)} ${config.medicion}
+              <div style="padding: 8px;">
+                <strong style="font-size: 14px;">${fieldName}</strong><br/>
+                <span style="color: #94a3b8;">Valor:</span> <strong>${value.toFixed(2)}</strong> ${unit}
               </div>
             `;
           }
@@ -188,7 +200,7 @@ function HeatmapWidget({ config }) {
         visualMap: {
           min: visualMin,
           max: visualMax,
-          type: 'continuous',  // Cambiado a continuous
+          type: 'continuous',
           calculable: true,
           realtime: true,
           orient: 'horizontal',
@@ -200,23 +212,33 @@ function HeatmapWidget({ config }) {
           },
           itemWidth: 20,
           itemHeight: 140,
-          // Color continuo con más contraste
+          // Paleta de colores de frío a caliente
           inRange: {
             color: [
-              '#1e3a8a',  // Azul muy oscuro
-              '#3b82f6',  // Azul
+              '#1e40af',  // Azul oscuro (frío)
+              '#3b82f6',  // Azul medio
               '#06b6d4',  // Cyan
+              '#14b8a6',  // Teal
               '#10b981',  // Verde
+              '#84cc16',  // Lima
               '#fbbf24',  // Amarillo
+              '#fb923c',  // Naranja claro
               '#f97316',  // Naranja
-              '#ef4444'   // Rojo
+              '#ef4444',  // Rojo
+              '#dc2626'   // Rojo oscuro (caliente)
             ]
           },
-          text: [`${visualMax.toFixed(1)}${config.medicion}`, `${visualMin.toFixed(1)}${config.medicion}`],
+          text: [
+            `${visualMax.toFixed(1)}${config.medicion || ''}`, 
+            `${visualMin.toFixed(1)}${config.medicion || ''}`
+          ],
           textGap: 10,
-          // Forzar rango específico
-          splitNumber: 5,
-          precision: 1
+          splitNumber: 6,
+          precision: 1,
+          // CRÍTICO: especificar que use la dimensión 2 (el valor)
+          dimension: 2,
+          // Forzar el mapeo de valores
+          seriesIndex: 0
         },
         
         series: [{
@@ -227,11 +249,13 @@ function HeatmapWidget({ config }) {
           label: {
             show: true,
             color: '#ffffff',
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 'bold',
             formatter: (params) => {
-              const fieldName = params.data[3];
+              const col = params.data[0];
+              const row = params.data[1];
               const value = params.data[2];
+              const fieldName = fieldNameMap[`${col}_${row}`] || '?';
               return `${fieldName}\n${value.toFixed(1)}`;
             }
           },
@@ -252,7 +276,14 @@ function HeatmapWidget({ config }) {
         }]
       };
       
-      chartInstanceRef.current.setOption(option, true); // El 'true' fuerza actualización completa
+      console.log('[HeatmapWidget] Configuración de visualMap:', {
+        min: option.visualMap.min,
+        max: option.visualMap.max,
+        dimension: option.visualMap.dimension,
+        dataCount: heatmapData.length
+      });
+      
+      chartInstanceRef.current.setOption(option, true);
     }
   }, [data, config]);
 

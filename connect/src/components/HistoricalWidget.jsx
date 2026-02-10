@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import LineChartWidget from './LineChartWidget.jsx';
-import HeatmapWidget from './HeatmapWidget.jsx';
+import HeatmapHistoricalWidget from './HeatmapHistoricalWidget.jsx';
 import GaugeWidget from './GaugeWidget.jsx';
 
 
@@ -121,8 +121,8 @@ function SingleChartRenderer({ config, dateRange }) {
   };
 
   switch (config.tipo) {
-    case 'heatmap':
-      return <HeatmapWidget config={configWithDateRange} />;
+    case 'heatmapHistorico':
+      return <HeatmapHistoricalWidget config={configWithDateRange} />;
     case 'line':
       return <LineChartWidget config={configWithDateRange} />;
     case 'gauge':

@@ -69,7 +69,6 @@ export function useWidgetData(widgetConfig, refreshInterval = 5000) {
       // Llamar al servicio para obtener datos de InfluxDB
   
       const result = await fetchWidgetData(widgetConfig);
-       
       // Solo actualizar estado si el componente sigue montado
       if (isMounted.current) {
         setData(result);
@@ -117,7 +116,6 @@ export function useWidgetData(widgetConfig, refreshInterval = 5000) {
     // CLEANUP: Limpiar al desmontar o cuando cambien las dependencias
     // ==========================================================================
     return () => {
-      //console.log(`[useWidgetData] Limpiando widget: ${widgetConfig.label}`);
       
       // Marcar como desmontado para prevenir actualizaciones de estado
       isMounted.current = false;
