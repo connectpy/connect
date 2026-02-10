@@ -25,6 +25,9 @@ interface WidgetRequest {
   timeRange: string;     // Rango de tiempo (como "1h", "24h", "7d")
   aggregation?: string;  // Función de agregación (mean, sum, max, min)
   lastValueOnly?: boolean; // Si true, solo devuelve el último valor de cada field
+  dateRange?: {    start: string; // Fecha de inicio en formato ISO
+                 end: string;   // Fecha de fin en formato ISO
+               }; // Rango de fechas para widgets históricos (opcional)
 }
 
 // Estructura de un punto de dato que devolvemos
@@ -100,13 +103,14 @@ serve(async (req) => {
       measurement,              // Requerido
       field,                    // Opcional (para gráficos simples)
       fields,                   // Opcional (para heatmaps con múltiples fields)
-      timeRange,                // Requerido
+      timeRange = false,                // Requerido
       aggregation = 'mean',     // Opcional, default: mean
-      lastValueOnly = false     // Opcional, default: false
+      lastValueOnly = false,     // Opcional, default: false
+      dateRange = false,                // Opcional, rango de fechas para widgets históricos
     } = requestData
 
     // Validar que los campos requeridos existen
-    if (!bucket || !measurement || !timeRange) {
+    if (!bucket || !measurement) {
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -233,6 +237,17 @@ from(bucket: "${bucket}")
   |> aggregateWindow(every: 1m, fn: ${aggregation}, createEmpty: false)
 `
       }
+    } else if (dateRange) {
+      // Query con rango de fechas específicas
+      console.log('[Query] Construyendo query con rango de fechas:', dateRange)
+      
+      fluxQuery = `
+from(bucket: "${bucket}")
+  |> range(start: ${dateRange.start}, stop: ${dateRange.end})
+  |> filter(fn: (r) => r["_measurement"] == "${measurement}")
+  |> filter(fn: (r) => r["_field"] == "${field}")
+  |> limit(n: 100)
+`
     } else {
       // Query para un solo field (gráfico de línea normal)
       //console.log('[Query] Construyendo query para field único:', field)

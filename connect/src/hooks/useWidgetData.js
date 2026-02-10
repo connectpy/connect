@@ -11,7 +11,6 @@ import { fetchWidgetData } from '../influxService';
  * - Se limpia correctamente al desmontar
  * 
  * @param {Object} widgetConfig - Configuración del widget (bucket, measurement, field)
- * @param {string} timeRange - Rango de tiempo (ej: "1h", "24h")
  * @param {number} refreshInterval - Intervalo de actualización en milisegundos (default: 5000)
  * 
  * @returns {Object} Objeto con { data, loading, error, refetch }
@@ -26,12 +25,12 @@ import { fetchWidgetData } from '../influxService';
  *   return <Chart data={data} />
  * }
  */
-export function useWidgetData(widgetConfig, timeRange = '1h', refreshInterval = 5000) {
+export function useWidgetData(widgetConfig, refreshInterval = 5000) {
   
   // ==========================================================================
   // ESTADOS
   // ==========================================================================
-  //console.log(`[useWidgetData] Hook iniciado para widget: ${widgetConfig.label}`);
+
   // data: Array de {time, value} o null si aún no se cargó
   const [data, setData] = useState(null);
   
@@ -69,7 +68,7 @@ export function useWidgetData(widgetConfig, timeRange = '1h', refreshInterval = 
       
       // Llamar al servicio para obtener datos de InfluxDB
   
-      const result = await fetchWidgetData(widgetConfig, timeRange);
+      const result = await fetchWidgetData(widgetConfig);
        
       // Solo actualizar estado si el componente sigue montado
       if (isMounted.current) {
@@ -133,8 +132,7 @@ export function useWidgetData(widgetConfig, timeRange = '1h', refreshInterval = 
     // Dependencias: re-ejecutar effect si cambia alguna de estas
     // NOTA: widgetConfig es un objeto, así que usamos JSON.stringify para compararlo
   }, [
-    JSON.stringify(widgetConfig), // Configuración del widget
-    timeRange,                     // Rango de tiempo
+    JSON.stringify(widgetConfig), // Configuración del widget                  
     refreshInterval                // Intervalo de actualización
   ]);
 
@@ -166,68 +164,3 @@ export function useWidgetData(widgetConfig, timeRange = '1h', refreshInterval = 
   };
 }
 
-// ============================================================================
-// VARIANTE: Hook para múltiples widgets
-// ============================================================================
-
-/**
- * Hook para cargar datos de múltiples widgets a la vez
- * 
- * @param {Array} widgetConfigs - Array de configuraciones de widgets
- * @param {string} timeRange - Rango de tiempo
- * @param {number} refreshInterval - Intervalo de actualización
- * 
- * @returns {Object} Objeto con { dataMap, loading, errors }
- * 
- * @example
- * const { dataMap, loading } = useMultipleWidgets(widgets, '1h');
- * const widget1Data = dataMap[widgets[0].id];
- */
-export function useMultipleWidgets(widgetConfigs, timeRange = '1h', refreshInterval = 5000) {
-  const [dataMap, setDataMap] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState({});
-  const isMounted = useRef(true);
-
-  useEffect(() => {
-    isMounted.current = true;
-
-    const loadAllData = async () => {
-      const newDataMap = {};
-      const newErrors = {};
-
-      // Cargar datos de todos los widgets en paralelo
-      await Promise.all(
-        widgetConfigs.map(async (config) => {
-          try {
-            const data = await fetchWidgetData(config, timeRange);
-            if (isMounted.current) {
-              newDataMap[config.id] = data;
-            }
-          } catch (err) {
-            if (isMounted.current) {
-              newErrors[config.id] = err.message;
-            }
-          }
-        })
-      );
-
-      if (isMounted.current) {
-        setDataMap(newDataMap);
-        setErrors(newErrors);
-        setLoading(false);
-      }
-    };
-
-    loadAllData();
-
-    const interval = setInterval(loadAllData, refreshInterval);
-
-    return () => {
-      isMounted.current = false;
-      clearInterval(interval);
-    };
-  }, [JSON.stringify(widgetConfigs), timeRange, refreshInterval]);
-
-  return { dataMap, loading, errors };
-}

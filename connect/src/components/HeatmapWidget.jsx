@@ -31,7 +31,6 @@ function HeatmapWidget({ config }) {
       ...config,
       lastValueOnly: true  // Solo queremos el último valor de cada sensor
     },
-    '1h',    // Rango (irrelevante con lastValueOnly, pero necesario)
     10000    // Actualizar cada 10 segundos
   );
 

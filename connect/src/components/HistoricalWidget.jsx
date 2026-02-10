@@ -1,3 +1,5 @@
+//este componente crea un widget con controles para seleccionar un rango de fechas y un botón para consultar los datos históricos
+
 import { useState } from 'react';
 import LineChartWidget from './LineChartWidget.jsx';
 import HeatmapWidget from './HeatmapWidget.jsx';

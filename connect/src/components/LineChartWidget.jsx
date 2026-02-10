@@ -19,6 +19,8 @@ import { formatForLineChart } from '../influxService';
  * @param {string} props.config.field - Campo
  * @param {string} props.config.medicion - Unidad de medida (ej: "°C", "PSI")
  * @param {string} [props.config.aggregation] - Función de agregación
+ * @param {string} [props.config.timeRange] - Rango de tiempo (ej: "1h", "24h")
+ * @param {Object} [props.config.dateRange] - Rango de fechas para widgets históricos (opcional, formato: { start: ISOString, end: ISOString })
  */
 function LineChartWidget({ config }) {
   
@@ -43,10 +45,9 @@ function LineChartWidget({ config }) {
   // 4. Limpiar al desmontar
   const { data, loading, error } = useWidgetData(
     config,      // Configuración del widget (bucket, measurement, field)
-    '24h',        // Rango de tiempo: última 1 hora
-    10000         // Actualizar cada 10 segundos
+    10000,        // Actualizar cada 10 segundos ¿
   );
-  //console.log(`[LineChartWidget] Config:`, config);
+  //console.log(`[LineChartWidget] rango:`, JSON.stringify(config.dateRange));
   // ==========================================================================
   // EFFECT: Inicializar y actualizar el gráfico
   // ==========================================================================

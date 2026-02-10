@@ -16,8 +16,8 @@ import { supabase } from './supabaseClient';
  * @param {string} [widgetConfig.field] - Campo (ej: "celsius")
  * @param {Array} [widgetConfig.fields] - Array de campos (ej: ["T1", "T2", ...])
  * @param {string} [widgetConfig.aggregation] - Función de agregación (mean, sum, etc.)
- * @param {string} timeRange - Rango de tiempo (ej: "1h", "24h", "7d")
- * 
+ * @param {string} [widgetConfig.timeRange] - Rango de tiempo (ej: "1h", "24h", "7d")
+ * @param {Object} [widgetConfig.dateRange] - Rango de fechas para widgets históricos (opcional, formato: { start: ISOString, end: ISOString })
  * @returns {Promise<Array>} Array de objetos {time, value}
  * 
  * @example
@@ -40,7 +40,7 @@ import { supabase } from './supabaseClient';
  * const data = await fetchWidgetData(widgetConfig, "1h")
  * // Retorna: [{time, value, field: "T1"}, {time, value, field: "T2"}, ...]
  */
-export async function fetchWidgetData(widgetConfig, timeRange = '1h') {
+export async function fetchWidgetData(widgetConfig) {
   
   // --------------------------------------------------------------------------
   // PASO 1: Verificar que el usuario está autenticado
@@ -68,8 +68,7 @@ export async function fetchWidgetData(widgetConfig, timeRange = '1h') {
   // --------------------------------------------------------------------------
   const requestBody = {
     bucket: widgetConfig.bucket,                    // ej: "sensores"
-    measurement: widgetConfig.measurement,          // ej: "temperature"                    // ej: "celsius"
-    timeRange: timeRange,                           // ej: "1h"
+    measurement: widgetConfig.measurement,          // ej: "temperature"                    // ej: "celsius"                           // ej: "1h"
     aggregation: widgetConfig.aggregation || 'mean' // ej: "mean" (default)
   };
 
@@ -85,7 +84,13 @@ export async function fetchWidgetData(widgetConfig, timeRange = '1h') {
     requestBody.field = widgetConfig.field;
   }
 
-  //console.log('Solicitando datos a Edge Function:', requestBody);
+  if (widgetConfig.dateRange) {
+    requestBody.dateRange = widgetConfig.dateRange;
+  }
+  else{
+    requestBody.timeRange = widgetConfig.timeRange;
+  }
+  console.log('[influxService] Solicitando datos a Edge Function:', requestBody);
 
   // --------------------------------------------------------------------------
   // PASO 4: Llamar a la Edge Function de Supabase
