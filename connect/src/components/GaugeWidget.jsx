@@ -47,7 +47,7 @@ function GaugeWidget({ config }) {
 
     // Inicializar ECharts
     if (!chartInstanceRef.current) {
-      console.log(`[GaugeWidget] Inicializando gauge: ${config.label}`);
+      //console.log(`[GaugeWidget] Inicializando gauge: ${config.label}`);
       chartInstanceRef.current = echarts.init(chartRef.current);
     }
 
@@ -56,7 +56,7 @@ function GaugeWidget({ config }) {
       // Obtener el último valor
       const latestValue = data[data.length - 1].value;
       
-      console.log(`[GaugeWidget] Valor actual: ${latestValue} ${config.medicion}`);
+      //console.log(`[GaugeWidget] Valor actual: ${latestValue} ${config.medicion}`);
       
       // Configuración de rangos
       const min = config.min !== undefined ? config.min : 0;

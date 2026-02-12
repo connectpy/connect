@@ -7,13 +7,13 @@ const influxDB = new InfluxDB({
 
 const queryApi = influxDB.getQueryApi(import.meta.env.VITE_INFLUX_ORG);
 
-export async function demoData(bucket, measurement, field, timeRange) {
+export async function demoData({bucket, measurement, field, timeRange}) {
     const fluxQuery = `from(bucket: "${bucket}")
-  |> range(start: -${timeRange})
+  |> range(start: ${timeRange})
   |> filter(fn: (r) => r._measurement == "${measurement}")
   |> filter(fn: (r) => r._field == "${field}")
   |> yield(name: "demoData")`;  
-  
+  console.log('Ejecutando consulta InfluxDB con query:', fluxQuery);
   const data = [];
 
   return new Promise((resolve, reject) => {
@@ -28,7 +28,6 @@ export async function demoData(bucket, measurement, field, timeRange) {
       },
       complete() {
         resolve(data);
-        console.log('Datos obtenidos para gráfico:', data);
       }
     });
   });
@@ -41,7 +40,7 @@ export async function getDemoLatestValue({bucket, measurement, field }) {
   |> filter(fn: (r) => r._field == "${field}")
   |> last()`;
 
-  console.log('Ejecutando consulta gauge InfluxDB con query:', fluxQuery);
+  //console.log('Ejecutando consulta gauge InfluxDB con query:', fluxQuery);
 
   const data = [];
 
@@ -58,7 +57,7 @@ export async function getDemoLatestValue({bucket, measurement, field }) {
         },
         complete() {
            resolve(data[0]?.value ?? null);
-           console.log('Valor obtenido para gauge:', data[0]?.value);
+           //console.log('Valor obtenido para gauge:', data[0]?.value);
       } 
     });
   });

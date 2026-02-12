@@ -161,7 +161,6 @@ function DemoDashboard() {
                         bucket="CONNECT"
                         measurement="ESTACION"
                         field="TEMPERATURA"
-                        deviceId="weather-station-01"
                         timeRange="-24h"
                         title="Últimas 24 horas"
                         unit="°C"
@@ -185,7 +184,6 @@ function DemoDashboard() {
                         bucket="CONNECT"
                         measurement="ESTACION"
                         field="HUMEDAD"
-                        deviceId="weather-station-01"
                         title="Humedad Actual"
                         unit="%"
                         min={0}

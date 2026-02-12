@@ -5,13 +5,12 @@ import * as echarts from 'echarts';
 import { demoData } from '../influxDemoClient';
 
 export default function DemoLineChart({ 
+  bucket,
   measurement, 
   field, 
-  deviceId = null,
   timeRange = '-1h',
   title = 'Gráfico de Línea',
   unit = '',
-  aggregateWindow = null,
   refreshInterval = 30000
 }) {
   const chartRef = useRef(null);
@@ -20,144 +19,180 @@ export default function DemoLineChart({
   const [error, setError] = useState(null);
   const resizeObserver = useRef(null);
 
-  // 1. Inicializar el gráfico (Corregido)
   useEffect(() => {
     if (chartRef.current && !chartInstance.current) {
-      // Inicializar directamente si el DOM existe
       chartInstance.current = echarts.init(chartRef.current);
     }
-
     return () => {
-      if (chartInstance.current) {
-        chartInstance.current.dispose();
-        chartInstance.current = null;
-      }
+      chartInstance.current?.dispose();
+      chartInstance.current = null;
     };
   }, []);
 
-  // 2. Manejar resize con ResizeObserver (Optimizado)
   useEffect(() => {
     if (!chartRef.current) return;
-
-    resizeObserver.current = new ResizeObserver(() => {
-      chartInstance.current?.resize();
-    });
-
+    resizeObserver.current = new ResizeObserver(() => chartInstance.current?.resize());
     resizeObserver.current.observe(chartRef.current);
-
-    return () => {
-      resizeObserver.current?.disconnect();
-    };
+    return () => resizeObserver.current?.disconnect();
   }, []);
 
-  // 3. Fetch data (Corregido)
   useEffect(() => {
-    async function fetchData() {
-      try {
-        // Si por alguna razón la instancia no está lista, salimos (el intervalo reintentará)
-        if (!chartInstance.current) return;
+    const fetchData = async () => {
+      if (!chartInstance.current) return;
 
-        // No mostramos loading en cada refresh para evitar parpadeos, solo al inicio o si hay error previo
-        if (error || !chartInstance.current.getOption()) {
-           setLoading(true);
-        }
-        
-        const data = await demoData({
-          bucket: process.env.NEXT_PUBLIC_INFLUX_BUCKET,
-          measurement,
-          field,
-          deviceId,
-          timeRange,
-          aggregateWindow
-        });
+      try {
+        if (!chartInstance.current.getOption()) setLoading(true);
+
+        const data = await demoData({ bucket, measurement, field, timeRange });
 
         if (!data || data.length === 0) {
-          setError('No hay datos disponibles para el rango seleccionado');
+          setError('No hay datos disponibles');
           setLoading(false);
+          chartInstance.current.clear(); 
           return;
         }
 
-        // Formatear datos
-        const times = data.map(d => new Date(d._time).toLocaleTimeString('es-PY', {
-          hour: '2-digit',
-          minute: '2-digit',
-          day: '2-digit',
-          month: '2-digit'
-        }));
-        const values = data.map(d => parseFloat(d._value).toFixed(2));
+        // Formateo de datos según tu estructura {time, value}
+        const chartPoints = data.map(d => [new Date(d.time).getTime(), parseFloat(d.value)]);
 
         const option = {
+          backgroundColor: 'transparent',
+          
           title: {
             text: title,
-            left: 'center',
-            textStyle: { fontSize: 14, fontWeight: 'normal' }
-          },
-          tooltip: {
-            trigger: 'axis',
-            formatter: (params) => {
-              const param = params[0];
-              return `${param.name}<br/>${param.seriesName}: ${param.value}${unit}`;
+            left: '10',
+            top: '10',
+            textStyle: { 
+              color: '#ffffff', // Texto blanco para modo oscuro
+              fontSize: 16,
+              fontWeight: 600
             }
           },
-          xAxis: {
-            type: 'category',
-            data: times,
-            axisLabel: { rotate: 45, fontSize: 10 }
+
+          tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+            borderColor: '#475569',
+            borderWidth: 1,
+            textStyle: { color: '#ffffff', fontSize: 13 },
+            formatter: (params) => {
+              const point = params[0];
+              const date = new Date(point.value[0]);
+              const dateStr = date.toLocaleString('es-PY', {
+                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+              });
+              return `
+                <div style="padding: 5px;">
+                  <strong>${dateStr}</strong><br/>
+                  Valor: <strong>${point.value[1].toFixed(2)} ${unit}</strong>
+                </div>
+              `;
+            }
           },
+
+          grid: {
+            left: '10%',
+            right: '5%',
+            bottom: '15%',
+            top: '20%',
+            containLabel: true
+          },
+
+          xAxis: {
+            type: 'time', // Usamos tipo tiempo para mejor espaciado
+            axisLabel: { 
+              color: '#94a3b8', // Gris pizarra
+              fontSize: 11,
+              formatter: (value) => {
+                const date = new Date(value);
+                return date.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+              }
+            },
+            axisLine: { lineStyle: { color: '#475569' } },
+            splitLine: { show: false }
+          },
+
           yAxis: {
             type: 'value',
             name: unit,
-            axisLabel: { formatter: `{value}${unit}`, fontSize: 11 }
+            nameTextStyle: { color: '#94a3b8', fontSize: 12 },
+            axisLabel: { 
+              color: '#94a3b8', 
+              fontSize: 11,
+              formatter: (value) => value.toFixed(1)
+            },
+            axisLine: { lineStyle: { color: '#475569' } },
+            splitLine: { 
+              lineStyle: { color: '#334155', type: 'dashed' } 
+            }
           },
+
           series: [{
-            name: field || measurement,
+            name: field,
             type: 'line',
-            data: values,
+            data: chartPoints,
             smooth: true,
-            itemStyle: { color: '#3b82f6' },
+            symbol: 'circle',
+            symbolSize: 6,
+            lineStyle: { 
+              color: '#06b6d4', // Cyan intenso
+              width: 3 
+            },
+            itemStyle: { color: '#06b6d4' },
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
-                { offset: 1, color: 'rgba(59, 130, 246, 0.05)' }
+                { offset: 0, color: 'rgba(6, 182, 212, 0.4)' },
+                { offset: 1, color: 'rgba(6, 182, 212, 0.05)' }
               ])
-            }
-          }],
-          grid: { left: '60px', right: '20px', bottom: '60px', top: '50px' }
+            },
+            animationDuration: 1000
+          }]
         };
 
         chartInstance.current.setOption(option, true);
-        setError(null); // Limpiar error si la carga es exitosa
+        setError(null);
       } catch (err) {
-        setError(err.message);
-        console.error('Error fetching chart data:', err);
+        setError('Error al conectar con la base de datos');
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchData();
-
     const interval = setInterval(fetchData, refreshInterval);
     return () => clearInterval(interval);
-  }, [measurement, field, deviceId, timeRange, title, unit, aggregateWindow, refreshInterval, error]);
+  }, [bucket, measurement, field, timeRange, title, unit, refreshInterval]);
 
-  // Renderizado
   return (
-    <div className="chart-wrapper" style={{ position: 'relative', width: '100%', height: '350px' }}>
+    <div className="chart-wrapper" style={{ 
+      position: 'relative', 
+      width: '100%', 
+      height: '350px', 
+      background: '#1e293b', // Fondo oscuro tipo Slate-900
+      borderRadius: '12px', 
+      padding: '10px',
+      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+    }}>
       {loading && (
-        <div className="chart-loading" style={{ position: 'absolute', zIndex: 10, background: 'rgba(255,255,255,0.7)', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-          <div className="spinner"></div>
-          <p>Cargando datos...</p>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30, 41, 59, 0.7)', borderRadius: '12px' }}>
+          <p style={{ color: '#94a3b8' }}>Cargando...</p>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30, 41, 59, 0.9)', borderRadius: '12px' }}>
+          <p style={{ color: '#ef4444' }}>{error}</p>
         </div>
       )}
       
-      {error ? (
-        <div className="chart-error" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p>{error}</p>
-        </div>
-      ) : (
-        <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
-      )}
+      <div 
+        ref={chartRef} 
+        style={{ 
+          width: '100%', 
+          height: '100%',
+          visibility: error ? 'hidden' : 'visible'
+        }} 
+      />
     </div>
   );
 }
