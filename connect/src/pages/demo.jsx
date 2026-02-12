@@ -12,7 +12,7 @@ function DemoDashboard() {
     { id: 'historico', name: 'Histórico', icon: 'chart-line' }
   ];
   const user = "demo";
-  const [activeTabId, setActiveTabId] = useState(null); // Pestaña seleccionada
+  const [activeTabId, setActiveTabId] = useState('estacion'); // Pestaña seleccionada
   const navigate = useNavigate();
   const companyName = "Su empresa";
   const [sidebarOpen, setSidebarOpen] = useState(false); 
