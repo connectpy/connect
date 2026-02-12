@@ -6,6 +6,7 @@ import Login from './pages/login.jsx'
 import Dashboard from './pages/dashboard.jsx';
 import Register from './pages/register.jsx';
 import './App.css';
+import DemoDashboard from './pages/demo.jsx';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -44,6 +45,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path='/registro' element={<Register />} />
+          <Route path="/demo" element={<DemoDashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
