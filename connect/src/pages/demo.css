@@ -1,0 +1,91 @@
+/* Estilos para el contenedor de gauge + chart */
+.gauge-chart-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  align-items: center;
+}
+
+.gauge-section {
+  min-height: 300px;
+}
+
+.chart-section {
+  min-height: 300px;
+}
+
+/* Widget full width */
+.widget-card.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Estilos para el selector de fechas */
+.date-selector {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.date-input-group label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.date-input-group input[type="datetime-local"] {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 220px;
+}
+
+.date-input-group input[type="datetime-local"]:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn-apply-dates {
+  padding: 8px 24px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  height: fit-content;
+}
+
+.btn-apply-dates:hover {
+  background-color: #2563eb;
+}
+
+.btn-apply-dates:active {
+  background-color: #1d4ed8;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .gauge-chart-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .date-selector {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .date-input-group input[type="datetime-local"] {
+    min-width: 100%;
+  }
+}

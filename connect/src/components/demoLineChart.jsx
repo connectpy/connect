@@ -1,4 +1,3 @@
-// components/demo/DemoLineChart.jsx
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -13,30 +12,55 @@ export default function DemoLineChart({
   title = 'Gráfico de Línea',
   unit = '',
   aggregateWindow = null,
-  refreshInterval = 30000 // 30 segundos
+  refreshInterval = 30000
 }) {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const resizeObserver = useRef(null);
 
+  // 1. Inicializar el gráfico (Corregido)
   useEffect(() => {
-    // Inicializar el gráfico
-    if (chartRef.current) {
+    if (chartRef.current && !chartInstance.current) {
+      // Inicializar directamente si el DOM existe
       chartInstance.current = echarts.init(chartRef.current);
     }
 
     return () => {
       if (chartInstance.current) {
         chartInstance.current.dispose();
+        chartInstance.current = null;
       }
     };
   }, []);
 
+  // 2. Manejar resize con ResizeObserver (Optimizado)
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    resizeObserver.current = new ResizeObserver(() => {
+      chartInstance.current?.resize();
+    });
+
+    resizeObserver.current.observe(chartRef.current);
+
+    return () => {
+      resizeObserver.current?.disconnect();
+    };
+  }, []);
+
+  // 3. Fetch data (Corregido)
   useEffect(() => {
     async function fetchData() {
       try {
-        setLoading(true);
+        // Si por alguna razón la instancia no está lista, salimos (el intervalo reintentará)
+        if (!chartInstance.current) return;
+
+        // No mostramos loading en cada refresh para evitar parpadeos, solo al inicio o si hay error previo
+        if (error || !chartInstance.current.getOption()) {
+           setLoading(true);
+        }
         
         const data = await demoData({
           bucket: process.env.NEXT_PUBLIC_INFLUX_BUCKET,
@@ -47,14 +71,26 @@ export default function DemoLineChart({
           aggregateWindow
         });
 
-        // Formatear datos para ECharts
-        const times = data.map(d => new Date(d._time).toLocaleTimeString());
-        const values = data.map(d => d._value);
+        if (!data || data.length === 0) {
+          setError('No hay datos disponibles para el rango seleccionado');
+          setLoading(false);
+          return;
+        }
+
+        // Formatear datos
+        const times = data.map(d => new Date(d._time).toLocaleTimeString('es-PY', {
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit'
+        }));
+        const values = data.map(d => parseFloat(d._value).toFixed(2));
 
         const option = {
           title: {
             text: title,
-            left: 'center'
+            left: 'center',
+            textStyle: { fontSize: 14, fontWeight: 'normal' }
           },
           tooltip: {
             trigger: 'axis',
@@ -66,44 +102,31 @@ export default function DemoLineChart({
           xAxis: {
             type: 'category',
             data: times,
-            axisLabel: {
-              rotate: 45
-            }
+            axisLabel: { rotate: 45, fontSize: 10 }
           },
           yAxis: {
             type: 'value',
             name: unit,
-            axisLabel: {
-              formatter: `{value}${unit}`
-            }
+            axisLabel: { formatter: `{value}${unit}`, fontSize: 11 }
           },
-          series: [
-            {
-              name: field || measurement,
-              type: 'line',
-              data: values,
-              smooth: true,
-              itemStyle: {
-                color: '#5470c6'
-              },
-              areaStyle: {
-                opacity: 0.3
-              }
+          series: [{
+            name: field || measurement,
+            type: 'line',
+            data: values,
+            smooth: true,
+            itemStyle: { color: '#3b82f6' },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
+                { offset: 1, color: 'rgba(59, 130, 246, 0.05)' }
+              ])
             }
-          ],
-          grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '15%',
-            containLabel: true
-          }
+          }],
+          grid: { left: '60px', right: '20px', bottom: '60px', top: '50px' }
         };
 
-        if (chartInstance.current) {
-          chartInstance.current.setOption(option);
-        }
-
-        setError(null);
+        chartInstance.current.setOption(option, true);
+        setError(null); // Limpiar error si la carga es exitosa
       } catch (err) {
         setError(err.message);
         console.error('Error fetching chart data:', err);
@@ -114,39 +137,27 @@ export default function DemoLineChart({
 
     fetchData();
 
-    // Auto-refresh
     const interval = setInterval(fetchData, refreshInterval);
     return () => clearInterval(interval);
-  }, [measurement, field, deviceId, timeRange, title, unit, aggregateWindow, refreshInterval]);
+  }, [measurement, field, deviceId, timeRange, title, unit, aggregateWindow, refreshInterval, error]);
 
-  // Manejar resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (chartInstance.current) {
-        chartInstance.current.resize();
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  if (error) {
-    return (
-      <div className="w-full h-96 flex items-center justify-center border rounded bg-red-50">
-        <p className="text-red-600">Error: {error}</p>
-      </div>
-    );
-  }
-
+  // Renderizado
   return (
-    <div className="w-full h-96 relative">
+    <div className="chart-wrapper" style={{ position: 'relative', width: '100%', height: '350px' }}>
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
-          <p className="text-gray-600">Cargando datos...</p>
+        <div className="chart-loading" style={{ position: 'absolute', zIndex: 10, background: 'rgba(255,255,255,0.7)', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+          <div className="spinner"></div>
+          <p>Cargando datos...</p>
         </div>
       )}
-      <div ref={chartRef} className="w-full h-full" />
+      
+      {error ? (
+        <div className="chart-error" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p>{error}</p>
+        </div>
+      ) : (
+        <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
+      )}
     </div>
   );
 }

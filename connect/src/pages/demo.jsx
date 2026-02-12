@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import whitelogo from '../assets/whitelogo.svg';
 import './Dashboard.css';
+import './demo.css'
 import DemoLineChart from '../components/demoLineChart.jsx';
+import DemoGauge from '../components/demoGauge.jsx';
 
 function DemoDashboard() {
   const tabs = [
@@ -123,6 +125,7 @@ function DemoDashboard() {
           </nav>
         </aside>
         {/* Main Content */}
+        {/* Main Content */}
         <main className="dashboard-content">
           <div className="content-header">
             <h1>{activeTab?.name || 'Dashboard'}</h1>
@@ -130,15 +133,165 @@ function DemoDashboard() {
               Última actualización: {new Date().toLocaleTimeString('es-PY')}
             </p>
           </div>
+
+          {/* Contenido de la pestaña Estación Meteorológica */}
+          {activeTabId === 'estacion' && (
             <div className="widgets-grid">
-              <div className="widget-card">
-                  <div className="widget-header">
-                    <h3>temperatura</h3>
-                  </div>
-                  <div className="widget-content">
+              {/* Sección de Temperatura */}
+              <div className="widget-card full-width">
+                <div className="widget-header">
+                  <h3>Temperatura</h3>
+                </div>
+                <div className="widget-content">
+                  <div className="gauge-chart-container">
+                    <div className="gauge-section">
+                      <DemoGauge
+                        bucket="CONNECT"
+                        measurement="ESTACION"
+                        field="TEMPERATURA"
+                        title="Temperatura Actual"
+                        unit="°C"
+                        min={-10}
+                        max={50}
+                        refreshInterval={5000}
+                      />
+                    </div>
+                    <div className="chart-section">
+                      <DemoLineChart
+                        bucket="CONNECT"
+                        measurement="ESTACION"
+                        field="TEMPERATURA"
+                        deviceId="weather-station-01"
+                        timeRange="-24h"
+                        title="Últimas 24 horas"
+                        unit="°C"
+                        aggregateWindow="10m"
+                        refreshInterval={30000}
+                      />
+                    </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Sección de Humedad */}
+              <div className="widget-card full-width">
+                <div className="widget-header">
+                  <h3>Humedad</h3>
+                </div>
+                <div className="widget-content">
+                  <div className="gauge-chart-container">
+                    <div className="gauge-section">
+                      <DemoGauge
+                        bucket="CONNECT"
+                        measurement="ESTACION"
+                        field="HUMEDAD"
+                        deviceId="weather-station-01"
+                        title="Humedad Actual"
+                        unit="%"
+                        min={0}
+                        max={100}
+                        refreshInterval={5000}
+                      />
+                    </div>
+                    <div className="chart-section">
+                      <DemoLineChart
+                        bucket="CONNECT"
+                        measurement="ESTACION"
+                        field="HUMEDAD"
+                        deviceId="weather-station-01"
+                        timeRange="-24h"
+                        title="Últimas 24 horas"
+                        unit="%"
+                        aggregateWindow="10m"
+                        refreshInterval={30000}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
+
+          {/* Contenido de la pestaña Histórico */}
+          {activeTabId === 'historico' && (
+            <div className="widgets-grid">
+              {/* Selector de fechas */}
+              <div className="widget-card full-width">
+                <div className="widget-header">
+                  <h3>Seleccionar Rango de Fechas</h3>
+                </div>
+                <div className="widget-content">
+                  <div className="date-selector">
+                    <div className="date-input-group">
+                      <label htmlFor="start-date">Fecha Inicio:</label>
+                      <input
+                        id="start-date"
+                        type="datetime-local"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        max={endDate}
+                      />
+                    </div>
+                    <div className="date-input-group">
+                      <label htmlFor="end-date">Fecha Fin:</label>
+                      <input
+                        id="end-date"
+                        type="datetime-local"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        min={startDate}
+                        max={new Date().toISOString().slice(0, 16)}
+                      />
+                    </div>
+                    <button 
+                      className="btn-apply-dates"
+                      onClick={handleDateChange}
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gráfico de Temperatura Histórico */}
+              <div className="widget-card full-width">
+                <div className="widget-header">
+                  <h3>Histórico de Temperatura</h3>
+                </div>
+                <div className="widget-content">
+                  <DemoLineChart
+                    measurement="sensors"
+                    field="temperature"
+                    deviceId="weather-station-01"
+                    timeRange={timeRange}
+                    title="Temperatura"
+                    unit="°C"
+                    aggregateWindow="1h"
+                    refreshInterval={60000}
+                  />
+                </div>
+              </div>
+
+              {/* Gráfico de Humedad Histórico */}
+              <div className="widget-card full-width">
+                <div className="widget-header">
+                  <h3>Histórico de Humedad</h3>
+                </div>
+                <div className="widget-content">
+                  <DemoLineChart
+                    measurement="sensors"
+                    field="humidity"
+                    deviceId="weather-station-01"
+                    timeRange={timeRange}
+                    title="Humedad"
+                    unit="%"
+                    aggregateWindow="1h"
+                    refreshInterval={60000}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
