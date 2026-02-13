@@ -16,21 +16,27 @@ function DemoDashboard() {
   const navigate = useNavigate();
   const companyName = "Su empresa";
   const [sidebarOpen, setSidebarOpen] = useState(false); 
+  
+  // Estados para el histórico
+  const [timeRange, setTimeRange] = useState('-7d'); // <-- ESTO FALTABA
   const [startDate, setStartDate] = useState(() => {
     const date = new Date();
-    date.setDate(date.getDate() - 7); // 1 día atrás
+    date.setDate(date.getDate() - 7); // 7 días atrás
     return date.toISOString().slice(0, 16);
   });
   const [endDate, setEndDate] = useState(() => {
     return new Date().toISOString().slice(0, 16);
   });
-  const handleLogout =  () => {
-      navigate('/');
-    };
+
+  const handleLogout = () => {
+    navigate('/');
+  };
 
   const handleTabChange = (tabId) => {
     setActiveTabId(tabId);
+    setSidebarOpen(false); // Cerrar sidebar en mobile al cambiar de tab
   };
+  
   const activeTab = tabs.find(tab => tab.id === activeTabId);
 
   const toggleSidebar = () => {
@@ -88,7 +94,7 @@ function DemoDashboard() {
             </div>
             <div className="header-actions">
               <div className="user-info">
-                <span>{user?.email}</span>
+                <span>{user}</span>
               </div>
               <button onClick={handleLogout} className="btn-logout">
                 Cerrar Sesión
@@ -124,7 +130,6 @@ function DemoDashboard() {
             ))}
           </nav>
         </aside>
-        {/* Main Content */}
         {/* Main Content */}
         <main className="dashboard-content">
           <div className="content-header">
@@ -196,7 +201,6 @@ function DemoDashboard() {
                         bucket="CONNECT"
                         measurement="ESTACION"
                         field="HUMEDAD"
-                        deviceId="weather-station-01"
                         timeRange="-24h"
                         title="Últimas 24 horas"
                         unit="%"
@@ -258,9 +262,9 @@ function DemoDashboard() {
                 </div>
                 <div className="widget-content">
                   <DemoLineChart
-                    measurement="sensors"
-                    field="temperature"
-                    deviceId="weather-station-01"
+                    bucket="CONNECT"
+                    measurement="ESTACION"
+                    field="TEMPERATURA"
                     timeRange={timeRange}
                     title="Temperatura"
                     unit="°C"
@@ -277,9 +281,9 @@ function DemoDashboard() {
                 </div>
                 <div className="widget-content">
                   <DemoLineChart
-                    measurement="sensors"
-                    field="humidity"
-                    deviceId="weather-station-01"
+                    bucket="CONNECT"
+                    measurement="ESTACION"
+                    field="HUMEDAD"
                     timeRange={timeRange}
                     title="Humedad"
                     unit="%"
