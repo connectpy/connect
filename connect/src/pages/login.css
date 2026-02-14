@@ -219,6 +219,22 @@
   flex-shrink: 0;
 }
 
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.password-input-wrapper input:focus {
+  outline: none;
+  border-color: #06b6d4; /* Color cian de tu marca */
+}
+
+.password-toggle-btn:hover {
+  color: #06b6d4 !important;
+}
+
 @media (max-width: 768px) {
   .login-container {
     grid-template-columns: 1fr;
