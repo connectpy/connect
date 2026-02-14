@@ -132,6 +132,7 @@ function Dashboard() {
       <header className="dashboard-header">
         <div className="dashboard-container">
           <div className="header-content">
+            <div className='header-logo'>
             <button className="sidebar-toggle" onClick={toggleSidebar} aria-label='Toggle menu'>
               {sidebarOpen ? (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -153,6 +154,7 @@ function Dashboard() {
               </div>
               <div className="logo-cliente">
                 <span>{companyName}</span>
+              </div>
               </div>
             </div>
             <div className="header-actions">
