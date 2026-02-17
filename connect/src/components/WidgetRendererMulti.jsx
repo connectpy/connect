@@ -16,7 +16,7 @@ function WidgetRendererMulti({ widget }) {
       <div className="internal-widget-grid">
         {widget.charts.map((subChart) => (
           <div key={subChart.id} className="sub-chart-item">
-            <h4 className="sub-chart-label">{subChart.label}</h4>
+            {/*<h4 className="sub-chart-label">{subChart.label}</h4>*/}
             {/* Llamada recursiva o directa según tu lógica */}
             <SingleChartRenderer config={subChart} />
           </div>
