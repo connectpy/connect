@@ -5,6 +5,9 @@ import './Dashboard.css';
 import './demo.css'
 import DemoLineChart from '../components/demoLineChart.jsx';
 import DemoGauge from '../components/demoGauge.jsx';
+import { useMqttData } from '../hooks/Usemqttdata.js';
+
+const NODERED_WS_URL = import.meta.env.VITE_NODERED_WS_URL || 'wss://nodered.connectparaguay.com/ws/dashboard';
 
 function DemoDashboard() {
   const tabs = [
