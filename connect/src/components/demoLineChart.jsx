@@ -1,198 +1,126 @@
-'use client';
-
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import * as echarts from 'echarts';
-import { demoData } from '../influxDemoClient';
+import { useTopic } from '../hooks/MqttContext';
 
-export default function DemoLineChart({ 
-  bucket,
-  measurement, 
-  field, 
-  timeRange = '-1h',
-  title = 'Gráfico de Línea',
+/**
+ * LineChartWidget
+ *
+ * Config:
+ *   topic          : "estacion/temperatura"
+ *   title          : "Temperatura - Últimas 24h"
+ *   unit           : "°C"
+ *   timeRange      : '-24h' | '-7d' | '-30d' | '-90d'
+ *   color          : "#3b82f6"   (opcional)
+ *   showArea       : true        (opcional)
+ */
+export default function LineChartWidget({
+  topic,
+  title = 'Gráfico',
   unit = '',
-  refreshInterval = 30000
+  timeRange = '-24h',
+  color = '#3b82f6',
+  showArea = true,
 }) {
+  const { history, series } = useTopic(topic);
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const resizeObserver = useRef(null);
 
   useEffect(() => {
     if (chartRef.current && !chartInstance.current) {
       chartInstance.current = echarts.init(chartRef.current);
     }
+    const onResize = () => chartInstance.current?.resize();
+    window.addEventListener('resize', onResize);
     return () => {
+      window.removeEventListener('resize', onResize);
       chartInstance.current?.dispose();
       chartInstance.current = null;
     };
   }, []);
 
-  useEffect(() => {
-    if (!chartRef.current) return;
-    resizeObserver.current = new ResizeObserver(() => chartInstance.current?.resize());
-    resizeObserver.current.observe(chartRef.current);
-    return () => resizeObserver.current?.disconnect();
-  }, []);
+  const filteredPoints = useMemo(() => {
+    const rangeMs = {
+      '-24h': 86400000,
+      '-7d': 604800000,
+      '-30d': 2592000000,
+      '-90d': 7776000000,
+    }[timeRange] || 604800000;
+
+    const now = Date.now();
+    const combined = [...(history || []), ...(series || [])].sort(
+      (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+    );
+    return combined.filter((d) => now - new Date(d.timestamp).getTime() <= rangeMs);
+  }, [history, series, timeRange]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!chartInstance.current) return;
+    if (!chartInstance.current) return;
 
-      try {
-        if (!chartInstance.current.getOption()) setLoading(true);
+    const xData = filteredPoints.map((d) =>
+      new Date(d.timestamp).toLocaleString('es-PY', {
+        month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+      })
+    );
+    const yData = filteredPoints.map((d) => parseFloat(d.value) ?? 0);
 
-        const data = await demoData({ bucket, measurement, field, timeRange });
+    chartInstance.current.setOption({
+      title: {
+        text: title,
+        left: 'center',
+        textStyle: { fontSize: 14, fontWeight: 'bold', color: '#1e293b' },
+      },
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: '#1e293b',
+        borderColor: '#334155',
+        textStyle: { color: '#f1f5f9' },
+        formatter: (params) => `${params[0].name}<br/><b>${params[0].value}${unit}</b>`,
+      },
+      grid: { left: '3%', right: '4%', bottom: '12%', top: '18%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: xData,
+        boundaryGap: false,
+        axisLabel: { rotate: 30, fontSize: 10, color: '#94a3b8' },
+        axisLine: { lineStyle: { color: '#e2e8f0' } },
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { formatter: `{value}${unit}`, color: '#94a3b8', fontSize: 11 },
+        splitLine: { lineStyle: { color: '#f1f5f9' } },
+      },
+      series: [{
+        data: yData,
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { color, width: 2.5 },
+        areaStyle: showArea ? {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: color + '55' },
+            { offset: 1, color: color + '05' },
+          ]),
+        } : undefined,
+      }],
+    }, true);
+  }, [filteredPoints, title, unit, color, showArea]);
 
-        if (!data || data.length === 0) {
-          setError('No hay datos disponibles');
-          setLoading(false);
-          chartInstance.current.clear(); 
-          return;
-        }
-
-        // Formateo de datos según tu estructura {time, value}
-        const chartPoints = data.map(d => [new Date(d.time).getTime(), parseFloat(d.value)]);
-
-        const option = {
-          backgroundColor: 'transparent',
-          
-          title: {
-            text: title,
-            left: '10',
-            top: '10',
-            textStyle: { 
-              color: '#ffffff', // Texto blanco para modo oscuro
-              fontSize: 16,
-              fontWeight: 600
-            }
-          },
-
-          tooltip: {
-            trigger: 'axis',
-            backgroundColor: 'rgba(30, 41, 59, 0.95)',
-            borderColor: '#475569',
-            borderWidth: 1,
-            textStyle: { color: '#ffffff', fontSize: 13 },
-            formatter: (params) => {
-              const point = params[0];
-              const date = new Date(point.value[0]);
-              const dateStr = date.toLocaleString('es-PY', {
-                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-              });
-              return `
-                <div style="padding: 5px;">
-                  <strong>${dateStr}</strong><br/>
-                  Valor: <strong>${point.value[1].toFixed(2)} ${unit}</strong>
-                </div>
-              `;
-            }
-          },
-
-          grid: {
-            left: '10%',
-            right: '5%',
-            bottom: '15%',
-            top: '20%',
-            containLabel: true
-          },
-
-          xAxis: {
-            type: 'time', // Usamos tipo tiempo para mejor espaciado
-            axisLabel: { 
-              color: '#94a3b8', // Gris pizarra
-              fontSize: 11,
-              formatter: (value) => {
-                const date = new Date(value);
-                return date.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
-              }
-            },
-            axisLine: { lineStyle: { color: '#475569' } },
-            splitLine: { show: false }
-          },
-
-          yAxis: {
-            type: 'value',
-            name: unit,
-            nameTextStyle: { color: '#94a3b8', fontSize: 12 },
-            axisLabel: { 
-              color: '#94a3b8', 
-              fontSize: 11,
-              formatter: (value) => value.toFixed(1)
-            },
-            axisLine: { lineStyle: { color: '#475569' } },
-            splitLine: { 
-              lineStyle: { color: '#334155', type: 'dashed' } 
-            }
-          },
-
-          series: [{
-            name: field,
-            type: 'line',
-            data: chartPoints,
-            smooth: true,
-            symbol: 'circle',
-            symbolSize: 6,
-            lineStyle: { 
-              color: '#06b6d4', // Cyan intenso
-              width: 3 
-            },
-            itemStyle: { color: '#06b6d4' },
-            areaStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgba(6, 182, 212, 0.4)' },
-                { offset: 1, color: 'rgba(6, 182, 212, 0.05)' }
-              ])
-            },
-            animationDuration: 1000
-          }]
-        };
-
-        chartInstance.current.setOption(option, true);
-        setError(null);
-      } catch (err) {
-        setError('Error al conectar con la base de datos');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, refreshInterval);
-    return () => clearInterval(interval);
-  }, [bucket, measurement, field, timeRange, title, unit, refreshInterval]);
+  const isEmpty = filteredPoints.length === 0;
 
   return (
-    <div className="chart-wrapper" style={{ 
-      position: 'relative', 
-      width: '100%', 
-      height: '350px', 
-      background: '#1e293b', // Fondo oscuro tipo Slate-900
-      borderRadius: '12px', 
-      padding: '10px',
-      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-    }}>
-      {loading && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30, 41, 59, 0.7)', borderRadius: '12px' }}>
-          <p style={{ color: '#94a3b8' }}>Cargando...</p>
+    <div style={{ position: 'relative', width: '100%', height: '280px' }}>
+      {isEmpty && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 10,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(255,255,255,0.85)', gap: 10,
+        }}>
+          <div className="spinner" />
+          <p style={{ margin: 0, color: '#64748b', fontSize: 13 }}>Esperando datos...</p>
         </div>
       )}
-
-      {error && !loading && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30, 41, 59, 0.9)', borderRadius: '12px' }}>
-          <p style={{ color: '#ef4444' }}>{error}</p>
-        </div>
-      )}
-      
-      <div 
-        ref={chartRef} 
-        style={{ 
-          width: '100%', 
-          height: '100%',
-          visibility: error ? 'hidden' : 'visible'
-        }} 
-      />
+      <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
     </div>
   );
 }
