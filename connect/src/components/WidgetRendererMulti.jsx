@@ -1,46 +1,96 @@
+import GaugeWidget from './GaugeWidget';
+import LineChartWidget from './LineChartWidget';
+import SpatialHeatmapWidget from './SpatialHeatmapWidget';
+import HistoricoContainer from './HistoricoContainer';
 
-import LineChartWidget from './LineChartWidget.jsx';
-import HeatmapWidget from './HeatmapWidget.jsx';
-import GaugeWidget from './GaugeWidget.jsx';
-import HistoricalWidget from './HistoricalWidget.jsx';
+/**
+ * WidgetRendererMulti
+ *
+ * Tipos de widget.tipo:
+ *   'container'  → varios charts lado a lado
+ *   'historico'  → selectores de fecha + consulta WS + LineCharts
+ *
+ * Tipos de chart.tipo dentro de container/historico:
+ *   'gauge'           → GaugeWidget
+ *   'line'            → LineChartWidget
+ *   'spatial_heatmap' → SpatialHeatmapWidget
+ */
 
-function WidgetRendererMulti({ widget }) {
+const CHART_MAP = {
+  gauge:           GaugeWidget,
+  line:            LineChartWidget,
+  spatial_heatmap: SpatialHeatmapWidget,
+};
 
-    // 1. Si es un widget de tipo histórico
-  if (widget.tipo === 'historical' && widget.charts) {
-    return <HistoricalWidget widget={widget} />;
-  }
-  // 2. Si el widget tiene un array de charts, renderizamos múltiples
-  if (widget.tipo === 'container' && widget.charts) {
+function ChartRenderer({ chart }) {
+  const Component = CHART_MAP[chart.tipo];
+
+  if (!Component) {
     return (
-      <div className="internal-widget-grid">
-        {widget.charts.map((subChart) => (
-          <div key={subChart.id} className="sub-chart-item">
-            {/*<h4 className="sub-chart-label">{subChart.label}</h4>*/}
-            {/* Llamada recursiva o directa según tu lógica */}
-            <SingleChartRenderer config={subChart} />
-          </div>
-        ))}
+      <div style={{ padding: 12, color: '#ef4444', fontSize: 12 }}>
+        Tipo desconocido: <b>{chart.tipo}</b>
       </div>
     );
   }
 
-  // 3. Si es un widget simple (el comportamiento que ya tienes)
-  return <SingleChartRenderer config={widget} />;
+  // Extraer id/tipo del objeto — NO incluirlos en el spread para evitar
+  // el warning "key in props spread"
+  const { id, tipo, ...rest } = chart;
+
+  const props = {
+    topic:      rest.topic,
+    field:      rest.field,
+    fields:     rest.fields,
+    layout:     rest.layout,
+    label:      rest.label,
+    unit:       rest.unit || rest.medicion || '',
+    min:        rest.min,
+    max:        rest.max,
+    thresholds: rest.thresholds,
+    timeRange:  rest.timeRange,
+    color:      rest.color,
+    showArea:   rest.showArea,
+  };
+
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <Component key={id} {...props} />
+    </div>
+  );
 }
 
-// Componente auxiliar para no repetir lógica de "Switch"
-function SingleChartRenderer({ config }) {
-  switch (config.tipo) {
-    case 'heatmap':
-      return <HeatmapWidget config={config} />;
-    case 'line':
-      return <LineChartWidget config={config} />;
-    case 'gauge':
-      return <GaugeWidget config={config} />;
-    default:
-      return <p>Tipo de gráfico no soportado</p>;
+function ContainerWidget({ widget }) {
+  const charts = widget.charts || [];
+  const isRow = charts.length > 1;
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: isRow ? 'row' : 'column',
+      gap: 16,
+      width: '100%',
+      flexWrap: 'wrap',
+    }}>
+      {charts.map((chart) => (
+        <ChartRenderer key={chart.id} chart={chart} />
+      ))}
+    </div>
+  );
+}
+
+export default function WidgetRendererMulti({ widget }) {
+  if (!widget) return null;
+
+  // Pestaña de historico: selectores de fecha + graficos bajo demanda
+  if (widget.tipo === 'historico') {
+    return <HistoricoContainer charts={widget.charts || []} label={widget.label} />;
   }
-}
 
-export default WidgetRendererMulti;
+  // Container: uno o varios charts lado a lado
+  if (widget.tipo === 'container') {
+    return <ContainerWidget widget={widget} />;
+  }
+
+  // Widget suelto sin container
+  return <ChartRenderer chart={widget} />;
+}

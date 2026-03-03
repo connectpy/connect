@@ -1,267 +1,118 @@
-// src/components/widgets/GaugeWidget.jsx
-// Componente de medidor circular (gauge) para valores instantáneos
-
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
-import { useWidgetData } from '../hooks/useWidgetData';
+import { useTopic } from '../hooks/MqttContext';
 
 /**
- * Widget de Gauge (Medidor circular)
- * 
- * Muestra el último valor de un sensor como un medidor circular
- * Ideal para presión, temperatura, velocidad, porcentaje, etc.
- * 
- * @param {Object} props
- * @param {Object} props.config - Configuración del widget
- * @param {string} props.config.bucket - Bucket de InfluxDB
- * @param {string} props.config.measurement - Medición
- * @param {string} props.config.field - Campo del sensor
- * @param {string} props.config.label - Título del gauge
- * @param {string} props.config.medicion - Unidad (ej: "PSI", "°C", "%")
- * @param {number} [props.config.min] - Valor mínimo del gauge (default: 0)
- * @param {number} [props.config.max] - Valor máximo del gauge (default: 100)
- * @param {Array} [props.config.thresholds] - Umbrales de color
- *   Ejemplo: [
- *     { value: 30, color: '#10b981' },  // Verde hasta 30
- *     { value: 70, color: '#f59e0b' },  // Amarillo de 30-70
- *     { value: 100, color: '#ef4444' }  // Rojo de 70-100
- *   ]
+ * GaugeWidget — Tema oscuro
+ *
+ * Props del config:
+ *   topic      : "horno/temperaturas"
+ *   field      : "T1"           si el payload es objeto { T1: 145, T2: 98 }
+ *                               omitir si el payload es escalar directo
+ *   label      : "Temperatura Horno"
+ *   unit       : "°C"
+ *   min        : 0
+ *   max        : 300
+ *   thresholds : [{ value: 100, color: '#10b981' }, ...]
  */
-function GaugeWidget({ config }) {
-  
+export default function GaugeWidget({ topic, field, label = 'Gauge', unit = '', min = 0, max = 100, thresholds }) {
+  const { current, getField, status } = useTopic(topic);
   const chartRef = useRef(null);
-  const chartInstanceRef = useRef(null);
-  
-  // Cargar datos - solo necesitamos el último valor
-  const { data, loading, error } = useWidgetData(
-    {
-      ...config,
-      lastValueOnly: true  // Solo el último valor
-    },
-    '5m',    // Rango pequeño ya que solo queremos el último
-    5000     // Actualizar cada 5 segundos
-  );
+  const chartInstance = useRef(null);
+
+  const rawValue = field ? getField(field) : current;
+  const hasValue = rawValue !== null && rawValue !== undefined;
 
   useEffect(() => {
-    if (!chartRef.current) return;
-
-    // Inicializar ECharts
-    if (!chartInstanceRef.current) {
-      //console.log(`[GaugeWidget] Inicializando gauge: ${config.label}`);
-      chartInstanceRef.current = echarts.init(chartRef.current);
+    if (chartRef.current && !chartInstance.current) {
+      chartInstance.current = echarts.init(chartRef.current, null, { renderer: 'canvas' });
     }
-
-    // Actualizar con datos
-    if (data && data.length > 0) {
-      // Obtener el último valor
-      const latestValue = data[data.length - 1].value;
-      
-      //console.log(`[GaugeWidget] Valor actual: ${latestValue} ${config.medicion}`);
-      
-      // Configuración de rangos
-      const min = config.min !== undefined ? config.min : 0;
-      const max = config.max !== undefined ? config.max : 100;
-      
-      // Umbrales de color por defecto
-      const defaultThresholds = [
-        { value: (max - min) * 0.33 + min, color: '#10b981' },  // Verde: 0-33%
-        { value: (max - min) * 0.66 + min, color: '#f59e0b' },  // Amarillo: 33-66%
-        { value: max, color: '#ef4444' }                         // Rojo: 66-100%
-      ];
-      
-      const thresholds = config.thresholds || defaultThresholds;
-      
-      // ==================================================================
-      // CONFIGURACIÓN DEL GAUGE
-      // ==================================================================
-      
-      const option = {
-        backgroundColor: 'transparent',
-        
-        title: {
-          text: config.label,
-          textStyle: { 
-            color: '#ffffff',
-            fontSize: 16,
-            fontWeight: 600
-          },
-          left: 'center',
-          top: '5%'
-        },
-        
-        series: [{
-          type: 'gauge',
-          min: min,
-          max: max,
-          
-          // Dividir el gauge en secciones de color según umbrales
-          axisLine: {
-            lineStyle: {
-              width: 20,
-              color: thresholds.map((threshold, index) => {
-                const prevValue = index === 0 ? min : thresholds[index - 1].value;
-                const percentage = (threshold.value - min) / (max - min);
-                return [percentage, threshold.color];
-              })
-            }
-          },
-          
-          // Configuración del puntero
-          pointer: {
-            itemStyle: {
-              color: '#06b6d4',
-              shadowColor: 'rgba(6, 182, 212, 0.5)',
-              shadowBlur: 10
-            },
-            length: '70%',
-            width: 6
-          },
-          
-          // Centro del gauge
-          anchor: {
-            show: true,
-            showAbove: true,
-            size: 15,
-            itemStyle: {
-              color: '#06b6d4',
-              borderWidth: 2,
-              borderColor: '#ffffff',
-              shadowBlur: 5,
-              shadowColor: 'rgba(6, 182, 212, 0.5)'
-            }
-          },
-          
-          // Etiquetas de los ejes
-          axisLabel: {
-            color: '#94a3b8',
-            fontSize: 11,
-            distance: -45,
-            formatter: (value) => {
-              // Mostrar solo algunos valores para no saturar
-              if (value === min || value === max || value === (min + max) / 2) {
-                return Math.round(value);
-              }
-              return '';
-            }
-          },
-          
-          // Líneas divisorias
-          axisTick: {
-            distance: -30,
-            length: 6,
-            lineStyle: {
-              color: '#475569',
-              width: 2
-            }
-          },
-          
-          splitLine: {
-            distance: -35,
-            length: 10,
-            lineStyle: {
-              color: '#475569',
-              width: 3
-            }
-          },
-          
-          // Valor central (número grande)
-          detail: {
-            valueAnimation: true,
-            formatter: (value) => {
-              return `{value|${value.toFixed(1)}}\n{unit|${config.medicion}}`;
-            },
-            rich: {
-              value: {
-                fontSize: 40,
-                fontWeight: 'bold',
-                color: '#ffffff',
-                lineHeight: 50
-              },
-              unit: {
-                fontSize: 18,
-                color: '#94a3b8',
-                padding: [10, 0, 0, 0]
-              }
-            },
-            offsetCenter: [0, '70%']
-          },
-          
-          // Título dentro del gauge
-          title: {
-            show: false  // Ya tenemos título arriba
-          },
-          
-          // El valor actual
-          data: [{
-            value: latestValue,
-            name: ''
-          }],
-          
-          // Animación
-          animation: true,
-          animationDuration: 1000,
-          animationEasing: 'elasticOut'
-        }]
-      };
-      
-      chartInstanceRef.current.setOption(option);
-    }
-  }, [data, config]);
-
-  // Responsive
-  useEffect(() => {
-    const handleResize = () => {
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.resize();
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Cleanup
-  useEffect(() => {
+    const onResize = () => chartInstance.current && chartInstance.current.resize();
+    window.addEventListener('resize', onResize);
     return () => {
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.dispose();
-        chartInstanceRef.current = null;
-      }
+      window.removeEventListener('resize', onResize);
+      if (chartInstance.current) { chartInstance.current.dispose(); chartInstance.current = null; }
     };
   }, []);
 
-  // Estados de loading y error
-  if (loading && !data) {
-    return (
-      <div className="widget-loading">
-        <div className="spinner"></div>
-        <p>Cargando medidor...</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!chartInstance.current || !hasValue) return;
+    const value = parseFloat(rawValue);
 
-  if (error) {
-    return (
-      <div className="widget-error">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <p className="error-message">Error al cargar gauge</p>
-        <p className="error-detail">{error}</p>
-      </div>
-    );
-  }
+    const resolvedThresholds = thresholds || [
+      { value: min + (max - min) * 0.33, color: '#10b981' },
+      { value: min + (max - min) * 0.66, color: '#f59e0b' },
+      { value: max, color: '#ef4444' },
+    ];
+
+    const axisColors = resolvedThresholds.map((t) => [(t.value - min) / (max - min), t.color]);
+    const activeColor = resolvedThresholds.find((t) => value <= t.value)?.color || resolvedThresholds.at(-1).color;
+
+    chartInstance.current.setOption({
+      backgroundColor: 'transparent',
+      title: {
+        text: label, left: 'center', top: '4%',
+        textStyle: { color: '#f1f5f9', fontSize: 14, fontWeight: 600 },
+      },
+      series: [{
+        type: 'gauge', min, max,
+        startAngle: 210, endAngle: -30,
+        center: ['50%', '58%'], radius: '76%',
+        axisLine: { lineStyle: { width: 20, color: axisColors } },
+        pointer: { length: '70%', width: 6, itemStyle: { color: activeColor, shadowColor: activeColor + '88', shadowBlur: 12 } },
+        anchor: { show: true, showAbove: true, size: 16, itemStyle: { color: activeColor, borderWidth: 2, borderColor: '#1e293b', shadowBlur: 8, shadowColor: activeColor + '88' } },
+        axisTick: { distance: -28, length: 6, lineStyle: { color: '#334155', width: 2 } },
+        splitLine: { distance: -33, length: 12, lineStyle: { color: '#475569', width: 3 } },
+        axisLabel: {
+          distance: -46, color: '#64748b', fontSize: 11,
+          formatter: (v) => {
+            const mid = Math.round((min + max) / 2);
+            return (v === min || v === max || v === mid) ? Math.round(v) : '';
+          },
+        },
+        detail: {
+          valueAnimation: true, offsetCenter: [0, '72%'],
+          formatter: (v) => '{val|' + v.toFixed(1) + '}\n{unit|' + unit + '}',
+          rich: {
+            val: { fontSize: 36, fontWeight: 'bold', color: '#f1f5f9', lineHeight: 44 },
+            unit: { fontSize: 14, color: '#94a3b8', padding: [6, 0, 0, 0] },
+          },
+        },
+        title: { show: false },
+        data: [{ value, name: '' }],
+        animation: true, animationDuration: 800, animationEasing: 'elasticOut',
+      }],
+    }, true);
+  }, [rawValue, label, unit, min, max, thresholds]);
+
   return (
-    <div 
-      ref={chartRef} 
-      style={{ 
-        width: '100%', 
-        height: '350px'
-      }}
-    />
+    <div style={{ position: 'relative', width: '100%', height: '300px' }}>
+      {!hasValue && (
+        <WaitingPlaceholder text={status === 'connected' ? 'Esperando ' + (field || topic) + '...' : 'Conectando...'} />
+      )}
+      <div ref={chartRef} style={{ width: '100%', height: '100%', opacity: hasValue ? 1 : 0, transition: 'opacity 0.4s' }} />
+    </div>
   );
 }
 
-export default GaugeWidget;
+// Placeholder compartido — importado por LineChartWidget y otros
+export function WaitingPlaceholder({ text = 'Esperando datos...' }) {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 10,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(15,23,42,0.75)', borderRadius: 12, gap: 12,
+    }}>
+      <div style={{ display: 'flex', gap: 5 }}>
+        {[0, 1, 2].map((i) => (
+          <div key={i} style={{
+            width: 7, height: 7, borderRadius: '50%', background: '#334155',
+            animation: 'mqttPulse 1.2s ease-in-out ' + (i * 0.2) + 's infinite',
+          }} />
+        ))}
+      </div>
+      <p style={{ margin: 0, color: '#475569', fontSize: 12 }}>{text}</p>
+      <style>{`@keyframes mqttPulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2);background:#06b6d4}}`}</style>
+    </div>
+  );
+}
