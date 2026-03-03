@@ -7,15 +7,17 @@ import { MqttProvider, useMqttStatus } from '../hooks/MqttContext';
 import WidgetRenderer from '../components/WidgetRendererDemo';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. URL del WebSocket de Node-RED
+// URL del WebSocket
+// Para la demo usa esta constante.
+// Para dashboards de usuarios pasa: <DemoDashboard wsUrl={user.ws_url} />
 // ─────────────────────────────────────────────────────────────────────────────
 const NODERED_WS_URL = 'wss://demonode.connectparaguay.com/ws/connect';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. CONFIGURACIÓN DE PESTAÑAS Y WIDGETS
-//    Edita este objeto para cambiar el dashboard.
-//    Tipos disponibles: 'gauge' | 'linechart' | 'valuecard' | 'heatmap'
-//    Tamaños:           'full' | 'half' | 'third'
+// CONFIGURACIÓN DE PESTAÑAS Y WIDGETS
+// Edita este objeto para modificar el dashboard.
+// Tipos disponibles: 'gauge' | 'linechart' | 'valuecard' | 'heatmap'
+// Tamaños:           'full' | 'half' | 'third'
 // ─────────────────────────────────────────────────────────────────────────────
 const DASHBOARD_CONFIG = {
   tabs: [
@@ -59,7 +61,11 @@ const DASHBOARD_CONFIG = {
           unit: '°C',
           min: -10,
           max: 50,
-          color: '#f59e0b',
+          thresholds: [
+            { value: 15, color: '#3b82f6' },
+            { value: 30, color: '#10b981' },
+            { value: 50, color: '#ef4444' },
+          ],
         },
         {
           id: 'hum-gauge',
@@ -70,13 +76,17 @@ const DASHBOARD_CONFIG = {
           unit: '%',
           min: 0,
           max: 100,
-          color: '#06b6d4',
+          thresholds: [
+            { value: 40, color: '#ef4444' },
+            { value: 70, color: '#10b981' },
+            { value: 100, color: '#3b82f6' },
+          ],
         },
         {
           id: 'temp-line-24h',
           type: 'linechart',
           size: 'full',
-          topic: 'estacion/temperatura',
+          topic: 'temperatura',
           title: 'Temperatura — Últimas 24h',
           unit: '°C',
           timeRange: '-24h',
@@ -86,7 +96,7 @@ const DASHBOARD_CONFIG = {
           id: 'hum-line-24h',
           type: 'linechart',
           size: 'full',
-          topic: 'estacion/humedad',
+          topic: 'humedad',
           title: 'Humedad — Últimas 24h',
           unit: '%',
           timeRange: '-24h',
@@ -103,7 +113,7 @@ const DASHBOARD_CONFIG = {
           id: 'temp-line-7d',
           type: 'linechart',
           size: 'full',
-          topic: 'estacion/temperatura',
+          topic: 'temperatura',
           title: 'Temperatura — 7 días',
           unit: '°C',
           timeRange: '-7d',
@@ -113,7 +123,7 @@ const DASHBOARD_CONFIG = {
           id: 'hum-line-7d',
           type: 'linechart',
           size: 'full',
-          topic: 'estacion/humedad',
+          topic: 'humedad',
           title: 'Humedad — 7 días',
           unit: '%',
           timeRange: '-7d',
@@ -123,21 +133,21 @@ const DASHBOARD_CONFIG = {
           id: 'temp-heatmap',
           type: 'heatmap',
           size: 'full',
-          topic: 'estacion/temperatura',
+          topic: 'temperatura',
           title: 'Mapa de calor — Temperatura',
           unit: '°C',
-          colorMin: '#fef3c7',
-          colorMax: '#b45309',
+          colorMin: '#1a2a1a',
+          colorMax: '#10b981',
         },
         {
           id: 'hum-heatmap',
           type: 'heatmap',
           size: 'full',
-          topic: 'estacion/humedad',
+          topic: 'humedad',
           title: 'Mapa de calor — Humedad',
           unit: '%',
-          colorMin: '#e0f2fe',
-          colorMax: '#0369a1',
+          colorMin: '#1e3a5f',
+          colorMax: '#06b6d4',
         },
       ],
     },
@@ -145,46 +155,62 @@ const DASHBOARD_CONFIG = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. Componente raíz — envuelve todo en MqttProvider
+// Componente raíz
+// Props (opcionales):
+//   wsUrl : string – URL del WebSocket del usuario (viene de Supabase/DB)
+//                   Si se omite, usa NODERED_WS_URL de esta demo.
 // ─────────────────────────────────────────────────────────────────────────────
-export default function DemoDashboard() {
+export default function DemoDashboard({ wsUrl }) {
+  const resolvedUrl = wsUrl || NODERED_WS_URL;
+
   return (
-    <MqttProvider url={NODERED_WS_URL}>
+    <MqttProvider url={resolvedUrl}>
       <DashboardInner />
     </MqttProvider>
   );
 }
 
+// ─── Inner ────────────────────────────────────────────────────────────────────
 function DashboardInner() {
   const navigate = useNavigate();
   const { status, lastUpdate, sendMessage } = useMqttStatus();
   const [activeTabId, setActiveTabId] = useState(DASHBOARD_CONFIG.tabs[0].id);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
 
+  // Al conectar, enviar mensaje de inicialización para que Node-RED
+  // sepa que hay un cliente activo. No pedimos histórico; esperamos
+  // que los datos lleguen con las actualizaciones normales del sensor.
   useEffect(() => {
-    if (status === 'connected' ) {
-      console.log("📡 Conexión establecida. Solicitando estado actual de sensores...");
-      
-      // Enviamos un mensaje especial de inicialización
+    if (status === 'connected') {
+      console.log('📡 Conexión establecida. Solicitando estado actual de sensores...');
       sendMessage({
-        action: "get_current_status",
-        client: "dashboard_web"
+        action: 'get_current_status',
+        client: 'dashboard_web',
       });
     }
   }, [status, sendMessage]);
 
   const activeTab = DASHBOARD_CONFIG.tabs.find((t) => t.id === activeTabId);
 
-  const statusColor = { connected: '#22c55e', connecting: '#f59e0b', error: '#ef4444', disconnected: '#94a3b8' }[status] || '#94a3b8';
-  const statusLabel = { connected: 'Conectado', connecting: 'Conectando…', error: 'Error', disconnected: 'Desconectado' }[status] || status;
+  const WS_STATUS = {
+    connected:    { color: '#22c55e', label: 'Conectado',     glow: '#22c55e' },
+    connecting:   { color: '#f59e0b', label: 'Conectando…',   glow: '#f59e0b' },
+    error:        { color: '#ef4444', label: 'Error',          glow: '#ef4444' },
+    disconnected: { color: '#475569', label: 'Desconectado',   glow: 'transparent' },
+  };
+  const { color: dotColor, label: dotLabel, glow: dotGlow } = WS_STATUS[status] || WS_STATUS.disconnected;
 
   return (
     <div className="dashboard-page">
+      {/* ── Header ────────────────────────────────────────────────────────── */}
       <header className="dashboard-header">
         <div className="dashboard-container">
           <div className="header-content">
-            <button className="sidebar-toggle" onClick={() => setSidebarOpen((v) => !v)} aria-label="Toggle menu">
+            <button
+              className="sidebar-toggle"
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label="Toggle menu"
+            >
               {sidebarOpen ? (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -204,19 +230,31 @@ function DashboardInner() {
             </div>
 
             <div className="header-actions">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#cbd5e1' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: statusColor, flexShrink: 0 }} />
-                {statusLabel}
+              {/* Estado WebSocket */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#64748b' }}>
+                <div style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: dotColor,
+                  boxShadow: `0 0 6px ${dotGlow}`,
+                  flexShrink: 0,
+                  transition: 'background 0.3s, box-shadow 0.3s',
+                }} />
+                {dotLabel}
               </div>
-              <button onClick={() => navigate('/')} className="btn-logout">Cerrar Sesión</button>
+              <button onClick={() => navigate('/')} className="btn-logout">
+                Cerrar Sesión
+              </button>
             </div>
           </div>
         </div>
       </header>
 
       <div className="dashboard-layout">
-        {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+        {sidebarOpen && (
+          <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+        )}
 
+        {/* ── Sidebar ─────────────────────────────────────────────────────── */}
         <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="sidebar-header"><h3>Pestañas</h3></div>
           <nav className="sidebar-nav">
@@ -233,11 +271,13 @@ function DashboardInner() {
           </nav>
         </aside>
 
+        {/* ── Main ────────────────────────────────────────────────────────── */}
         <main className="dashboard-content">
           <div className="content-header">
             <h1>{activeTab?.name}</h1>
             <p className="last-update">
-              Última actualización: {lastUpdate ? lastUpdate.toLocaleTimeString('es-PY') : '—'}
+              Última actualización:{' '}
+              {lastUpdate ? lastUpdate.toLocaleTimeString('es-PY') : '—'}
             </p>
           </div>
 
@@ -252,6 +292,7 @@ function DashboardInner() {
   );
 }
 
+// ── Iconos ────────────────────────────────────────────────────────────────────
 function getIcon(name) {
   const icons = {
     'chart-line': (
