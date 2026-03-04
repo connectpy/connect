@@ -1,236 +1,326 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import whitelogo from '../assets/whitelogo.svg';
-import './Dashboard.css';
-import './demo.css';
+import './Dashboard.css';                                        // mismo CSS que Dashboard
 import { MqttProvider, useMqttStatus } from '../hooks/MqttContext';
-import WidgetRenderer from '../components/WidgetRendererDemo';
+import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx'; // mismo renderer
 
 // ─────────────────────────────────────────────────────────────────────────────
-// URL del WebSocket
-// Para la demo usa esta constante.
-// Para dashboards de usuarios pasa: <DemoDashboard wsUrl={user.ws_url} />
+// Configuración fija de la demo.
+// Misma estructura que el JSON almacenado en Supabase para usuarios reales:
+//   { ws_url, tabs: [{ id, name, icon, widgets: [{ tipo, label, charts: [...] }] }] }
+//
+// Tipos de widget.tipo : 'container' | 'historico'
+// Tipos de chart.tipo  : 'gauge' | 'line' | 'valuecard' | 'spatial_heatmap'
 // ─────────────────────────────────────────────────────────────────────────────
-const NODERED_WS_URL = 'wss://demonode.connectparaguay.com/ws/connect';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIGURACIÓN DE PESTAÑAS Y WIDGETS
-// Edita este objeto para modificar el dashboard.
-// Tipos disponibles: 'gauge' | 'linechart' | 'valuecard' | 'heatmap'
-// Tamaños:           'full' | 'half' | 'third'
-// ─────────────────────────────────────────────────────────────────────────────
-const DASHBOARD_CONFIG = {
+const DEMO_CONFIG = 
+ {
+  ws_url: 'wss://demonode.connectparaguay.com/ws/connect',
   tabs: [
+
+    // ── Pestaña 1: General ───────────────────────────────────────────────────
+    // Weather a todo el ancho, luego los dos silos en resumen lado a lado
     {
-      id: 'estacion',
-      name: 'Estación Meteorológica',
+      id: 'general',
+      name: 'General',
       icon: 'activity',
       widgets: [
+        // WeatherCard — ancho completo (un solo chart en el container)
         {
-          id: 'temp-card',
-          type: 'valuecard',
-          size: 'half',
-          topic: 'temperatura',
-          title: 'Temperatura',
-          unit: '°C',
-          icon: '🌡️',
-          decimals: 1,
-          thresholds: [
-            { max: 15, color: '#3b82f6' },
-            { max: 30, color: '#22c55e' },
-            { max: 50, color: '#ef4444' },
+          id: 'widget-weather',
+          tipo: 'container',
+          label: 'Estación Meteorológica',
+          charts: [
+            {
+              id: 'weather-card',
+              tipo: 'WeatherCard',
+              topic: 'estacion',
+              stationName: 'Planta Bella Vista',
+            },
+            
           ],
         },
+        // Resumen de los dos silos — lado a lado
         {
-          id: 'hum-card',
-          type: 'valuecard',
-          size: 'half',
-          topic: 'humedad',
-          title: 'Humedad',
-          unit: '%',
-          icon: '💧',
-          decimals: 0,
-          color: '#06b6d4',
-        },
-        {
-          id: 'temp-gauge',
-          type: 'gauge',
-          size: 'half',
-          topic: 'temperatura',
-          title: 'Temperatura Actual',
-          unit: '°C',
-          min: -10,
-          max: 50,
-          thresholds: [
-            { value: 15, color: '#3b82f6' },
-            { value: 30, color: '#10b981' },
-            { value: 50, color: '#ef4444' },
+          id: 'widget-silos-resumen',
+          tipo: 'container',
+          label: 'Resumen de Silos',
+          charts: [
+            {
+              id: 'silo1-resumen',
+              tipo: 'SiloResumen',
+              topic: 'silo1/datos',
+              siloName: 'SILO CENTRAL N° 1',
+            },
+            {
+              id: 'silo2-resumen',
+              tipo: 'SiloResumen',
+              topic: 'silo2/datos',
+              siloName: 'SILO CENTRAL N° 2',
+            },
           ],
-        },
-        {
-          id: 'hum-gauge',
-          type: 'gauge',
-          size: 'half',
-          topic: 'humedad',
-          title: 'Humedad Actual',
-          unit: '%',
-          min: 0,
-          max: 100,
-          thresholds: [
-            { value: 40, color: '#ef4444' },
-            { value: 70, color: '#10b981' },
-            { value: 100, color: '#3b82f6' },
-          ],
-        },
-        {
-          id: 'temp-line-24h',
-          type: 'linechart',
-          size: 'full',
-          topic: 'temperatura',
-          title: 'Temperatura — Últimas 24h',
-          unit: '°C',
-          timeRange: '-24h',
-          color: '#f59e0b',
-        },
-        {
-          id: 'hum-line-24h',
-          type: 'linechart',
-          size: 'full',
-          topic: 'humedad',
-          title: 'Humedad — Últimas 24h',
-          unit: '%',
-          timeRange: '-24h',
-          color: '#06b6d4',
         },
       ],
     },
+
+    // ── Pestaña 2: Silo 1 ────────────────────────────────────────────────────
+    // Control de aireación | Heatmap de termometría | Histórico
     {
-      id: 'historico',
-      name: 'Histórico',
-      icon: 'chart-line',
+      id: 'silo1',
+      name: 'Silo 1',
+      icon: 'bar-chart',
+      widgets: [
+        // Control de aireación — ancho completo
+        {
+          id: 'silo1-control',
+          tipo: 'container',
+          label: 'Control de Aireación — Silo 1',
+          charts: [
+            {
+              id: 'silo1-control-card',
+              tipo: 'SiloControl',
+              topic: 'silo1/datos',
+              topicControl: 'silo1/control',
+              siloName: 'Silo Nro. 1',
+            },
+          ],
+        },
+        // Heatmap de termometría — ancho completo
+        {
+          id: 'silo1-heatmap',
+          tipo: 'container',
+          label: 'Termometría — Silo 1',
+          charts: [
+            {
+              id: 'silo1-spatial-heatmap',
+              tipo: 'spatial_heatmap',
+              topic: 'silo1/temperaturas',
+              fields: ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
+              layout: [
+                ['T7','T8'],
+                ['T5','T6'],
+                ['T1','T2','T3','T4'],
+                ['T9','T10','T11','T12'],
+              ],
+              unit: '°C',
+              min: 15,
+              max: 45,
+            },
+          ],
+        },
+        // Histórico — selectores de fecha
+        {
+          id: 'silo1-historico',
+          tipo: 'historico',
+          label: 'Historial — Silo 1',
+          charts: [
+            {
+              id: 'silo1-hist-temp-max',
+              tipo: 'line',
+              label: 'Temperatura Máxima',
+              topic: 'silo1/datos',
+              field: 'temp',
+              unit: '°C',
+              color: '#ef4444',
+            },
+            {
+              id: 'silo1-hist-humedad',
+              tipo: 'line',
+              label: 'Humedad del Grano',
+              topic: 'silo1/datos',
+              field: 'humedad',
+              unit: '%',
+              color: '#06b6d4',
+            },
+            {
+              id: 'silo1-hist-nivel',
+              tipo: 'line',
+              label: 'Nivel de Llenado',
+              topic: 'silo1/datos',
+              field: 'nivel',
+              unit: '%',
+              color: '#f59e0b',
+            },
+          ],
+        },
+      ],
+    },
+
+    // ── Pestaña 3: Silo 2 ────────────────────────────────────────────────────
+    // Misma estructura que Silo 1
+    {
+      id: 'silo2',
+      name: 'Silo 2',
+      icon: 'bar-chart',
       widgets: [
         {
-          id: 'temp-line-7d',
-          type: 'linechart',
-          size: 'full',
-          topic: 'temperatura',
-          title: 'Temperatura — 7 días',
-          unit: '°C',
-          timeRange: '-7d',
-          color: '#f59e0b',
+          id: 'silo2-control',
+          tipo: 'container',
+          label: 'Control de Aireación — Silo 2',
+          charts: [
+            {
+              id: 'silo2-control-card',
+              tipo: 'SiloControl',
+              topic: 'silo2/datos',
+              topicControl: 'silo2/control',
+              siloName: 'Silo Nro. 2',
+            },
+          ],
         },
         {
-          id: 'hum-line-7d',
-          type: 'linechart',
-          size: 'full',
-          topic: 'humedad',
-          title: 'Humedad — 7 días',
-          unit: '%',
-          timeRange: '-7d',
-          color: '#06b6d4',
+          id: 'silo2-heatmap',
+          tipo: 'container',
+          label: 'Termometría — Silo 2',
+          charts: [
+            {
+              id: 'silo2-spatial-heatmap',
+              tipo: 'spatial_heatmap',
+              topic: 'silo2/temperaturas',
+              fields: ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
+              layout: [
+                ['T7','T8'],
+                ['T5','T6'],
+                ['T1','T2','T3','T4'],
+                ['T9','T10','T11','T12'],
+              ],
+              unit: '°C',
+              min: 15,
+              max: 45,
+            },
+          ],
         },
         {
-          id: 'temp-heatmap',
-          type: 'heatmap',
-          size: 'full',
-          topic: 'temperatura',
-          title: 'Mapa de calor — Temperatura',
-          unit: '°C',
-          colorMin: '#1a2a1a',
-          colorMax: '#10b981',
-        },
-        {
-          id: 'hum-heatmap',
-          type: 'heatmap',
-          size: 'full',
-          topic: 'humedad',
-          title: 'Mapa de calor — Humedad',
-          unit: '%',
-          colorMin: '#1e3a5f',
-          colorMax: '#06b6d4',
+          id: 'silo2-historico',
+          tipo: 'historico',
+          label: 'Historial — Silo 2',
+          charts: [
+            {
+              id: 'silo2-hist-temp-max',
+              tipo: 'line',
+              label: 'Temperatura Máxima',
+              topic: 'silo2/datos',
+              field: 'temp',
+              unit: '°C',
+              color: '#ef4444',
+            },
+            {
+              id: 'silo2-hist-humedad',
+              tipo: 'line',
+              label: 'Humedad del Grano',
+              topic: 'silo2/datos',
+              field: 'humedad',
+              unit: '%',
+              color: '#06b6d4',
+            },
+            {
+              id: 'silo2-hist-nivel',
+              tipo: 'line',
+              label: 'Nivel de Llenado',
+              topic: 'silo2/datos',
+              field: 'nivel',
+              unit: '%',
+              color: '#f59e0b',
+            },
+          ],
         },
       ],
     },
+
   ],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Componente raíz
-// Props (opcionales):
-//   wsUrl : string – URL del WebSocket del usuario (viene de Supabase/DB)
-//                   Si se omite, usa NODERED_WS_URL de esta demo.
+//
+// Diferencia con Dashboard.jsx: no verifica sesión Supabase ni carga config
+// desde la DB. La config es DEMO_CONFIG (fija). Todo lo demás es idéntico.
+//
+// Props opcionales:
+//   wsUrl : string  Permite sobreescribir la URL del WS desde el padre.
 // ─────────────────────────────────────────────────────────────────────────────
 export default function DemoDashboard({ wsUrl }) {
-  const resolvedUrl = wsUrl || NODERED_WS_URL;
+  const config = wsUrl
+    ? { ...DEMO_CONFIG, ws_url: wsUrl }
+    : DEMO_CONFIG;
 
   return (
-    <MqttProvider url={resolvedUrl}>
-      <DashboardInner />
+    <MqttProvider url={config.ws_url}>
+      <DashboardInner config={config} companyName="Demo" />
     </MqttProvider>
   );
 }
 
 // ─── Inner ────────────────────────────────────────────────────────────────────
-function DashboardInner() {
+// Idéntico a DashboardInner en Dashboard.jsx.
+// Diferencias:
+//   - No recibe `user` (no hay sesión)
+//   - El botón de logout navega a '/' en lugar de hacer signOut de Supabase
+//   - No muestra user?.email en el header
+// ─────────────────────────────────────────────────────────────────────────────
+function DashboardInner({ config, companyName }) {
   const navigate = useNavigate();
   const { status, lastUpdate, sendMessage } = useMqttStatus();
-  const [activeTabId, setActiveTabId] = useState(DASHBOARD_CONFIG.tabs[0].id);
+  const [activeTabId, setActiveTabId] = useState(config?.tabs?.[0]?.id || null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Al conectar, enviar mensaje de inicialización para que Node-RED
-  // sepa que hay un cliente activo. No pedimos histórico; esperamos
-  // que los datos lleguen con las actualizaciones normales del sensor.
   useEffect(() => {
     if (status === 'connected') {
-      console.log('📡 Conexión establecida. Solicitando estado actual de sensores...');
       sendMessage({
         action: 'get_current_status',
         client: 'dashboard_web',
+        company: companyName,
       });
     }
-  }, [status, sendMessage]);
+  }, [status, sendMessage, companyName]);
 
-  const activeTab = DASHBOARD_CONFIG.tabs.find((t) => t.id === activeTabId);
+  const activeTab = config?.tabs?.find((tab) => tab.id === activeTabId);
 
   const WS_STATUS = {
-    connected:    { color: '#22c55e', label: 'Conectado',     glow: '#22c55e' },
-    connecting:   { color: '#f59e0b', label: 'Conectando…',   glow: '#f59e0b' },
-    error:        { color: '#ef4444', label: 'Error',          glow: '#ef4444' },
-    disconnected: { color: '#475569', label: 'Desconectado',   glow: 'transparent' },
+    connected:    { color: '#22c55e', label: 'Conectado',   glow: '#22c55e' },
+    connecting:   { color: '#f59e0b', label: 'Conectando…', glow: '#f59e0b' },
+    error:        { color: '#ef4444', label: 'Error',        glow: '#ef4444' },
+    disconnected: { color: '#475569', label: 'Desconectado', glow: 'transparent' },
   };
-  const { color: dotColor, label: dotLabel, glow: dotGlow } = WS_STATUS[status] || WS_STATUS.disconnected;
+  const { color: dotColor, label: dotLabel, glow: dotGlow } =
+    WS_STATUS[status] || WS_STATUS.disconnected;
 
   return (
     <div className="dashboard-page">
+
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <header className="dashboard-header">
         <div className="dashboard-container">
           <div className="header-content">
-            <button
-              className="sidebar-toggle"
-              onClick={() => setSidebarOpen((v) => !v)}
-              aria-label="Toggle menu"
-            >
-              {sidebarOpen ? (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              ) : (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
-                </svg>
-              )}
-            </button>
 
-            <div className="logo">
-              <div className="empresa-logo">
-                <img src={whitelogo} alt="Logo" height="50px" width="auto" />
-                <span>Connect Paraguay</span>
+            <div className="header-logo">
+              <button
+                className="sidebar-toggle"
+                onClick={() => setSidebarOpen((v) => !v)}
+                aria-label="Toggle menu"
+              >
+                {sidebarOpen ? (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
+                  </svg>
+                )}
+              </button>
+
+              <div className="logo">
+                <div className="empresa-logo">
+                  <img src={whitelogo} alt="Logo" height="50px" width="auto" />
+                  <span>Connect Paraguay</span>
+                </div>
+                <div className="logo-cliente">
+                  <span>{companyName}</span>
+                </div>
               </div>
             </div>
 
             <div className="header-actions">
-              {/* Estado WebSocket */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#64748b' }}>
                 <div style={{
                   width: 8, height: 8, borderRadius: '50%',
@@ -245,6 +335,7 @@ function DashboardInner() {
                 Cerrar Sesión
               </button>
             </div>
+
           </div>
         </div>
       </header>
@@ -258,14 +349,15 @@ function DashboardInner() {
         <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="sidebar-header"><h3>Pestañas</h3></div>
           <nav className="sidebar-nav">
-            {DASHBOARD_CONFIG.tabs.map((tab) => (
+            {config?.tabs?.map((tab) => (
               <button
                 key={tab.id}
                 className={`sidebar-tab ${activeTabId === tab.id ? 'active' : ''}`}
                 onClick={() => { setActiveTabId(tab.id); setSidebarOpen(false); }}
               >
-                {getIcon(tab.icon)}
+                {tab.icon && <span className="tab-icon">{getIcon(tab.icon)}</span>}
                 <span className="tab-name">{tab.name}</span>
+                <span className="tab-count">{tab.widgets?.length || 0}</span>
               </button>
             ))}
           </nav>
@@ -274,7 +366,7 @@ function DashboardInner() {
         {/* ── Main ────────────────────────────────────────────────────────── */}
         <main className="dashboard-content">
           <div className="content-header">
-            <h1>{activeTab?.name}</h1>
+            <h1>{activeTab?.name || 'Dashboard'}</h1>
             <p className="last-update">
               Última actualización:{' '}
               {lastUpdate ? lastUpdate.toLocaleTimeString('es-PY') : '—'}
@@ -282,18 +374,29 @@ function DashboardInner() {
           </div>
 
           <div className="widgets-grid">
-            {activeTab?.widgets.map((widgetConfig) => (
-              <WidgetRenderer key={widgetConfig.id} config={widgetConfig} />
+            {activeTab?.widgets?.map((widget) => (
+              <div
+                key={widget.id}
+                className={`widget-card ${widget.size === 'half' ? 'half-width' : 'full-width'}`}
+              >
+                <div className="widget-header">
+                  <h3>{widget.label}</h3>
+                </div>
+                <div className="widget-content">
+                  <WidgetRendererMulti widget={widget} />
+                </div>
+              </div>
             ))}
           </div>
         </main>
       </div>
+
     </div>
   );
 }
 
-// ── Iconos ────────────────────────────────────────────────────────────────────
-function getIcon(name) {
+// ── Iconos — copia exacta de Dashboard.jsx ───────────────────────────────────
+function getIcon(iconName) {
   const icons = {
     'chart-line': (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -306,6 +409,25 @@ function getIcon(name) {
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
+    'check-circle': (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+      </svg>
+    ),
+    'bar-chart': (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="18" y1="20" x2="18" y2="10" />
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" />
+      </svg>
+    ),
+    settings: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 1v6m0 6v6m-9-9h6m6 0h6" />
+      </svg>
+    ),
   };
-  return icons[name] || null;
+  return icons[iconName] || icons['activity'];
 }
