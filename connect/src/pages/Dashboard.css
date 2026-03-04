@@ -453,4 +453,8 @@
   .consult-button {
     width: 100%;
   }
+
+  .widgets-grid {
+    grid-template-columns: 1fr;
+  }
 }
