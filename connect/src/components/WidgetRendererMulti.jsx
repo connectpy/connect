@@ -3,8 +3,8 @@ import LineChartWidget    from './LineChartWidget';
 import SpatialHeatmapWidget from './SpatialHeatmapWidget';
 import HistoricoContainer from './HistoricoContainer';
 import WeatherCard        from './WeatherCArd';
-import SiloResumenCard    from './SiloResumenCard';
-import SiloControlCard    from './SiloControlCard';
+import SiloResumenCard    from './Siloresumencard';
+import SiloControlCard    from './Silocontrolcard';
 import { useTopic }       from '../hooks/MqttContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
