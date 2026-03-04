@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import GaugeWidget        from './GaugeWidget';
 import LineChartWidget    from './LineChartWidget';
 import SpatialHeatmapWidget from './SpatialHeatmapWidget';
@@ -6,6 +7,22 @@ import WeatherCard        from './WeatherCArd';
 import SiloResumenCard    from './Siloresumencard';
 import SiloControlCard    from './Silocontrolcard';
 import { useTopic }       from '../hooks/MqttContext';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hook para detectar si estamos en pantalla pequeña (móvil)
+// ─────────────────────────────────────────────────────────────────────────────
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    const listener = window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Renderers inline para componentes que necesitan useTopic internamente
@@ -58,12 +75,16 @@ const COMPLEX_RENDERERS = {
 // ─────────────────────────────────────────────────────────────────────────────
 function ChartRenderer({ chart }) {
   const { id, tipo, ...rest } = chart;
+  const isMobile = useIsMobile();
 
   // Widgets complejos con su propio renderer
   const ComplexRenderer = COMPLEX_RENDERERS[tipo];
   if (ComplexRenderer) {
     return (
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ 
+        flex: isMobile ? '1 1 100%' : '1 1 auto',
+        minWidth: 0 
+      }}>
         <ComplexRenderer key={id} {...rest} />
       </div>
     );
@@ -98,22 +119,24 @@ function ChartRenderer({ chart }) {
   };
 
   return (
-    <div style={{ flex: 1, minWidth: 0 }}>
+    <div style={{ 
+      flex: isMobile ? '1 1 100%' : '1 1 auto',
+      minWidth: 0 
+    }}>
       <Component key={id} {...props} />
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ContainerWidget — agrupa charts en fila o columna
+// ContainerWidget — agrupa charts en fila, con wrap responsivo
 // ─────────────────────────────────────────────────────────────────────────────
 function ContainerWidget({ widget }) {
   const charts = widget.charts || [];
-  const isRow  = charts.length > 1;
   return (
     <div style={{
       display: 'flex',
-      flexDirection: isRow ? 'row' : 'column',
+      flexDirection: 'row',
       gap: 16,
       width: '100%',
       flexWrap: 'wrap',

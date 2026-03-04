@@ -386,6 +386,13 @@
   margin: 0;
 }
 
+.widget-content {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
 @media (max-width: 768px) {
 
   .sidebar-toggle {
@@ -456,5 +463,9 @@
 
   .widgets-grid {
     grid-template-columns: 1fr;
+  }
+
+  .widget-content {
+    flex-direction: column;
   }
 }
