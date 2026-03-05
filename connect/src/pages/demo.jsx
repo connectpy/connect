@@ -48,7 +48,7 @@ const DEMO_CONFIG =
             {
               id: 'silo1-resumen',
               tipo: 'SiloResumen',
-              topic: 'silo1/datos',
+              topic: 'silo1/resumen',
               siloName: 'SILO CENTRAL N° 1',
             },
           ],
@@ -88,7 +88,6 @@ const DEMO_CONFIG =
               id: 'silo1-control-card',
               tipo: 'SiloControl',
               topic: 'silo1/datos',
-              topicControl: 'silo1/control',
               siloName: 'Silo Nro. 1',
             },
           ],

@@ -51,7 +51,7 @@ function SiloResumenRenderer({ topic, siloName, label }) {
 }
 
 function SiloControlRenderer({ topic, topicControl, siloName, label }) {
-  return <SiloControlCard topic={topic} topicControl={topicControl} siloName={siloName || label} />;
+  return <SiloControlCard topic={topic} siloName={siloName || label} />;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -27,11 +27,11 @@ import { useTopic, useMqttStatus } from '../hooks/MqttContext';
  * Dashboard envia comandos (mismo topic de respuesta configurado en Node-RED):
  * {
  *   topic: "silo1/control",
- *   payload: { command: "FAN_CTRL", mode, state, timer, start, end }
+ *   payload: { source: "dashboard", mode, fans, timer, start, end }
  * }
  */
-export default function SiloControlCard({ topic, topicControl, siloName = 'Silo Nro. 1' }) {
-  const { getField } = useTopic(topic);
+export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
+  const { getField, current } = useTopic(topic);
   const { sendMessage } = useMqttStatus();
 
   // Estado local del panel de control
@@ -41,40 +41,35 @@ export default function SiloControlCard({ topic, topicControl, siloName = 'Silo 
   const [startTime, setStartTime] = useState('22:00');
   const [endTime, setEndTime]     = useState('06:00');
 
-  // Sincronizar desde Node-RED cuando llegan datos
+  // Sincronizar desde Node-RED cuando llegan datos.
+  // Usamos `current` como dependencia unica — evita re-ejecuciones con
+  // valores null intermedios que resetearian el estado local del usuario.
   useEffect(() => {
-    const modeVal  = getField('mode');
-    const fansVal  = getField('fans');
-    const timerVal = getField('timer');
-    const startVal = getField('start');
-    const endVal   = getField('end');
+    if (!current || typeof current !== 'object') return;
+    if (current.mode  != null) setMode(current.mode);
+    if (current.fans  != null) setFanSwitch(current.fans === true || current.fans === 'ON');
+    if (current.timer != null) setUseTimer(Boolean(current.timer));
+    if (current.start != null) setStartTime(current.start);
+    if (current.end   != null) setEndTime(current.end);
+  }, [current]);
 
-    if (modeVal  !== null) setMode(modeVal);
-    if (fansVal  !== null) setFanSwitch(fansVal === true || fansVal === 'ON');
-    if (timerVal !== null) setUseTimer(Boolean(timerVal));
-    if (startVal !== null) setStartTime(startVal);
-    if (endVal   !== null) setEndTime(endVal);
-  }, [
-    getField('mode'), getField('fans'), getField('timer'),
-    getField('start'), getField('end'),
-  ]);
-
-  // Enviar comando a Node-RED
+  // Enviar estado completo del control a Node-RED por el mismo topic.
+  // `source: 'dashboard'` permite que Node-RED distinga este mensaje
+  // de los datos que el propio Node-RED envia, evitando loops.
   const sendControl = useCallback((overrides = {}) => {
-    const cmd = {
-      topic: topicControl || topic + '/control',
+    sendMessage({
+      topic,
       payload: {
-        command: 'FAN_CTRL',
+        source: 'dashboard',
         mode,
-        state: fanSwitch,
+        fans: fanSwitch,
         timer: useTimer,
         start: startTime,
         end: endTime,
         ...overrides,
       },
-    };
-    sendMessage(cmd);
-  }, [mode, fanSwitch, useTimer, startTime, endTime, sendMessage, topicControl, topic]);
+    });
+  }, [mode, fanSwitch, useTimer, startTime, endTime, sendMessage, topic]);
 
   // Valores de lectura
   const nivel        = getField('nivel')        ?? 0;
