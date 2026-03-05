@@ -6,6 +6,7 @@ import HistoricoContainer from './HistoricoContainer';
 import WeatherCard        from './WeatherCArd';
 import SiloResumenCard    from './Siloresumencard';
 import SiloControlCard    from './Silocontrolcard';
+import SiloHeatmapWidget  from './SiloHeatmapWidget';
 import { useTopic }       from '../hooks/MqttContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -54,6 +55,10 @@ function SiloControlRenderer({ topic, topicControl, siloName, label }) {
   return <SiloControlCard topic={topic} siloName={siloName || label} />;
 }
 
+function SiloHeatmapRenderer({ topic, label }) {
+  return <SiloHeatmapWidget topic={topic} label={label} />;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Mapa tipo → componente para charts simples
 // ─────────────────────────────────────────────────────────────────────────────
@@ -68,6 +73,8 @@ const COMPLEX_RENDERERS = {
   WeatherCard:  WeatherCardRenderer,
   SiloResumen:  SiloResumenRenderer,
   SiloControl:  SiloControlRenderer,
+  SiloHeatmap:  SiloHeatmapRenderer,
+
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,130 +1,88 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useTopic, useMqttStatus } from '../hooks/MqttContext';
+import { useTopic } from '../hooks/MqttContext';
 
 /**
- * SiloControlCard
- * Control de aireacion de un silo: manual/auto, switch ventiladores, timer horario.
- * Sincroniza estado desde Node-RED y envia comandos de vuelta por WebSocket.
+ * SiloControlCard — solo lectura
+ * Muestra el estado del sistema de aireacion recibido desde Node-RED.
+ * No envía ningún comando.
  *
- * Node-RED envia datos (topic: "silo1/datos"):
+ * Node-RED envia (topic: "silo1/datos"):
  * {
- *   topic: "silo1/datos",
- *   payload: {
- *     nivel: 72, humedad_grano: 13.5,
- *     temp_max: 28.1, temp_avg: 24.3, temp_min: 20.6,
- *     fans_state: true,
- *     mode: "auto",          // "manual" | "auto"
- *     fans: false,           // estado switch manual
- *     timer: true,           // programacion horaria
- *     start: "22:00",
- *     end: "06:00",
- *     grano: "SOJA",
- *     activo: true
- *   }
- * }
- *
- * Dashboard envia comandos (mismo topic de respuesta configurado en Node-RED):
- * {
- *   topic: "silo1/control",
- *   payload: { command: "FAN_CTRL", mode, state, timer, start, end }
+ *   nivel: 72,
+ *   humedad_grano: 13.5,
+ *   temp_max: 28.1, temp_avg: 24.3, temp_min: 20.6,
+ *   grano: "SOJA",
+ *   activo: true,
+ *   fans_state: true,   // confirmacion fisica — ventilador encendido
+ *   mode: "auto",       // "manual" | "auto"
+ *   timer: true,        // usa programacion horaria
+ *   start: "22:00",
+ *   end: "06:00"
  * }
  */
 export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
-  const { getField, current } = useTopic(topic);
-  const { sendMessage } = useMqttStatus();
+  const { getField } = useTopic(topic);
 
-  // Estado local del panel de control
-  const [mode, setMode]           = useState('auto');
-  const [fanSwitch, setFanSwitch] = useState(false);
-  const [useTimer, setUseTimer]   = useState(false);
-  const [startTime, setStartTime] = useState('22:00');
-  const [endTime, setEndTime]     = useState('06:00');
-
-  // Sincronizar desde Node-RED cuando llegan datos.
-  // Usamos `current` como dependencia unica — evita re-ejecuciones con
-  // valores null intermedios que resetearian el estado local del usuario.
-  useEffect(() => {
-    if (!current || typeof current !== 'object') return;
-    if (current.mode  != null) setMode(current.mode);
-    if (current.fans  != null) setFanSwitch(current.fans === true || current.fans === 'ON');  // posicion switch
-    if (current.timer != null) setUseTimer(Boolean(current.timer));
-    if (current.start != null) setStartTime(current.start);
-    if (current.end   != null) setEndTime(current.end);
-  }, [current]);
-
-  // Enviar comando a Node-RED.
-  // Formato estandar con `command: 'FAN_CTRL'` para que Node-RED
-  // lo distinga de los datos de sensores por el mismo topic.
-  const sendControl = useCallback((overrides = {}) => {
-    sendMessage({
-      topic,
-      payload: {
-        command: 'FAN_CTRL',
-        mode,
-        fan:  fanSwitch,   // posicion del switch — lo que el usuario eligio
-        timer: useTimer,
-        start: startTime,
-        end:   endTime,
-        ...overrides,
-      },
-    });
-  }, [mode, fanSwitch, useTimer, startTime, endTime, sendMessage, topic]);
-
-  // Valores de lectura
-  const nivel        = getField('nivel')        ?? 0;
-  const humGrano     = getField('humedad_grano');
-  const tempMax      = getField('temp_max');
-  const tempAvg      = getField('temp_avg');
-  const tempMin      = getField('temp_min');
-  const fansState    = getField('fans_state')   ?? false;
-  const grano        = getField('grano')        ?? 'S/D';
-  const activo       = getField('activo')       ?? false;
+  const nivel      = getField('nivel')         ?? 0;
+  const humGrano   = getField('humedad_grano');
+  const tempMax    = getField('temp_max');
+  const tempAvg    = getField('temp_avg');
+  const tempMin    = getField('temp_min');
+  const grano      = getField('grano')         ?? 'S/D';
+  const activo     = getField('activo')        ?? false;
+  const fansState  = getField('fans_state')    ?? false;  // estado fisico ventilador
+  const mode       = getField('mode')          ?? '--';
+  const timer      = getField('timer')         ?? false;
+  const startTime  = getField('start')         ?? '--:--';
+  const endTime    = getField('end')           ?? '--:--';
 
   const fmt = (v, d = 1) => v !== null && v !== undefined ? Number(v).toFixed(d) : '--';
 
-  const glass = {
-    background: 'rgba(255,255,255,0.05)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 24,
-    padding: 24,
-    color: 'white',
-    fontFamily: "'DM Sans','Segoe UI',sans-serif",
-  };
+  const isAuto   = mode === 'auto';
 
   return (
-    <div style={glass}>
+    <div style={{
+      background: 'rgba(255,255,255,0.05)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 24,
+      padding: 24,
+      color: 'white',
+      fontFamily: "'DM Sans','Segoe UI',sans-serif",
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 16,
+    }}>
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <span style={{ fontSize: '0.6rem', letterSpacing: '1.5px', color: '#00aae4', fontWeight: 800, display: 'block', textTransform: 'uppercase' }}>
-            Control de Silo
+          <span style={{
+            fontSize: '0.6rem', letterSpacing: '1.5px', color: '#00aae4',
+            fontWeight: 800, display: 'block', textTransform: 'uppercase',
+          }}>
+            Estado de Aireación
           </span>
           <span style={{ fontSize: '1rem', fontWeight: 400, color: 'rgba(255,255,255,0.9)' }}>
             {siloName} — {grano}
           </span>
         </div>
         <span style={{
-          fontSize: '0.6rem', padding: '4px 10px', borderRadius: 50,
+          fontSize: '0.6rem', padding: '4px 10px', borderRadius: 50, fontWeight: 700,
           border: activo ? '1px solid rgba(0,170,228,0.5)' : '1px solid rgba(255,255,255,0.1)',
           color: activo ? '#00aae4' : 'rgba(255,255,255,0.3)',
-          fontWeight: 700,
         }}>
           {activo ? 'CONECTADO' : 'DESCONECTADO'}
         </span>
       </div>
 
-      {/* ── Nivel + Humedad grano ──────────────────────────────────────── */}
+      {/* ── Nivel + Humedad ────────────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center',
         background: 'rgba(255,255,255,0.04)',
         padding: 16, borderRadius: 18,
         border: '1px solid rgba(255,255,255,0.05)',
-        marginBottom: 12,
       }}>
-        {/* Mini gauge circular */}
         <svg width="65" height="65" viewBox="0 0 65 65" style={{ flexShrink: 0 }}>
           <circle cx="32.5" cy="32.5" r="26" stroke="rgba(255,255,255,0.08)" strokeWidth="5" fill="none" />
           <circle cx="32.5" cy="32.5" r="26" stroke="#00aae4" strokeWidth="6" fill="none"
@@ -135,7 +93,6 @@ export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
           <text x="32.5" y="32.5" textAnchor="middle" dominantBaseline="middle"
             fontWeight="800" fontSize="11" fill="white">{nivel}%</text>
         </svg>
-
         <div style={{ marginLeft: 16 }}>
           <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
             Estado de Carga
@@ -147,11 +104,11 @@ export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
         </div>
       </div>
 
-      {/* ── Temperaturas ──────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+      {/* ── Temperaturas ───────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 10 }}>
         {[
           { label: 'Máx',   value: fmt(tempMax), color: '#ef4444' },
-          { label: 'Media', value: fmt(tempAvg), color: 'white' },
+          { label: 'Media', value: fmt(tempAvg), color: 'white'   },
           { label: 'Mín',   value: fmt(tempMin), color: '#3b82f6' },
         ].map((t) => (
           <div key={t.label} style={{
@@ -169,125 +126,90 @@ export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
         ))}
       </div>
 
-      {/* ── Divisor ───────────────────────────────────────────────────── */}
-      <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent)', marginBottom: 20 }} />
+      {/* ── Divisor ────────────────────────────────────────────────────── */}
+      <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent)' }} />
 
-      {/* ── Toggle Manual / Auto ─────────────────────────────────────── */}
-      <div style={{ marginBottom: 16 }}>
-        <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: 8 }}>
-          Configuración de Aireación
+      {/* ── Modo de operación ──────────────────────────────────────────── */}
+      <div>
+        <span style={{
+          fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)',
+          textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: 8,
+        }}>
+          Modo de Aireación
         </span>
+
+        {/* Indicador MANUAL / AUTO */}
         <div style={{
-          display: 'flex', borderRadius: 12,
+          display: 'flex', borderRadius: 12, overflow: 'hidden',
           border: '1px solid rgba(255,255,255,0.1)',
           background: 'rgba(0,0,0,0.2)',
-          overflow: 'hidden',
         }}>
           {['manual', 'auto'].map((m) => (
-            <button key={m} onClick={() => { setMode(m); sendControl({ mode: m }); }}
-              style={{
-                flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer',
-                fontWeight: 700, fontSize: '0.75rem', letterSpacing: '1px',
-                background: mode === m ? '#00aae4' : 'transparent',
-                color: mode === m ? '#fff' : 'rgba(255,255,255,0.4)',
-                transition: 'all 0.2s',
-              }}>
+            <div key={m} style={{
+              flex: 1, padding: '8px 0', textAlign: 'center',
+              fontWeight: 700, fontSize: '0.75rem', letterSpacing: '1px',
+              background: mode === m ? '#00aae4' : 'transparent',
+              color: mode === m ? '#fff' : 'rgba(255,255,255,0.25)',
+              transition: 'all 0.3s',
+            }}>
               {m.toUpperCase()}
-            </button>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* ── Panel Manual ─────────────────────────────────────────────── */}
-      {mode === 'manual' && (
+      {/* ── Info según modo ────────────────────────────────────────────── */}
+
+      {isAuto && (
         <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          background: fanSwitch ? 'rgba(76,175,80,0.1)' : 'rgba(255,255,255,0.06)',
-          border: fanSwitch ? '1px solid rgba(76,175,80,0.3)' : '1px solid transparent',
-          padding: '10px 16px', borderRadius: 16, marginBottom: 16,
-          transition: 'all 0.3s',
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 14, padding: '12px 16px',
+          display: 'flex', flexDirection: 'column', gap: 10,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Programación horaria */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
+              Programación horaria
+            </span>
             <span style={{
-              fontSize: 18,
-              animation: fanSwitch ? 'siloCtrlSpin 2s linear infinite' : 'none',
-              color: fanSwitch ? '#4caf50' : 'rgba(255,255,255,0.4)',
-              transition: 'color 0.3s',
-            }}>⚙</span>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Ventiladores</span>
-          </div>
-          {/* Toggle switch */}
-          <div onClick={() => { const v = !fanSwitch; setFanSwitch(v); sendControl({ fans: v }); }}
-            style={{
-              width: 44, height: 24, borderRadius: 50, cursor: 'pointer',
-              background: fanSwitch ? '#4caf50' : 'rgba(255,255,255,0.15)',
-              position: 'relative', transition: 'background 0.3s',
+              fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 50,
+              background: timer ? 'rgba(0,170,228,0.15)' : 'rgba(255,255,255,0.06)',
+              color: timer ? '#00aae4' : 'rgba(255,255,255,0.3)',
+              border: timer ? '1px solid rgba(0,170,228,0.3)' : '1px solid transparent',
             }}>
-            <div style={{
-              position: 'absolute', top: 3,
-              left: fanSwitch ? 23 : 3,
-              width: 18, height: 18, borderRadius: '50%',
-              background: 'white', transition: 'left 0.2s',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
-            }} />
+              {timer ? 'ACTIVA' : 'INACTIVA'}
+            </span>
           </div>
-        </div>
-      )}
 
-      {/* ── Panel Auto ───────────────────────────────────────────────── */}
-      {mode === 'auto' && (
-        <div style={{ marginBottom: 16 }}>
-          {/* Switch timer */}
+          {/* Horario — siempre visible en modo auto */}
           <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            background: 'rgba(255,255,255,0.06)', padding: '10px 16px', borderRadius: 16, marginBottom: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
+            background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: 10,
+            opacity: timer ? 1 : 0.4,
           }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Programación Horaria</span>
-            <div onClick={() => { const v = !useTimer; setUseTimer(v); sendControl({ timer: v }); }}
-              style={{
-                width: 44, height: 24, borderRadius: 50, cursor: 'pointer',
-                background: useTimer ? '#00aae4' : 'rgba(255,255,255,0.15)',
-                position: 'relative', transition: 'background 0.3s',
-              }}>
-              <div style={{
-                position: 'absolute', top: 3,
-                left: useTimer ? 23 : 3,
-                width: 18, height: 18, borderRadius: '50%',
-                background: 'white', transition: 'left 0.2s',
-              }} />
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.55rem', color: '#00aae4', fontWeight: 900, display: 'block', marginBottom: 2 }}>
+                INICIO
+              </span>
+              <span style={{ fontFamily: 'monospace', fontSize: '1.3rem', fontWeight: 700 }}>
+                {startTime}
+              </span>
+            </div>
+            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '1.2rem' }}>→</span>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.55rem', color: '#00aae4', fontWeight: 900, display: 'block', marginBottom: 2 }}>
+                FIN
+              </span>
+              <span style={{ fontFamily: 'monospace', fontSize: '1.3rem', fontWeight: 700 }}>
+                {endTime}
+              </span>
             </div>
           </div>
-
-          {/* Horarios */}
-          {useTimer && (
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-              background: 'rgba(0,0,0,0.2)', padding: 14, borderRadius: 14,
-            }}>
-              {[
-                { label: 'INICIO', value: startTime, onChange: (v) => { setStartTime(v); sendControl({ start: v }); } },
-                { label: 'FIN',    value: endTime,   onChange: (v) => { setEndTime(v);   sendControl({ end: v }); } },
-              ].map((t, i) => (
-                <div key={t.label} style={{ textAlign: 'center' }}>
-                  <span style={{ fontSize: '0.55rem', color: '#00aae4', fontWeight: 900, display: 'block', marginBottom: 4 }}>
-                    {t.label}
-                  </span>
-                  <input type="time" value={t.value}
-                    onChange={(e) => t.onChange(e.target.value)}
-                    style={{
-                      background: 'transparent', border: 'none', color: 'white',
-                      fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 'bold',
-                      outline: 'none', colorScheme: 'dark', cursor: 'pointer',
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
-      {/* ── Estado ventiladores ──────────────────────────────────────── */}
+      {/* ── Estado físico del ventilador ───────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: 16, borderRadius: 16,
@@ -309,14 +231,18 @@ export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
             color: fansState ? '#4caf50' : 'rgba(255,255,255,0.3)',
           }}>⚙</span>
         </div>
-        <span style={{
-          fontSize: '0.75rem', fontWeight: 700,
-          color: fansState ? '#4caf50' : 'rgba(255,255,255,0.3)',
-          letterSpacing: '0.5px',
-          transition: 'color 0.3s',
-        }}>
-          {fansState ? 'SISTEMA DE AIREACIÓN ACTIVO' : 'SISTEMA EN ESPERA'}
-        </span>
+        <div>
+          <span style={{
+            fontSize: '0.75rem', fontWeight: 700, display: 'block',
+            color: fansState ? '#4caf50' : 'rgba(255,255,255,0.3)',
+            letterSpacing: '0.5px', transition: 'color 0.3s',
+          }}>
+            {fansState ? 'VENTILADORES ENCENDIDOS' : 'VENTILADORES APAGADOS'}
+          </span>
+          <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: 2, display: 'block' }}>
+            Estado físico confirmado
+          </span>
+        </div>
       </div>
 
       <style>{`

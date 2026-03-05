@@ -99,19 +99,10 @@ const DEMO_CONFIG =
           label: 'Termometría — Silo 1',
           charts: [
             {
-              id: 'silo1-spatial-heatmap',
-              tipo: 'spatial_heatmap',
-              topic: 'silo1/temperaturas',
-              fields: ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
-              layout: [
-                ['T7','T8'],
-                ['T5','T6'],
-                ['T1','T2','T3','T4'],
-                ['T9','T10','T11','T12'],
-              ],
-              unit: '°C',
-              min: 15,
-              max: 45,
+              id: 'silo1-silo-heatmap',
+              tipo: 'SiloHeatmap',
+              topic: 'silo1/heatmap',
+              label: 'Termometría — Silo 1',
             },
           ],
         },
