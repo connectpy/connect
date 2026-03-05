@@ -46,7 +46,7 @@ export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
   useEffect(() => {
     if (!current || typeof current !== 'object') return;
     if (current.mode  != null) setMode(current.mode);
-    if (current.fans  != null) setFanSwitch(current.fans === true || current.fans === 'ON');
+    if (current.fans  != null) setFanSwitch(current.fans === true || current.fans === 'ON');  // posicion switch
     if (current.timer != null) setUseTimer(Boolean(current.timer));
     if (current.start != null) setStartTime(current.start);
     if (current.end   != null) setEndTime(current.end);
@@ -61,10 +61,10 @@ export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
       payload: {
         command: 'FAN_CTRL',
         mode,
-        state: fanSwitch,
+        fan:  fanSwitch,   // posicion del switch — lo que el usuario eligio
         timer: useTimer,
         start: startTime,
-        end: endTime,
+        end:   endTime,
         ...overrides,
       },
     });
@@ -217,7 +217,7 @@ export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Ventiladores</span>
           </div>
           {/* Toggle switch */}
-          <div onClick={() => { const v = !fanSwitch; setFanSwitch(v); sendControl({ state: v }); }}
+          <div onClick={() => { const v = !fanSwitch; setFanSwitch(v); sendControl({ fans: v }); }}
             style={{
               width: 44, height: 24, borderRadius: 50, cursor: 'pointer',
               background: fanSwitch ? '#4caf50' : 'rgba(255,255,255,0.15)',
