@@ -10,7 +10,8 @@ import { useTopic, useMqttStatus } from '../hooks/MqttContext';
  * {
  *   topic: "silo1/datos",
  *   payload: {
- *     nivel: 72, humedad_grano: 13.5,
+ *     nivel: 72, 
+ *     humedad_grano: 13.5,
  *     temp_max: 28.1, temp_avg: 24.3, temp_min: 20.6,
  *     fans_state: true,
  *     mode: "auto",          // "manual" | "auto"

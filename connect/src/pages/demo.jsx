@@ -18,17 +18,16 @@ const DEMO_CONFIG =
   ws_url: 'wss://demonode.connectparaguay.com/ws/connect',
   tabs: [
 
-    // ── Pestaña 1: General ───────────────────────────────────────────────────
-    // Weather a todo el ancho, luego los dos silos en resumen lado a lado
-    {
+     {
       id: 'general',
       name: 'General',
       icon: 'activity',
       widgets: [
-        // WeatherCard — ancho completo (un solo chart en el container)
+        // WeatherCard — ancho completo
         {
           id: 'widget-weather',
           tipo: 'container',
+          size: 'full',
           label: 'Estación Meteorológica',
           charts: [
             {
@@ -37,14 +36,14 @@ const DEMO_CONFIG =
               topic: 'estacion',
               stationName: 'Planta Bella Vista',
             },
-            
           ],
         },
-        // Resumen de los dos silos — lado a lado
+        // Silo 1 — columna izquierda
         {
-          id: 'widget-silos-resumen',
+          id: 'widget-silo1-resumen',
           tipo: 'container',
-          label: 'Resumen de Silos',
+          size: 'half',
+          label: 'SILO CENTRAL N° 1',
           charts: [
             {
               id: 'silo1-resumen',
@@ -52,6 +51,15 @@ const DEMO_CONFIG =
               topic: 'silo1/datos',
               siloName: 'SILO CENTRAL N° 1',
             },
+          ],
+        },
+        // Silo 2 — columna derecha
+        {
+          id: 'widget-silo2-resumen',
+          tipo: 'container',
+          size: 'half',
+          label: 'SILO CENTRAL N° 2',
+          charts: [
             {
               id: 'silo2-resumen',
               tipo: 'SiloResumen',
