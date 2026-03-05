@@ -132,7 +132,7 @@ export default function SiloHeatmapWidget({ topic, label = 'Termometría' }) {
         min: tempMin,
         max: tempMax,
         calculable: true,
-        show: true,
+        show: false,
         orient: 'horizontal',
         left: 'center',
         bottom: '0%',
