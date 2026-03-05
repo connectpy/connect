@@ -10,8 +10,7 @@ import { useTopic, useMqttStatus } from '../hooks/MqttContext';
  * {
  *   topic: "silo1/datos",
  *   payload: {
- *     nivel: 72, 
- *     humedad_grano: 13.5,
+ *     nivel: 72, humedad_grano: 13.5,
  *     temp_max: 28.1, temp_avg: 24.3, temp_min: 20.6,
  *     fans_state: true,
  *     mode: "auto",          // "manual" | "auto"
@@ -27,7 +26,7 @@ import { useTopic, useMqttStatus } from '../hooks/MqttContext';
  * Dashboard envia comandos (mismo topic de respuesta configurado en Node-RED):
  * {
  *   topic: "silo1/control",
- *   payload: { source: "dashboard", mode, fans, timer, start, end }
+ *   payload: { command: "FAN_CTRL", mode, state, timer, start, end }
  * }
  */
 export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
@@ -53,16 +52,16 @@ export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
     if (current.end   != null) setEndTime(current.end);
   }, [current]);
 
-  // Enviar estado completo del control a Node-RED por el mismo topic.
-  // `source: 'dashboard'` permite que Node-RED distinga este mensaje
-  // de los datos que el propio Node-RED envia, evitando loops.
+  // Enviar comando a Node-RED.
+  // Formato estandar con `command: 'FAN_CTRL'` para que Node-RED
+  // lo distinga de los datos de sensores por el mismo topic.
   const sendControl = useCallback((overrides = {}) => {
     sendMessage({
       topic,
       payload: {
-        source: 'dashboard',
+        command: 'FAN_CTRL',
         mode,
-        fans: fanSwitch,
+        state: fanSwitch,
         timer: useTimer,
         start: startTime,
         end: endTime,
