@@ -60,7 +60,7 @@ function Hero() {
             <div className="container">
                 <div className="hero-content-left">
                     <h1 className="hero-title">
-                        Maximice la <span className="gradient-text">calidad de su grano</span>, minimice los riesgos.
+                        Maximice la <span className="gradient-text">calidad de su grano,</span> minimice los riesgos.
                     </h1>
                     <p className="hero-description">
                         Monitoreo de termometría digital y automatización de aireación con tecnología IoT de alta precisión. 
