@@ -44,16 +44,7 @@ function Navbar (){
 //////funcion hero//////
 
 function Hero() {
-    const heroStyle = {
-        backgroundImage: `linear-gradient(to right, rgba(15, 23, 42, 0.9) 30%, rgba(15, 23, 42, 0.2) 100%), url(${fondo})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        width: '100%',
-        minHeight: '80vh',
-        display: 'flex',
-        alignItems: 'center',
-        position: 'relative'
-    };
+    
 
     return (
         <section className="hero-industrial" style={{

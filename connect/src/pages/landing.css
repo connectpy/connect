@@ -252,10 +252,7 @@ body {
 
 /* Responsivo para móviles */
 @media (max-width: 768px) {
-    .hero-industrial {
-        /* Verifica que la extensión sea .jpg si ese es tu archivo */
-        background-image: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('../assets/fondo.jpg') !important;
-    }
+    
 }
 .hero {
   padding: calc(var(--spacing-3xl) + 4rem) 0 var(--spacing-3xl);
@@ -721,6 +718,11 @@ body {
     max-width: 100%;
     width: 100%;
   }
+
+  .hero-industrial {
+        /* Verifica que la extensión sea .jpg si ese es tu archivo */
+        min-height: 70vh;
+    }
 
   /* Navegación móvil */
   .navbar {
