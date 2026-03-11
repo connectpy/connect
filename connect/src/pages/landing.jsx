@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import whitelogo from '../assets/whitelogo.svg';
 import './landing.css';
 import imagen from '../assets/silo.png';
+import fondo from '../assets/fondo.png';
 //barra de navegacion
 function Navbar (){
     //funcion de navbar scrolleado
@@ -43,32 +44,44 @@ function Navbar (){
 //////funcion hero//////
 
 function Hero() {
-    return(
-        <section className="hero">
+    const heroStyle = {
+        backgroundImage: `linear-gradient(to right, rgba(15, 23, 42, 0.9) 30%, rgba(15, 23, 42, 0.2) 100%), url(${fondo})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        width: '100%',
+        minHeight: '80vh',
+        display: 'flex',
+        alignItems: 'center',
+        position: 'relative'
+    };
+
+    return (
+        <section className="hero-industrial" style={{
+        backgroundImage: `linear-gradient(to right, rgba(15, 23, 42, 0.9) 30%, rgba(15, 23, 42, 0.2) 100%), url(${fondo})`,
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center', 
+        width: '100%', 
+        minHeight: '80vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        position: 'relative'
+    }}>
             <div className="container">
-                <div className="hero-grid">
-                    <div className="hero-content">
-                        <h1 className="hero-title">
-                            Monitorea tu empresa en
-                            <span className="gradient-text"> tiempo real</span>
-                        </h1>
-                        <p className="hero-description">
-                            Dashboards inteligentes que transforman tus datos en decisiones estratégicas. 
-                            Visualiza métricas críticas en tiempo real.
-                        </p>
-                        <div className="hero-buttons">
-                            <a href="/registro" className="btn-primary hero-btn">
-                                Registrarse
-                            </a>
-                            <a href="/demo" className="btn-secondary hero-btn">
-                                Visitar demo
-                            </a>
-                        </div>
-                    </div>
-                    <div className="hero-visual">
-                        <div className="contenedor-imagen">
-                            <img src={imagen} alt="Dashboard Mockup" className="dashboard-image"/>
-                        </div>
+                <div className="hero-content-left">
+                    <h1 className="hero-title">
+                        Maximice la <span className="gradient-text">calidad de su grano</span>, minimice los riesgos.
+                    </h1>
+                    <p className="hero-description">
+                        Monitoreo de termometría digital y automatización de aireación con tecnología IoT de alta precisión. 
+                        Proteja su inversión contra focos de calor y humedad en tiempo real.
+                    </p>
+                    <div className="hero-buttons">
+                        <a href="https://wa.me/595985686844" className="btn-primary hero-btn">
+                            Contactar Ventas
+                        </a>
+                        <a href="/demo" className="btn-secondary hero-btn">
+                            Visitar demo
+                        </a>
                     </div>
                 </div>
             </div>

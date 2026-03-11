@@ -223,6 +223,40 @@ body {
 }
 
 /* ===== Hero Section ===== */
+
+/* Asegura que el hero ocupe todo el ancho sin márgenes del container padre */
+.hero-industrial {
+    margin-top: 0;
+    padding: 100px 0;
+}
+
+.hero-content-left {
+    max-width: 600px; /* Limita el texto a la izquierda para no tapar el silo */
+    text-align: left;
+    z-index: 2;
+}
+
+.hero-title {
+    font-size: 3rem;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    color: #ffffff;
+}
+
+.hero-description {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    color: #cbd5e1; /* Gris claro para mejor lectura */
+}
+
+/* Responsivo para móviles */
+@media (max-width: 768px) {
+    .hero-industrial {
+        /* Verifica que la extensión sea .jpg si ese es tu archivo */
+        background-image: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('../assets/fondo.jpg') !important;
+    }
+}
 .hero {
   padding: calc(var(--spacing-3xl) + 4rem) 0 var(--spacing-3xl);
   position: relative;
