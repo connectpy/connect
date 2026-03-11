@@ -1,33 +1,30 @@
 import { useState, useEffect } from 'react';
-import GaugeWidget        from './GaugeWidget';
-import LineChartWidget    from './LineChartWidget';
+import GaugeWidget          from './GaugeWidget';
+import LineChartWidget      from './LineChartWidget';
 import SpatialHeatmapWidget from './SpatialHeatmapWidget';
-import HistoricoContainer from './HistoricoContainer';
-import WeatherCard        from './WeatherCArd';
-import SiloResumenCard    from './Siloresumencard';
-import SiloControlCard    from './Silocontrolcard';
-import SiloHeatmapWidget  from './SiloHeatmapWidget';
-import { useTopic }       from '../hooks/MqttContext';
+import HistoricoContainer   from './HistoricoContainer';
+import WeatherCard          from './WeatherCArd';
+import SiloResumenCard      from './Siloresumencard';
+import SiloControlCard      from './Silocontrolcard';
+import SiloHeatmapWidget    from './SiloHeatmapWidget';
+import { useTopic }         from '../hooks/MqttContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Hook para detectar si estamos en pantalla pequeña (móvil)
 // ─────────────────────────────────────────────────────────────────────────────
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
-
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
-    checkMobile();
-    const listener = window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
-
   return isMobile;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Renderers inline para componentes que necesitan useTopic internamente
-// (los hooks solo pueden llamarse dentro de componentes funcionales de React)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function WeatherCardRenderer({ topic, stationName, label }) {
@@ -51,7 +48,7 @@ function SiloResumenRenderer({ topic, siloName, label }) {
   return <SiloResumenCard topic={topic} siloName={siloName || label} />;
 }
 
-function SiloControlRenderer({ topic, topicControl, siloName, label }) {
+function SiloControlRenderer({ topic, siloName, label }) {
   return <SiloControlCard topic={topic} siloName={siloName || label} />;
 }
 
@@ -68,36 +65,29 @@ const CHART_MAP = {
   spatial_heatmap: SpatialHeatmapWidget,
 };
 
-// Tipos que se renderizan con su propio renderer inline
 const COMPLEX_RENDERERS = {
-  WeatherCard:  WeatherCardRenderer,
-  SiloResumen:  SiloResumenRenderer,
-  SiloControl:  SiloControlRenderer,
-  SiloHeatmap:  SiloHeatmapRenderer,
-
+  WeatherCard: WeatherCardRenderer,
+  SiloResumen: SiloResumenRenderer,
+  SiloControl: SiloControlRenderer,
+  SiloHeatmap: SiloHeatmapRenderer,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ChartRenderer — decide que componente usar segun chart.tipo
+// ChartRenderer — decide qué componente usar según chart.tipo
 // ─────────────────────────────────────────────────────────────────────────────
 function ChartRenderer({ chart }) {
   const { id, tipo, ...rest } = chart;
   const isMobile = useIsMobile();
 
-  // Widgets complejos con su propio renderer
   const ComplexRenderer = COMPLEX_RENDERERS[tipo];
   if (ComplexRenderer) {
     return (
-      <div style={{ 
-        flex: isMobile ? '1 1 100%' : '1 1 auto',
-        minWidth: 0 
-      }}>
+      <div style={{ flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: 0 }}>
         <ComplexRenderer key={id} {...rest} />
       </div>
     );
   }
 
-  // Widgets simples del mapa
   const Component = CHART_MAP[tipo];
   if (!Component) {
     return (
@@ -126,28 +116,19 @@ function ChartRenderer({ chart }) {
   };
 
   return (
-    <div style={{ 
-      flex: isMobile ? '1 1 100%' : '1 1 auto',
-      minWidth: 0 
-    }}>
+    <div style={{ flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: 0 }}>
       <Component key={id} {...props} />
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ContainerWidget — agrupa charts en fila, con wrap responsivo
+// ContainerWidget — agrupa charts en fila con wrap responsivo
 // ─────────────────────────────────────────────────────────────────────────────
 function ContainerWidget({ widget }) {
   const charts = widget.charts || [];
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'row',
-      gap: 16,
-      width: '100%',
-      flexWrap: 'wrap',
-    }}>
+    <div style={{ display: 'flex', flexDirection: 'row', gap: 16, width: '100%', flexWrap: 'wrap' }}>
       {charts.map((chart) => (
         <ChartRenderer key={chart.id} chart={chart} />
       ))}
@@ -161,16 +142,29 @@ function ContainerWidget({ widget }) {
 export default function WidgetRendererMulti({ widget }) {
   if (!widget) return null;
 
-  // Historico: selectores de fecha + graficos bajo demanda
+  // historico_cabo: heatmap por cabo + gráfico línea con áreas
+  if (widget.tipo === 'historico_cabo') {
+    return (
+      <HistoricoContainer
+        cabos={widget.cabos   || []}
+        siloId={widget.siloId || 'silo'}
+        unit={widget.unit     || '°C'}
+        min={widget.min       ?? 15}
+        max={widget.max       ?? 40}
+      />
+    );
+  }
+
+  // historico (legacy): selectores de fecha + gráficos bajo demanda
   if (widget.tipo === 'historico') {
     return <HistoricoContainer charts={widget.charts || []} label={widget.label} />;
   }
 
-  // Container: uno o varios charts agrupados
+  // container: uno o varios charts agrupados en fila
   if (widget.tipo === 'container') {
     return <ContainerWidget widget={widget} />;
   }
 
-  // Widget suelto (gauge, line, WeatherCard, SiloResumen, etc.)
+  // widget suelto (gauge, line, WeatherCard, SiloResumen, etc.)
   return <ChartRenderer chart={widget} />;
 }

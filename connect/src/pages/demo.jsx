@@ -15,217 +15,167 @@ import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx'; // mism
 // ─────────────────────────────────────────────────────────────────────────────
 const DEMO_CONFIG = 
  {
-  ws_url: 'wss://demonode.connectparaguay.com/ws/connect',
-  tabs: [
+  "ws_url": "wss://demonode.connectparaguay.com/ws/connect",
+  "tabs": [
 
-     {
-      id: 'general',
-      name: 'General',
-      icon: 'activity',
-      widgets: [
-        // WeatherCard — ancho completo
-        {
-          id: 'widget-weather',
-          tipo: 'container',
-          size: 'full',
-          label: 'Estación Meteorológica',
-          charts: [
-            {
-              id: 'weather-card',
-              tipo: 'WeatherCard',
-              topic: 'estacion',
-              stationName: 'Planta Bella Vista',
-            },
-          ],
-        },
-        // Silo 1 — columna izquierda
-        {
-          id: 'widget-silo1-resumen',
-          tipo: 'container',
-          size: 'half',
-          label: 'SILO CENTRAL N° 1',
-          charts: [
-            {
-              id: 'silo1-resumen',
-              tipo: 'SiloResumen',
-              topic: 'silo1/resumen',
-              siloName: 'SILO CENTRAL N° 1',
-            },
-          ],
-        },
-        // Silo 2 — columna derecha
-        {
-          id: 'widget-silo2-resumen',
-          tipo: 'container',
-          size: 'half',
-          label: 'SILO CENTRAL N° 2',
-          charts: [
-            {
-              id: 'silo2-resumen',
-              tipo: 'SiloResumen',
-              topic: 'silo2/datos',
-              siloName: 'SILO CENTRAL N° 2',
-            },
-          ],
-        },
-      ],
-    },
-
-    // ── Pestaña 2: Silo 1 ────────────────────────────────────────────────────
-    // Control de aireación | Heatmap de termometría | Histórico
     {
-      id: 'silo1',
-      name: 'Silo 1',
-      icon: 'bar-chart',
-      widgets: [
-        // Control de aireación — ancho completo
+      "id": "general",
+      "name": "General",
+      "icon": "activity",
+      "widgets": [
+
         {
-          id: 'silo1-control',
-          tipo: 'container',
-          label: 'Control de Aireación — Silo 1',
-          charts: [
+          "id": "widget-weather",
+          "tipo": "container",
+          "size": "full",
+          "label": "Estación Meteorológica",
+          "charts": [
             {
-              id: 'silo1-control-card',
-              tipo: 'SiloControl',
-              topic: 'silo1/datos',
-              siloName: 'Silo Nro. 1',
-            },
-          ],
+              "id": "weather-card",
+              "tipo": "WeatherCard",
+              "topic": "estacion",
+              "stationName": "Planta Bella Vista"
+            }
+          ]
         },
-        // Heatmap de termometría — ancho completo
+
         {
-          id: 'silo1-heatmap',
-          tipo: 'container',
-          label: 'Termometría — Silo 1',
-          charts: [
+          "id": "widget-silo1-resumen",
+          "tipo": "container",
+          "size": "half",
+          "label": "SILO CENTRAL N° 1",
+          "charts": [
             {
-              id: 'silo1-silo-heatmap',
-              tipo: 'SiloHeatmap',
-              topic: 'silo1/heatmap',
-              label: 'Termometría — Silo 1',
-            },
-          ],
+              "id": "silo1-resumen",
+              "tipo": "SiloResumen",
+              "topic": "silo1/resumen",
+              "siloName": "SILO CENTRAL N° 1"
+            }
+          ]
         },
-        // Histórico — selectores de fecha
+
         {
-          id: 'silo1-historico',
-          tipo: 'historico',
-          label: 'Historial — Silo 1',
-          charts: [
+          "id": "widget-silo2-resumen",
+          "tipo": "container",
+          "size": "half",
+          "label": "SILO CENTRAL N° 2",
+          "charts": [
             {
-              id: 'silo1-hist-temp-max',
-              tipo: 'line',
-              label: 'Temperatura Máxima',
-              topic: 'Silo1',
-              bucket: 'Silo1',
-              field: 'temperatura',
-              unit: '°C',
-              color: '#ef4444',
-            },
-            {
-              id: 'silo1-hist-humedad',
-              tipo: 'line',
-              label: 'Humedad del Grano',
-              topic: 'silo1/datos',
-              field: 'humedad',
-              unit: '%',
-              color: '#06b6d4',
-            },
-            {
-              id: 'silo1-hist-nivel',
-              tipo: 'line',
-              label: 'Nivel de Llenado',
-              topic: 'silo1/datos',
-              field: 'nivel',
-              unit: '%',
-              color: '#f59e0b',
-            },
-          ],
-        },
-      ],
+              "id": "silo2-resumen",
+              "tipo": "SiloResumen",
+              "topic": "silo2/resumen",
+              "siloName": "SILO CENTRAL N° 2"
+            }
+          ]
+        }
+
+      ]
     },
 
-    // ── Pestaña 3: Silo 2 ────────────────────────────────────────────────────
-    // Misma estructura que Silo 1
     {
-      id: 'silo2',
-      name: 'Silo 2',
-      icon: 'bar-chart',
-      widgets: [
+      "id": "silo1",
+      "name": "Silo 1",
+      "icon": "bar-chart",
+      "widgets": [
+
         {
-          id: 'silo2-control',
-          tipo: 'container',
-          label: 'Control de Aireación — Silo 2',
-          charts: [
+          "id": "silo1-control",
+          "tipo": "container",
+          "label": "Control de Aireación — Silo 1",
+          "charts": [
             {
-              id: 'silo2-control-card',
-              tipo: 'SiloControl',
-              topic: 'silo2/datos',
-              topicControl: 'silo2/control',
-              siloName: 'Silo Nro. 2',
-            },
-          ],
+              "id": "silo1-control-card",
+              "tipo": "SiloControl",
+              "topic": "silo1/datos",
+              "siloName": "Silo Nro. 1"
+            }
+          ]
         },
+
         {
-          id: 'silo2-heatmap',
-          tipo: 'container',
-          label: 'Termometría — Silo 2',
-          charts: [
+          "id": "silo1-heatmap",
+          "tipo": "container",
+          "label": "Termometría — Silo 1",
+          "charts": [
             {
-              id: 'silo2-spatial-heatmap',
-              tipo: 'spatial_heatmap',
-              topic: 'silo2/temperaturas',
-              fields: ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
-              layout: [
-                ['T7','T8'],
-                ['T5','T6'],
-                ['T1','T2','T3','T4'],
-                ['T9','T10','T11','T12'],
-              ],
-              unit: '°C',
-              min: 15,
-              max: 45,
-            },
-          ],
+              "id": "silo1-silo-heatmap",
+              "tipo": "SiloHeatmap",
+              "topic": "silo1/heatmap",
+              "label": "Termometría — Silo 1"
+            }
+          ]
         },
+
         {
-          id: 'silo2-historico',
-          tipo: 'historico',
-          label: 'Historial — Silo 2',
-          charts: [
-            {
-              id: 'silo2-hist-temp-max',
-              tipo: 'line',
-              label: 'Temperatura Máxima',
-              topic: 'silo1',
-              field: 'temperaturas',
-              unit: '°C',
-              color: '#ef4444',
-            },
-            {
-              id: 'silo2-hist-humedad',
-              tipo: 'line',
-              label: 'Humedad del Grano',
-              topic: 'silo2/datos',
-              field: 'humedad',
-              unit: '%',
-              color: '#06b6d4',
-            },
-            {
-              id: 'silo2-hist-nivel',
-              tipo: 'line',
-              label: 'Nivel de Llenado',
-              topic: 'silo2/datos',
-              field: 'nivel',
-              unit: '%',
-              color: '#f59e0b',
-            },
-          ],
-        },
-      ],
+          "id": "silo1-historico-cabo",
+          "tipo": "historico_cabo",
+          "label": "Análisis por Cabo — Silo 1",
+          "siloId": "silo1",
+          "unit": "°C",
+          "min": 15,
+          "max": 40,
+          "cabos": [
+            { "id": "cabo0", "label": "Cabo 1" },
+            { "id": "cabo1", "label": "Cabo 2" },
+            { "id": "cabo2", "label": "Cabo 3" }
+          ]
+        }
+
+      ]
     },
 
-  ],
+    {
+      "id": "silo2",
+      "name": "Silo 2",
+      "icon": "bar-chart",
+      "widgets": [
+
+        {
+          "id": "silo2-control",
+          "tipo": "container",
+          "label": "Control de Aireación — Silo 2",
+          "charts": [
+            {
+              "id": "silo2-control-card",
+              "tipo": "SiloControl",
+              "topic": "silo2/datos",
+              "siloName": "Silo Nro. 2"
+            }
+          ]
+        },
+
+        {
+          "id": "silo2-heatmap",
+          "tipo": "container",
+          "label": "Termometría — Silo 2",
+          "charts": [
+            {
+              "id": "silo2-silo-heatmap",
+              "tipo": "SiloHeatmap",
+              "topic": "silo2/heatmap",
+              "label": "Termometría — Silo 2"
+            }
+          ]
+        },
+
+        {
+          "id": "silo2-historico-cabo",
+          "tipo": "historico_cabo",
+          "label": "Análisis por Cabo — Silo 2",
+          "siloId": "silo2",
+          "unit": "°C",
+          "min": 15,
+          "max": 40,
+          "cabos": [
+            { "id": "cabo0", "label": "Cabo 1" },
+            { "id": "cabo1", "label": "Cabo 2" }
+          ]
+        }
+
+      ]
+    }
+
+  ]
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
