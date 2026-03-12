@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import whitelogo from '../assets/whitelogo.svg';
 import './landing.css';
-import slide2 from '../assets/silo.png';
+import slide3 from '../assets/fumigadora.png';
 import slide1 from '../assets/fondo.png';
-import slide3 from '../assets/telemetria.png';
+import slide2 from '../assets/telemetria.png';
 //barra de navegacion
 function Navbar (){
     //funcion de navbar scrolleado
@@ -69,21 +69,21 @@ function Hero() {
         },
         {
             image: slide2,
-            title: "Visualizá el interior de tu silo",
-            titleHighlight: "en tiempo real.",
+            title: "Optimice su planta industrial,",
+            titleHighlight: "potencie su eficiencia.",
             subtitle:
-                "Accedé a mapas de calor, gráficos históricos y alertas automáticas desde cualquier dispositivo. Toda la información de tu planta, al alcance de tu mano.",
+                "Telemetría avanzada y monitoreo de procesos en tiempo real. Integre sus activos a la Industria 4.0 con dashboards personalizados y conectividad de alta disponibilidad.",
             btnPrimary: { label: "Contactar", href: "https://wa.me/595985686844" },
             btnSecondary: { label: "Visitar demo", href: "/demo" },
         },
         {
             image: slide3,
-            title: "Automatizá la aireación,",
-            titleHighlight: "reducí costos operativos.",
+            title: "Fumigación de precisión y alta eficiencia,",
+            titleHighlight: "seguridad sin residuos.",
             subtitle:
-                "Nuestro sistema activa y detiene los ventiladores automáticamente según las condiciones del grano. Menos intervención manual, más eficiencia y menos pérdidas.",
+                "Generación e inyección de PH3 con sistema de recirculación uniforme para silos y recintos. Tecnología con respaldo de emergencia que garantiza una desinfección letal y segura.",
             btnPrimary: { label: "Contactar", href: "https://wa.me/595985686844" },
-            btnSecondary: { label: "Visitar demo", href: "/demo" },
+            btnSecondary: { label: "Mas info", href: "/fumigadora" },
         },
     ];
 
