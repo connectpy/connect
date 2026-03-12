@@ -658,6 +658,238 @@ body {
   font-size: 0.875rem;
 }
 
+/* ============================================================
+   REEMPLAZÁ los estilos del hero anterior en tu landing.css
+   con todo este bloque (o pegalo al final si no tenías estilos
+   de hero previos)
+   ============================================================ */
+
+/* --- Contenedor principal del carrusel --- */
+.hero-carousel {
+    position: relative;
+    width: 100%;
+    height: 78vh;          /* Un poco más bajo que pantalla completa */
+    min-height: 520px;
+    max-height: 780px;
+    overflow: hidden;
+    margin-top: 0;
+}
+
+/* --- Track: contiene todas las slides alineadas --- */
+.hero-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Animación slide hacia la izquierda (next) */
+.hero-track--sliding-next .hero-slide--active {
+    animation: slideOutLeft 0.5s ease forwards;
+}
+
+/* Animación slide hacia la derecha (prev) */
+.hero-track--sliding-prev .hero-slide--active {
+    animation: slideOutRight 0.5s ease forwards;
+}
+
+@keyframes slideOutLeft {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(-6%);  opacity: 0; }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0);   opacity: 1; }
+    to   { transform: translateX(6%);  opacity: 0; }
+}
+
+/* --- Slide individual --- */
+.hero-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.hero-slide--active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* --- Overlay oscuro --- */
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        105deg,
+        rgba(8, 12, 28, 0.90) 0%,
+        rgba(8, 12, 28, 0.65) 45%,
+        rgba(8, 12, 28, 0.20) 100%
+    );
+    z-index: 1;
+}
+
+/* --- Inner: contiene el texto, pegado a la izquierda --- */
+.hero-slide-inner {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 0 5vw;          /* Padding general de la página */
+    display: flex;
+    align-items: center;
+}
+
+/* --- Bloque de texto: alineado a la izquierda, ancho limitado --- */
+.hero-text-block {
+    max-width: 580px;
+    text-align: left;
+}
+
+.hero-banner-title {
+    font-size: clamp(1.7rem, 3.2vw, 2.8rem);
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.18;
+    margin-bottom: 1.1rem;
+    letter-spacing: -0.02em;
+}
+
+.hero-banner-subtitle {
+    font-size: clamp(0.88rem, 1.4vw, 1.05rem);
+    color: rgba(255, 255, 255, 0.80);
+    line-height: 1.75;
+    margin-bottom: 2rem;
+    max-width: 520px;
+}
+
+/* --- Botones: alineados a la izquierda --- */
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+/* --- Flechas de navegación --- */
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    font-size: 2rem;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    transition: background 0.2s ease, transform 0.2s ease;
+    line-height: 1;
+}
+
+.carousel-arrow:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-arrow--left  { left: 1.2rem; }
+.carousel-arrow--right { right: 1.2rem; }
+
+/* --- Dots --- */
+.carousel-dots {
+    position: absolute;
+    bottom: 1.4rem;
+    left: 5vw;               /* Alineados con el texto, a la izquierda */
+    z-index: 5;
+    display: flex;
+    gap: 8px;
+}
+
+.carousel-dot {
+    width: 28px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.30);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.3s ease, width 0.3s ease;
+}
+
+.carousel-dot--active {
+    background: #ffffff;
+    width: 48px;             /* Dot activo más largo */
+}
+
+/* --- Responsive móvil --- */
+@media (max-width: 640px) {
+    .hero-carousel {
+        height: 85vh;
+        min-height: 480px;
+    }
+
+    .hero-slide-inner {
+        padding: 0 1.2rem;
+        align-items: flex-end;
+        padding-bottom: 5rem;
+    }
+
+    .hero-text-block {
+        max-width: 100%;
+    }
+
+    .hero-banner-title {
+        font-size: clamp(1.5rem, 6vw, 2rem);
+    }
+
+    .carousel-arrow {
+        width: 36px;
+        height: 36px;
+        font-size: 1.4rem;
+    }
+
+    .carousel-arrow--left  { left: 0.5rem; }
+    .carousel-arrow--right { right: 0.5rem; }
+
+    .carousel-dots {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 1rem;
+    }
+}
+
+/* --- Responsive móvil --- */
+@media (max-width: 640px) {
+    .hero-banner-content {
+        padding: 120px 1.2rem 80px;
+        max-width: 100%;
+    }
+
+    .carousel-arrow {
+        width: 40px;
+        height: 40px;
+        font-size: 1.6rem;
+    }
+
+    .carousel-arrow--left {
+        left: 0.6rem;
+    }
+
+    .carousel-arrow--right {
+        right: 0.6rem;
+    }
+}
+
 /* ===== Animaciones ===== */
 @keyframes fadeInUp {
   from {

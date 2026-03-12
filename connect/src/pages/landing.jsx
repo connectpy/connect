@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import whitelogo from '../assets/whitelogo.svg';
 import './landing.css';
-import imagen from '../assets/silo.png';
-import fondo from '../assets/fondo.png';
+import slide2 from '../assets/silo.png';
+import slide1 from '../assets/fondo.png';
+import slide3 from '../assets/fondo.png';
 //barra de navegacion
 function Navbar (){
     //funcion de navbar scrolleado
@@ -42,44 +43,142 @@ function Navbar (){
 }
 
 //////funcion hero//////
+// ============================================================
+// REEMPLAZA la función Hero() completa en tu landing.jsx
+// ------------------------------------------------------------
+// Asegurate de tener estos imports al inicio del archivo:
+//
+//   import slide1 from '../assets/slide1.png';
+//   import slide2 from '../assets/slide2.png';
+//   import slide3 from '../assets/slide3.png';
+//
+// Y que useState, useEffect, useCallback estén importados:
+//   import { useState, useEffect, useCallback } from "react";
+// ============================================================
 
 function Hero() {
-    
+    const slides = [
+        {
+            image: slide1,
+            title: "Maximice la calidad de su grano,",
+            titleHighlight: "minimice los riesgos.",
+            subtitle:
+                "Monitoreo de termometría digital y automatización de aireación con tecnología IoT de alta precisión. Proteja su inversión contra focos de calor y humedad en tiempo real.",
+            btnPrimary: { label: "Contactar", href: "https://wa.me/595985686844" },
+            btnSecondary: { label: "Visitar demo", href: "/demo" },
+        },
+        {
+            image: slide2,
+            title: "Visualizá el interior de tu silo",
+            titleHighlight: "en tiempo real.",
+            subtitle:
+                "Accedé a mapas de calor, gráficos históricos y alertas automáticas desde cualquier dispositivo. Toda la información de tu planta, al alcance de tu mano.",
+            btnPrimary: { label: "Contactar", href: "https://wa.me/595985686844" },
+            btnSecondary: { label: "Visitar demo", href: "/demo" },
+        },
+        {
+            image: slide3,
+            title: "Automatizá la aireación,",
+            titleHighlight: "reducí costos operativos.",
+            subtitle:
+                "Nuestro sistema activa y detiene los ventiladores automáticamente según las condiciones del grano. Menos intervención manual, más eficiencia y menos pérdidas.",
+            btnPrimary: { label: "Contactar", href: "https://wa.me/595985686844" },
+            btnSecondary: { label: "Visitar demo", href: "/demo" },
+        },
+    ];
+
+    const [current, setCurrent] = useState(0);
+    const [sliding, setSliding] = useState(false);
+    const [direction, setDirection] = useState("next"); // "next" | "prev"
+
+    const goTo = useCallback(
+        (index, dir = "next") => {
+            if (sliding) return;
+            setDirection(dir);
+            setSliding(true);
+            setTimeout(() => {
+                setCurrent(index);
+                setSliding(false);
+            }, 500);
+        },
+        [sliding]
+    );
+
+    const next = useCallback(() => {
+        goTo((current + 1) % slides.length, "next");
+    }, [current, goTo, slides.length]);
+
+    const prev = useCallback(() => {
+        goTo((current - 1 + slides.length) % slides.length, "prev");
+    }, [current, goTo, slides.length]);
+
+    useEffect(() => {
+        const timer = setInterval(next, 6000);
+        return () => clearInterval(timer);
+    }, [next]);
 
     return (
-        <section className="hero-industrial" style={{
-        backgroundImage: `linear-gradient(to right, rgba(15, 23, 42, 0.9) 30%, rgba(15, 23, 42, 0.2) 100%), url(${fondo})`,
-        backgroundSize: 'cover', 
-        backgroundPosition: 'center', 
-        width: '100%', 
-        minHeight: '80vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        position: 'relative'
-    }}>
-            <div className="container">
-                <div className="hero-content-left">
-                    <h1 className="hero-title">
-                        Maximice la <span className="gradient-text">calidad de su grano,</span> minimice los riesgos.
-                    </h1>
-                    <p className="hero-description">
-                        Monitoreo de termometría digital y automatización de aireación con tecnología IoT de alta precisión. 
-                        Proteja su inversión contra focos de calor y humedad en tiempo real.
-                    </p>
-                    <div className="hero-buttons">
-                        <a href="https://wa.me/595985686844" className="btn-primary hero-btn">
-                            Contactar Ventas
-                        </a>
-                        <a href="/demo" className="btn-secondary hero-btn">
-                            Visitar demo
-                        </a>
+        <section className="hero-carousel">
+            {/* Track deslizable */}
+            <div
+                className={`hero-track ${sliding ? `hero-track--sliding-${direction}` : ""}`}
+            >
+                {slides.map((slide, i) => (
+                    <div
+                        key={i}
+                        className={`hero-slide ${i === current ? "hero-slide--active" : ""}`}
+                        style={{ backgroundImage: `url(${slide.image})` }}
+                        aria-hidden={i !== current}
+                    >
+                        <div className="hero-overlay" />
+                        <div className="hero-slide-inner">
+                            <div className="hero-text-block">
+                                <h1 className="hero-banner-title">
+                                    {slide.title}{" "}
+                                    <span className="gradient-text">{slide.titleHighlight}</span>
+                                </h1>
+                                <p className="hero-banner-subtitle">{slide.subtitle}</p>
+                                <div className="hero-buttons">
+                                    <a
+                                        href={slide.btnPrimary.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn-primary hero-btn"
+                                    >
+                                        {slide.btnPrimary.label}
+                                    </a>
+                                    <a href={slide.btnSecondary.href} className="btn-secondary hero-btn">
+                                        {slide.btnSecondary.label}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                ))}
+            </div>
+
+            {/* Flechas */}
+            <button className="carousel-arrow carousel-arrow--left" onClick={prev} aria-label="Anterior">
+                ‹
+            </button>
+            <button className="carousel-arrow carousel-arrow--right" onClick={next} aria-label="Siguiente">
+                ›
+            </button>
+
+            {/* Dots */}
+            <div className="carousel-dots">
+                {slides.map((_, i) => (
+                    <button
+                        key={i}
+                        className={`carousel-dot ${i === current ? "carousel-dot--active" : ""}`}
+                        onClick={() => goTo(i, i > current ? "next" : "prev")}
+                        aria-label={`Ir a slide ${i + 1}`}
+                    />
+                ))}
             </div>
         </section>
     );
 }
-
 
 // Componente de Feature
 function FeatureCard({ icon, title, description }) {
