@@ -44,11 +44,7 @@ const TRACE_ITEMS = [
     title: 'Humedad de Ingreso',
     desc: 'Registrá el porcentaje de humedad e impurezas al momento de la carga para tener el punto de partida exacto de cada lote.',
   },
-  {
-    icon: '🌿',
-    title: 'Tratamientos Fitosanitarios',
-    desc: 'Documentá cada aplicación, producto y dosis. Trazabilidad completa para exportación y certificaciones internacionales.',
-  },
+
   {
     icon: '🔥',
     title: 'Historial Térmico por Lote',
@@ -165,7 +161,7 @@ function ProductoPage() {
               <span className="prod-accent">Inteligencia Industrial</span>
             </h1>
             <p className="prod-hero-sub">
-              Termometría digital y automatización de aireación 3D. El monitoreo en tiempo real que tu planta necesita para eliminar riesgos, optimizar la aireación y garantizar la calidad del grano desde cualquier dispositivo.
+              Termometría digital y automatización de aireación. El monitoreo en tiempo real que tu planta necesita para eliminar riesgos, optimizar la aireación y garantizar la calidad del grano desde cualquier dispositivo.
             </p>
             <div className="prod-hero-actions">
               <a href="https://wa.me/595985686844" className="prod-btn-primary" target="_blank" rel="noopener noreferrer">
@@ -237,7 +233,6 @@ function ProductoPage() {
             <ul className="prod-viz-list">
               {[
                 { icon: '🌡️', title: 'Mapas de Calor (Heatmaps)', desc: 'Identificá puntos calientes de forma visual y jerárquica antes de que se conviertan en un problema. Colores intuitivos, decisiones rápidas.' },
-                { icon: '🧊', title: 'Visualización 3D', desc: 'Una réplica exacta de tus silos en pantalla para localizar con precisión la profundidad y ubicación de cada sensor. Tu gemelo digital.' },
                 { icon: '📏', title: 'Detección Inteligente de Llenado', desc: 'Nuestro algoritmo analiza la varianza térmica para determinar automáticamente el nivel de grano, separando lecturas reales del aire superior.' },
               ].map((item, i) => (
                 <li key={i}>
