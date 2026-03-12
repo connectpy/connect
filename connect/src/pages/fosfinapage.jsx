@@ -87,7 +87,7 @@ function FosfinaPage() {
           <div className="fos-hero-inner">
             <div className="fos-badge">
               <span className="fos-badge-pulse" />
-              Hamann &amp; Cia SRL — Tecnología Post-Cosecha
+              Connect &amp; Paraguay — Tecnología Post-Cosecha
             </div>
 
             <h1 className="fos-hero-title">
