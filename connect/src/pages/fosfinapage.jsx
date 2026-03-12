@@ -87,7 +87,7 @@ function FosfinaPage() {
           <div className="fos-hero-inner">
             <div className="fos-badge">
               <span className="fos-badge-pulse" />
-              Connect &amp; Paraguay — Tecnología Post-Cosecha
+              Connect Paraguay — Tecnología Post-Cosecha
             </div>
 
             <h1 className="fos-hero-title">
