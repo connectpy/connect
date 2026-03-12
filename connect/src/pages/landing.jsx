@@ -3,7 +3,7 @@ import whitelogo from '../assets/whitelogo.svg';
 import './landing.css';
 import slide2 from '../assets/silo.png';
 import slide1 from '../assets/fondo.png';
-import slide3 from '../assets/fondo.png';
+import slide3 from '../assets/telemetria.png';
 //barra de navegacion
 function Navbar (){
     //funcion de navbar scrolleado
@@ -64,7 +64,7 @@ function Hero() {
             titleHighlight: "minimice los riesgos.",
             subtitle:
                 "Monitoreo de termometría digital y automatización de aireación con tecnología IoT de alta precisión. Proteja su inversión contra focos de calor y humedad en tiempo real.",
-            btnPrimary: { label: "Contactar", href: "https://wa.me/595985686844" },
+            btnPrimary: { label: "Ver mas", href: "/termometria" },
             btnSecondary: { label: "Visitar demo", href: "/demo" },
         },
         {

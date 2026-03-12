@@ -9,6 +9,7 @@ import './App.css';
 import DemoDashboard from './pages/demo.jsx';
 import ForgotPassword from './pages/forgotPasword.jsx';
 import ResetPassword from './pages/resetPassword.jsx';
+import ProductoPage from './pages/termometria.jsx';
 
 
 class ErrorBoundary extends React.Component {
@@ -45,6 +46,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/termometria" element={<ProductoPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path='/registro' element={<Register />} />
