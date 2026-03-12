@@ -87,7 +87,7 @@ function FosfinaPage() {
           <div className="fos-hero-inner">
             <div className="fos-badge">
               <span className="fos-badge-pulse" />
-              Connect Paraguay — Tecnología Post-Cosecha
+              Pohl Servicios Industriales — Tecnología Post-Cosecha
             </div>
 
             <h1 className="fos-hero-title">
@@ -290,7 +290,7 @@ function FosfinaPage() {
       <section className="fos-cta">
         <div className="fos-cta-glow" />
         <div className="fos-container fos-cta-inner fos-reveal">
-          <div className="fos-cta-tag">Hamann &amp; Cia SRL</div>
+          <div className="fos-cta-tag">Pohl Servicios Industriales</div>
           <h2>Optimice sus procesos de sanidad vegetal</h2>
           <p>
             Contacte con un asesor técnico y reciba una cotización personalizada para su instalación.
