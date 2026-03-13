@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "./fosfina.css";
+import whitelogo from '../assets/whitelogo.svg';
 import imagen from '../assets/fumigadora2.png';
 
 // ── Datos ──────────────────────────────────────────────────
@@ -52,6 +53,40 @@ const SPECS = [
 ];
 
 // ── Hook reveal ────────────────────────────────────────────
+// ── Navbar (igual que landing) ─────────────────────────────
+function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <nav className={scrolled ? 'navbar scrolled' : 'navbar'}>
+      <div className="container">
+        <div className="nav-content">
+          <div className="logo">
+            <img src={whitelogo} alt="Logo" height="50px" width="auto" />
+            <h1>Connect</h1>
+          </div>
+          <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
+            <a href="/#features" onClick={() => setMenuOpen(false)}>Características</a>
+            <a href="/#benefits" onClick={() => setMenuOpen(false)}>Beneficios</a>
+            <a href="/#contact"  onClick={() => setMenuOpen(false)}>Contacto</a>
+            <a href="/login" className="btn-primary">Ingresar</a>
+          </div>
+          <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? '✕' : '☰'}
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
 function useReveal() {
   useEffect(() => {
     const els = document.querySelectorAll(".fos-reveal");
@@ -77,6 +112,7 @@ function FosfinaPage() {
 
   return (
     <div className="fos-page">
+      <Navbar />
 
       {/* ══ HERO ══════════════════════════════════════════════ */}
       <section className="fos-hero">
@@ -169,7 +205,7 @@ function FosfinaPage() {
         </div>
       </section>
 
-      {/* ══ IMAGEN DEL EQUIPO ════════════════════════════════ */}
+{/* ══ IMAGEN DEL EQUIPO ════════════════════════════════ */}
       <section className="fos-section fos-section--img">
         <div className="fos-container">
           <div className="fos-img-wrapper fos-reveal">
