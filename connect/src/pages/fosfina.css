@@ -311,6 +311,64 @@
   opacity: 0.6;
 }
 
+/* ── IMAGEN DEL EQUIPO ─────────────────────────────────────── */
+.fos-section--img {
+  padding: 60px 0;
+}
+
+.fos-img-wrapper {
+  position: relative;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* Glow verde detrás de la imagen */
+.fos-img-glow {
+  position: absolute;
+  inset: -30px;
+  border-radius: 28px;
+  background: radial-gradient(ellipse at center, rgba(34, 197, 94, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.fos-equipo-img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 32px 80px rgba(0, 0, 0, 0.55),
+    0 0 60px rgba(34, 197, 94, 0.07);
+  display: block;
+  object-fit: cover;
+}
+
+/* Pie de imagen */
+.fos-img-caption {
+  position: relative;
+  z-index: 1;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  font-family: var(--fos-mono);
+  font-size: 0.72rem;
+  color: var(--fos-muted);
+  letter-spacing: 0.06em;
+}
+
+.fos-img-caption-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--fos-green);
+  display: inline-block;
+  box-shadow: 0 0 6px var(--fos-green);
+}
+
 /* ── BENEFICIOS ────────────────────────────────────────────── */
 .fos-benefits-grid {
   display: grid;
@@ -588,3 +646,5 @@
   .fos-compare-arrow { transform: rotate(90deg); }
   .fos-spec-row { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.9rem 1.2rem; }
 }
+  .fos-compare-arrow { transform: rotate(90deg); }
+  .fos-spec-row { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.9rem 1.2rem; }

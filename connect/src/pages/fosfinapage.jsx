@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import "./fosfina.css";
+import imagen from '../assets/fumigadora2.png';
 
 // ── Datos ──────────────────────────────────────────────────
 const BENEFITS = [
@@ -163,6 +164,24 @@ function FosfinaPage() {
                 <li>Concentración uniforme y letal</li>
                 <li>Proceso más rápido y eficiente</li>
               </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ IMAGEN DEL EQUIPO ════════════════════════════════ */}
+      <section className="fos-section fos-section--img">
+        <div className="fos-container">
+          <div className="fos-img-wrapper fos-reveal">
+            <div className="fos-img-glow" />
+            <img
+              src={imagen}
+              alt="Equipo de Fumigación y Recirculación de Fosfina PH3 - Pohl Servicios Industriales"
+              className="fos-equipo-img"
+            />
+            <div className="fos-img-caption">
+              <span className="fos-img-caption-dot" />
+              Equipo de Recirculación PH₃ · Fabricación nacional
             </div>
           </div>
         </div>
