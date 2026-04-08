@@ -1,14 +1,3 @@
-import { useTopic } from '../hooks/MqttContext';
-
-function useTopicSafe(topic) {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useTopic(topic || '__none__');
-  } catch {
-    return { getField: () => null };
-  }
-}
-
 /**
  * SiloControlCard — solo lectura
  * Muestra el estado del sistema de aireacion recibido desde Node-RED.
@@ -28,22 +17,35 @@ function useTopicSafe(topic) {
  *   end: "06:00"
  * }
  */
-export default function SiloControlCard({ topic, data, siloName = 'Silo Nro. 1' }) {
-  const topicCtx  = useTopicSafe(topic);
-  const gf        = (k, def) => data?.[k] ?? topicCtx.getField(k) ?? def;
-
-  const nivel      = gf('nivel',         0);
-  const humGrano   = gf('humedad_grano', null);
-  const tempMax    = gf('temp_max',      null);
-  const tempAvg    = gf('temp_avg',      null);
-  const tempMin    = gf('temp_min',      null);
-  const grano      = gf('grano',         'S/D');
-  const activo     = gf('activo',        false);
-  const fansState  = gf('fans_state',    false);
-  const mode       = gf('mode',          '--');
-  const timer      = gf('timer',         false);
-  const startTime  = gf('start',         '--:--');
-  const endTime    = gf('end',           '--:--');
+/**
+ * SiloControlCard
+ * Recibe todos los valores como prop "data" desde WidgetRendererMulti (SensorContext).
+ *
+ * Props:
+ *   data.nivel         : number
+ *   data.humedad_grano : number
+ *   data.temp_max/avg/min : number
+ *   data.grano         : string
+ *   data.activo        : boolean
+ *   data.fans_state    : boolean
+ *   data.mode          : 'auto' | 'manual'
+ *   data.timer         : boolean
+ *   data.start / end   : string  'HH:MM'
+ *   siloName           : string
+ */
+export default function SiloControlCard({ data = {}, siloName = 'Silo Nro. 1' }) {
+  const nivel      = data.nivel          ?? 0;
+  const humGrano   = data.humedad_grano  ?? null;
+  const tempMax    = data.temp_max       ?? null;
+  const tempAvg    = data.temp_avg       ?? null;
+  const tempMin    = data.temp_min       ?? null;
+  const grano      = data.grano          ?? 'S/D';
+  const activo     = data.activo         ?? false;
+  const fansState  = data.fans_state     ?? false;
+  const mode       = data.mode           ?? '--';
+  const timer      = data.timer          ?? false;
+  const startTime  = data.start          ?? '--:--';
+  const endTime    = data.end            ?? '--:--';
 
   const fmt = (v, d = 1) => v !== null && v !== undefined ? Number(v).toFixed(d) : '--';
 

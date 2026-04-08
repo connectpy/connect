@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
-import { useTopic } from '../hooks/MqttContext';
 import { WaitingPlaceholder } from './GaugeWidget';
 
 /**
@@ -28,17 +27,30 @@ import { WaitingPlaceholder } from './GaugeWidget';
  *   label: "Termometría — Silo 1"
  * }
  */
-export default function SiloHeatmapWidget({ topic, label = 'Termometría' }) {
-  const { getField, status } = useTopic(topic);
+/**
+ * SiloHeatmapWidget
+ * Recibe todos los valores como prop "data" desde WidgetRendererMulti (SensorContext).
+ *
+ * Props:
+ *   data.labels    : string[]         nombres de cabos (columnas)
+ *   data.days      : string[]         niveles / filas
+ *   data.data      : [col, row, val][]
+ *   data.showColor : boolean[][]      [col][row] — true=grano/color, false=gris
+ *   data.temp_max  : number
+ *   data.temp_min  : number
+ *   label          : string
+ */
+export default function SiloHeatmapWidget({ data: dataProp = {}, label = 'Termometría' }) {
   const chartRef      = useRef(null);
   const chartInstance = useRef(null);
 
-  const labels    = getField('labels');
-  const days      = getField('days');
-  const data      = getField('data');
-  const showColor = getField('showColor');
-  const tempMax   = getField('temp_max') ?? 40;
-  const tempMin   = getField('temp_min') ?? 0;
+  const labels    = dataProp.labels    ?? [];
+  const days      = dataProp.days      ?? [];
+  const data      = dataProp.data      ?? [];
+  const showColor = dataProp.showColor ?? [];
+  const tempMax   = dataProp.temp_max  ?? 40;
+  const tempMin   = dataProp.temp_min  ?? 15;
+  const status    = data.length > 0 ? 'connected' : 'connecting';
 
   const hasData = Array.isArray(data) && data.length > 0;
 

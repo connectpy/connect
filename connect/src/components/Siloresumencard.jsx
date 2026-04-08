@@ -1,14 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTopic } from '../hooks/MqttContext';
-
-function useTopicSafe(topic) {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useTopic(topic || '__none__');
-  } catch {
-    return { getField: () => null, status: 'disconnected' };
-  }
-}
 
 /**
  * SiloResumenCard
@@ -28,19 +18,28 @@ function useTopicSafe(topic) {
  *   }
  * }
  */
-export default function SiloResumenCard({ topic, data, siloName = 'SILO CENTRAL N° 1' }) {
-  // Modo nuevo: data prop directa desde WidgetRendererMulti (SensorContext)
-  // Modo legacy: useTopic (MqttContext)
-  const topicCtx = useTopicSafe(topic);
-
-  const nivel     = data?.nivel    ?? topicCtx.getField('nivel')    ?? 0;
-  const temp      = data?.temp     ?? topicCtx.getField('temp');
-  const grano     = data?.grano    ?? topicCtx.getField('grano');
-  const fans      = data?.fans     ?? topicCtx.getField('fans');
-  const humedad   = data?.humedad  ?? topicCtx.getField('humedad');
-  const fecha     = data?.fecha    ?? topicCtx.getField('fecha');
-  const connected = data?.connected ?? topicCtx.getField('connected') ?? false;
-  const status    = topicCtx.status;
+/**
+ * SiloResumenCard
+ * Recibe todos los valores como prop "data" desde WidgetRendererMulti (SensorContext).
+ *
+ * Props:
+ *   data.nivel     : number   0–100 (%)
+ *   data.temp      : number   temperatura máxima
+ *   data.grano     : string   variedad de grano
+ *   data.fans      : boolean  ventilación activa
+ *   data.humedad   : number   humedad del grano (%)
+ *   data.fecha     : string   fecha de ingreso
+ *   data.connected : boolean
+ *   siloName       : string
+ */
+export default function SiloResumenCard({ data = {}, siloName = 'SILO CENTRAL N° 1' }) {
+  const nivel     = data.nivel     ?? 0;
+  const temp      = data.temp      ?? null;
+  const grano     = data.grano     ?? null;
+  const fans      = data.fans      ?? false;
+  const humedad   = data.humedad   ?? null;
+  const fecha     = data.fecha     ?? null;
+  const connected = data.connected ?? false;
 
   // Color del gauge segun nivel
   const nivelColor = nivel > 85 ? '#ef4444' : nivel > 70 ? '#f59e0b' : '#00aae4';
