@@ -7,11 +7,8 @@ import WeatherCard          from './WeatherCArd';
 import SiloResumenCard      from './Siloresumencard';
 import SiloControlCard      from './Silocontrolcard';
 import SiloHeatmapWidget    from './SiloHeatmapWidget';
-import { useTopic }         from '../hooks/MqttContext';
+import { useSensor }        from '../hooks/SensorContext';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Hook para detectar si estamos en pantalla pequeña (móvil)
-// ─────────────────────────────────────────────────────────────────────────────
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -24,24 +21,46 @@ function useIsMobile() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Renderers inline para componentes que necesitan useTopic internamente
+// Renderers con sensor_id — leen del SensorContext (polling HTTP)
 // ─────────────────────────────────────────────────────────────────────────────
-
-function WeatherCardRenderer({ topic, stationName, label }) {
-  const { getField } = useTopic(topic);
-  const tempHist = getField('tempHist');
-  const humHist  = getField('humHist');
+function SensorGaugeRenderer({ sensor_id, label, min, max, thresholds }) {
+  const { value, unit, tags } = useSensor(sensor_id);
   return (
-    <WeatherCard
-      temp={getField('temp')}
-      humedad={getField('humedad')}
-      rocio={getField('rocio')}
-      connected={getField('connected') ?? false}
-      tempHist={Array.isArray(tempHist) && tempHist.length > 0 ? tempHist : undefined}
-      humHist={Array.isArray(humHist)   && humHist.length  > 0 ? humHist  : undefined}
-      stationName={stationName || label || 'Estación'}
+    <GaugeWidget
+      value={value}
+      unit={unit}
+      label={label || tags?.sensor || sensor_id}
+      min={min}
+      max={max}
+      thresholds={thresholds}
     />
   );
+}
+
+function SensorLineRenderer({ sensor_id, label, color, showArea, timeRange }) {
+  const { value, unit, tags } = useSensor(sensor_id);
+  // LineChartWidget muestra la serie acumulada en tiempo real
+  // Para historial usar HistoricoContainer
+  return (
+    <LineChartWidget
+      value={value}
+      unit={unit}
+      label={label || tags?.sensor || sensor_id}
+      color={color}
+      showArea={showArea}
+      timeRange={timeRange}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Renderers legacy (topic-based) — se mantienen para widgets existentes
+// que no migraron al nuevo formato todavía
+// ─────────────────────────────────────────────────────────────────────────────
+function WeatherCardRenderer({ topic, stationName, label }) {
+  // WeatherCard todavía usa datos de campo, no sensor_id simple
+  // Se puede migrar más adelante mapeando sensor_ids individuales
+  return <WeatherCard stationName={stationName || label || 'Estación'} />;
 }
 
 function SiloResumenRenderer({ topic, siloName, label }) {
@@ -57,15 +76,17 @@ function SiloHeatmapRenderer({ topic, label }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mapa tipo → componente para charts simples
+// Mapas de tipos
 // ─────────────────────────────────────────────────────────────────────────────
-const CHART_MAP = {
-  gauge:           GaugeWidget,
-  line:            LineChartWidget,
-  spatial_heatmap: SpatialHeatmapWidget,
+
+// Requieren sensor_id
+const SENSOR_RENDERERS = {
+  gauge: SensorGaugeRenderer,
+  line:  SensorLineRenderer,
 };
 
-const COMPLEX_RENDERERS = {
+// Requieren topic (legacy)
+const TOPIC_RENDERERS = {
   WeatherCard: WeatherCardRenderer,
   SiloResumen: SiloResumenRenderer,
   SiloControl: SiloControlRenderer,
@@ -73,63 +94,38 @@ const COMPLEX_RENDERERS = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ChartRenderer — decide qué componente usar según chart.tipo
+// ChartRenderer
 // ─────────────────────────────────────────────────────────────────────────────
 function ChartRenderer({ chart }) {
-  const { id, tipo, ...rest } = chart;
+  const { id, tipo, sensor_id, ...rest } = chart;
   const isMobile = useIsMobile();
+  const wrapStyle = { flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: 0 };
 
-  const ComplexRenderer = COMPLEX_RENDERERS[tipo];
-  if (ComplexRenderer) {
-    return (
-      <div style={{ flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: 0 }}>
-        <ComplexRenderer key={id} {...rest} />
-      </div>
-    );
+  // sensor_id presente → nuevo formato
+  if (sensor_id) {
+    const R = SENSOR_RENDERERS[tipo];
+    if (R) return <div style={wrapStyle}><R key={id} sensor_id={sensor_id} {...rest} /></div>;
   }
 
-  const Component = CHART_MAP[tipo];
-  if (!Component) {
-    return (
-      <div style={{ padding: 12, color: '#ef4444', fontSize: 12, background: 'rgba(239,68,68,0.08)', borderRadius: 8 }}>
-        Tipo desconocido: <b>{tipo}</b>
-      </div>
-    );
-  }
-
-  const props = {
-    topic:        rest.topic,
-    field:        rest.field,
-    fields:       rest.fields,
-    layout:       rest.layout,
-    label:        rest.label,
-    unit:         rest.unit || rest.medicion || '',
-    min:          rest.min,
-    max:          rest.max,
-    thresholds:   rest.thresholds,
-    timeRange:    rest.timeRange,
-    color:        rest.color,
-    showArea:     rest.showArea,
-    stationName:  rest.stationName,
-    siloName:     rest.siloName,
-    topicControl: rest.topicControl,
-  };
+  // topic presente → legacy
+  const R = TOPIC_RENDERERS[tipo];
+  if (R) return <div style={wrapStyle}><R key={id} {...rest} /></div>;
 
   return (
-    <div style={{ flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: 0 }}>
-      <Component key={id} {...props} />
+    <div style={{ padding:12, color:'#ef4444', fontSize:12,
+      background:'rgba(239,68,68,0.08)', borderRadius:8 }}>
+      Tipo desconocido: <b>{tipo}</b>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ContainerWidget — agrupa charts en fila con wrap responsivo
+// ContainerWidget
 // ─────────────────────────────────────────────────────────────────────────────
 function ContainerWidget({ widget }) {
-  const charts = widget.charts || [];
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', gap: 16, width: '100%', flexWrap: 'wrap' }}>
-      {charts.map((chart) => (
+    <div style={{ display:'flex', flexDirection:'row', gap:16, width:'100%', flexWrap:'wrap' }}>
+      {(widget.charts || []).map(chart => (
         <ChartRenderer key={chart.id} chart={chart} />
       ))}
     </div>
@@ -137,12 +133,11 @@ function ContainerWidget({ widget }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WidgetRendererMulti — punto de entrada desde Dashboard / DemoDashboard
+// WidgetRendererMulti — punto de entrada
 // ─────────────────────────────────────────────────────────────────────────────
 export default function WidgetRendererMulti({ widget }) {
   if (!widget) return null;
 
-  // historico_cabo: heatmap por cabo + gráfico línea con áreas
   if (widget.tipo === 'historico_cabo') {
     return (
       <HistoricoContainer
@@ -155,16 +150,7 @@ export default function WidgetRendererMulti({ widget }) {
     );
   }
 
-  // historico (legacy): selectores de fecha + gráficos bajo demanda
-  if (widget.tipo === 'historico') {
-    return <HistoricoContainer charts={widget.charts || []} label={widget.label} />;
-  }
+  if (widget.tipo === 'container') return <ContainerWidget widget={widget} />;
 
-  // container: uno o varios charts agrupados en fila
-  if (widget.tipo === 'container') {
-    return <ContainerWidget widget={widget} />;
-  }
-
-  // widget suelto (gauge, line, WeatherCard, SiloResumen, etc.)
   return <ChartRenderer chart={widget} />;
 }

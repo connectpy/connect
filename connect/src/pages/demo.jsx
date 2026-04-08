@@ -1,174 +1,79 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import whitelogo from '../assets/whitelogo.svg';
-import './Dashboard.css';                                        // mismo CSS que Dashboard
-import { MqttProvider, useMqttStatus } from '../hooks/MqttContext';
-import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx'; // mismo renderer
+import './Dashboard.css';
+import { SensorProvider, useSensorStatus } from '../hooks/SensorContext';
+import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Configuración fija de la demo.
-// Misma estructura que el JSON almacenado en Supabase para usuarios reales:
-//   { ws_url, tabs: [{ id, name, icon, widgets: [{ tipo, label, charts: [...] }] }] }
+// DEMO_CONFIG
 //
-// Tipos de widget.tipo : 'container' | 'historico'
-// Tipos de chart.tipo  : 'gauge' | 'line' | 'valuecard' | 'spatial_heatmap'
+// Widgets con sensor_id → SensorContext (polling HTTP /api/estado/:clientId)
+// Widgets con topic     → legacy (se migran progresivamente)
+//
+// historico_cabo → cabos[].sensorIds lista los sensor_id del cabo
+//                  cabos[].queryConfig define { field, window, fn } para /api/consulta
 // ─────────────────────────────────────────────────────────────────────────────
-const DEMO_CONFIG = 
- {
-  "ws_url": "wss://demonode.connectparaguay.com/ws/connect",
+const DEMO_CONFIG = {
+  "client_id": "caaty",
+  "api_base":  "http://nodered.connectparaguay.com",
   "tabs": [
 
     {
-      "id": "general",
-      "name": "General",
+      "id": "secadero",
+      "name": "Secadero",
       "icon": "activity",
       "widgets": [
 
         {
-          "id": "widget-weather",
+          "id": "widget-secadero-temps",
           "tipo": "container",
           "size": "full",
-          "label": "Estación Meteorológica",
+          "label": "Temperaturas en tiempo real",
           "charts": [
-            {
-              "id": "weather-card",
-              "tipo": "WeatherCard",
-              "topic": "estacion",
-              "stationName": "Planta Bella Vista"
-            }
+            { "id": "sec-t1", "tipo": "gauge", "sensor_id": "caaty/secadero/T1", "label": "T1", "min": 0, "max": 60 },
+            { "id": "sec-t2", "tipo": "gauge", "sensor_id": "caaty/secadero/T2", "label": "T2", "min": 0, "max": 60 },
+            { "id": "sec-t3", "tipo": "gauge", "sensor_id": "caaty/secadero/T3", "label": "T3", "min": 0, "max": 60 },
+            { "id": "sec-t4", "tipo": "gauge", "sensor_id": "caaty/secadero/T4", "label": "T4", "min": 0, "max": 60 },
+            { "id": "sec-t5", "tipo": "gauge", "sensor_id": "caaty/secadero/T5", "label": "T5", "min": 0, "max": 60 },
+            { "id": "sec-t6", "tipo": "gauge", "sensor_id": "caaty/secadero/T6", "label": "T6", "min": 0, "max": 60 },
+            { "id": "sec-t7", "tipo": "gauge", "sensor_id": "caaty/secadero/T7", "label": "T7", "min": 0, "max": 60 },
+            { "id": "sec-t8", "tipo": "gauge", "sensor_id": "caaty/secadero/T8", "label": "T8", "min": 0, "max": 60 }
           ]
         },
 
         {
-          "id": "widget-silo1-resumen",
-          "tipo": "container",
-          "size": "half",
-          "label": "SILO CENTRAL N° 1",
-          "charts": [
-            {
-              "id": "silo1-resumen",
-              "tipo": "SiloResumen",
-              "topic": "silo1/resumen",
-              "siloName": "SILO CENTRAL N° 1"
-            }
-          ]
-        },
-
-        {
-          "id": "widget-silo2-resumen",
-          "tipo": "container",
-          "size": "half",
-          "label": "SILO CENTRAL N° 2",
-          "charts": [
-            {
-              "id": "silo2-resumen",
-              "tipo": "SiloResumen",
-              "topic": "silo2/resumen",
-              "siloName": "SILO CENTRAL N° 2"
-            }
-          ]
-        }
-
-      ]
-    },
-
-    {
-      "id": "silo1",
-      "name": "Silo 1",
-      "icon": "bar-chart",
-      "widgets": [
-
-        {
-          "id": "silo1-control",
-          "tipo": "container",
-          "label": "Control de Aireación — Silo 1",
-          "charts": [
-            {
-              "id": "silo1-control-card",
-              "tipo": "SiloControl",
-              "topic": "silo1/datos",
-              "siloName": "Silo Nro. 1"
-            }
-          ]
-        },
-
-        {
-          "id": "silo1-heatmap",
-          "tipo": "container",
-          "label": "Termometría — Silo 1",
-          "charts": [
-            {
-              "id": "silo1-silo-heatmap",
-              "tipo": "SiloHeatmap",
-              "topic": "silo1/heatmap",
-              "label": "Termometría — Silo 1"
-            }
-          ]
-        },
-
-        {
-          "id": "silo1-historico-cabo",
+          "id": "widget-secadero-historico",
           "tipo": "historico_cabo",
-          "label": "Análisis por Cabo — Silo 1",
-          "siloId": "silo1",
+          "size": "full",
+          "label": "Análisis Histórico — Secadero",
+          "siloId": "secadero",
           "unit": "°C",
           "min": 15,
-          "max": 40,
+          "max": 60,
           "cabos": [
-            { "id": "cabo0", "label": "Cabo 1" },
-            { "id": "cabo1", "label": "Cabo 2" },
-            { "id": "cabo2", "label": "Cabo 3" }
-          ]
-        }
-
-      ]
-    },
-
-    {
-      "id": "silo2",
-      "name": "Silo 2",
-      "icon": "bar-chart",
-      "widgets": [
-
-        {
-          "id": "silo2-control",
-          "tipo": "container",
-          "label": "Control de Aireación — Silo 2",
-          "charts": [
             {
-              "id": "silo2-control-card",
-              "tipo": "SiloControl",
-              "topic": "silo2/datos",
-              "siloName": "Silo Nro. 2"
-            }
-          ]
-        },
-
-        {
-          "id": "silo2-heatmap",
-          "tipo": "container",
-          "label": "Termometría — Silo 2",
-          "charts": [
+              "id": "cabo-sec-a",
+              "label": "Zona A (T1–T4)",
+              "sensorIds": [
+                "caaty/secadero/T1",
+                "caaty/secadero/T2",
+                "caaty/secadero/T3",
+                "caaty/secadero/T4"
+              ],
+              "queryConfig": { "field": "value", "window": "1h", "fn": "mean" }
+            },
             {
-              "id": "silo2-silo-heatmap",
-              "tipo": "SiloHeatmap",
-              "topic": "silo2/heatmap",
-              "label": "Termometría — Silo 2"
+              "id": "cabo-sec-b",
+              "label": "Zona B (T5–T8)",
+              "sensorIds": [
+                "caaty/secadero/T5",
+                "caaty/secadero/T6",
+                "caaty/secadero/T7",
+                "caaty/secadero/T8"
+              ],
+              "queryConfig": { "field": "value", "window": "1h", "fn": "mean" }
             }
-          ]
-        },
-
-        {
-          "id": "silo2-historico-cabo",
-          "tipo": "historico_cabo",
-          "label": "Análisis por Cabo — Silo 2",
-          "siloId": "silo2",
-          "unit": "°C",
-          "min": 15,
-          "max": 40,
-          "cabos": [
-            { "id": "cabo0", "label": "Cabo 1" },
-            { "id": "cabo1", "label": "Cabo 2" }
           ]
         }
 
@@ -179,131 +84,84 @@ const DEMO_CONFIG =
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente raíz
-//
-// Diferencia con Dashboard.jsx: no verifica sesión Supabase ni carga config
-// desde la DB. La config es DEMO_CONFIG (fija). Todo lo demás es idéntico.
-//
-// Props opcionales:
-//   wsUrl : string  Permite sobreescribir la URL del WS desde el padre.
-// ─────────────────────────────────────────────────────────────────────────────
-export default function DemoDashboard({ wsUrl }) {
-  const config = wsUrl
-    ? { ...DEMO_CONFIG, ws_url: wsUrl }
-    : DEMO_CONFIG;
+export default function DemoDashboard({ clientId, apiBase }) {
+  const config = {
+    ...DEMO_CONFIG,
+    client_id: clientId || DEMO_CONFIG.client_id,
+    api_base:  apiBase  || DEMO_CONFIG.api_base,
+  };
 
   return (
-    <MqttProvider url={config.ws_url}>
-      <DashboardInner config={config} companyName="Demo" />
-    </MqttProvider>
+    <SensorProvider clientId={config.client_id} apiBase={config.api_base}>
+      <DashboardInner config={config} companyName={config.client_id} />
+    </SensorProvider>
   );
 }
 
-// ─── Inner ────────────────────────────────────────────────────────────────────
-// Idéntico a DashboardInner en Dashboard.jsx.
-// Diferencias:
-//   - No recibe `user` (no hay sesión)
-//   - El botón de logout navega a '/' en lugar de hacer signOut de Supabase
-//   - No muestra user?.email en el header
 // ─────────────────────────────────────────────────────────────────────────────
 function DashboardInner({ config, companyName }) {
   const navigate = useNavigate();
-  const { status, lastUpdate, sendMessage } = useMqttStatus();
+  const { status, lastUpdate } = useSensorStatus();
   const [activeTabId, setActiveTabId] = useState(config?.tabs?.[0]?.id || null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    if (status === 'connected') {
-      sendMessage({
-        action: 'get_current_status',
-        client: 'dashboard_web',
-        company: companyName,
-      });
-    }
-  }, [status, sendMessage, companyName]);
-
-  const activeTab = config?.tabs?.find((tab) => tab.id === activeTabId);
+  const activeTab = config?.tabs?.find(tab => tab.id === activeTabId);
 
   const WS_STATUS = {
-    connected:    { color: '#22c55e', label: 'Conectado',   glow: '#22c55e' },
-    connecting:   { color: '#f59e0b', label: 'Conectando…', glow: '#f59e0b' },
-    error:        { color: '#ef4444', label: 'Error',        glow: '#ef4444' },
-    disconnected: { color: '#475569', label: 'Desconectado', glow: 'transparent' },
+    connected:  { color:'#22c55e', label:'Conectado',   glow:'#22c55e' },
+    connecting: { color:'#f59e0b', label:'Conectando…', glow:'#f59e0b' },
+    error:      { color:'#ef4444', label:'Error',        glow:'#ef4444' },
   };
-  const { color: dotColor, label: dotLabel, glow: dotGlow } =
-    WS_STATUS[status] || WS_STATUS.disconnected;
+  const dot = WS_STATUS[status] || { color:'#475569', label:'Desconectado', glow:'transparent' };
 
   return (
     <div className="dashboard-page">
 
-      {/* ── Header ────────────────────────────────────────────────────────── */}
       <header className="dashboard-header">
         <div className="dashboard-container">
           <div className="header-content">
-
             <div className="header-logo">
-              <button
-                className="sidebar-toggle"
-                onClick={() => setSidebarOpen((v) => !v)}
-                aria-label="Toggle menu"
-              >
-                {sidebarOpen ? (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
-                  </svg>
-                )}
+              <button className="sidebar-toggle" onClick={() => setSidebarOpen(v => !v)}>
+                {sidebarOpen
+                  ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                }
               </button>
-
               <div className="logo">
                 <div className="empresa-logo">
                   <img src={whitelogo} alt="Logo" height="50px" width="auto" />
                   <span>Connect Paraguay</span>
                 </div>
-                <div className="logo-cliente">
-                  <span>{companyName}</span>
-                </div>
+                <div className="logo-cliente"><span>{companyName}</span></div>
               </div>
             </div>
-
             <div className="header-actions">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#64748b' }}>
-                <div style={{
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: dotColor,
-                  boxShadow: `0 0 6px ${dotGlow}`,
-                  flexShrink: 0,
-                  transition: 'background 0.3s, box-shadow 0.3s',
-                }} />
-                {dotLabel}
+              <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:12, color:'#64748b' }}>
+                <div style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, transition:'all 0.3s',
+                  background:dot.color, boxShadow:`0 0 6px ${dot.glow}` }} />
+                {dot.label}
               </div>
-              <button onClick={() => navigate('/')} className="btn-logout">
-                Cerrar Sesión
-              </button>
+              {lastUpdate && (
+                <span style={{ fontSize:11, color:'#334155' }}>
+                  {lastUpdate.toLocaleTimeString('es-PY')}
+                </span>
+              )}
+              <button onClick={() => navigate('/')} className="btn-logout">Cerrar Sesión</button>
             </div>
-
           </div>
         </div>
       </header>
 
       <div className="dashboard-layout">
-        {sidebarOpen && (
-          <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
-        )}
+        {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
-        {/* ── Sidebar ─────────────────────────────────────────────────────── */}
         <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="sidebar-header"><h3>Pestañas</h3></div>
           <nav className="sidebar-nav">
-            {config?.tabs?.map((tab) => (
-              <button
-                key={tab.id}
+            {config?.tabs?.map(tab => (
+              <button key={tab.id}
                 className={`sidebar-tab ${activeTabId === tab.id ? 'active' : ''}`}
-                onClick={() => { setActiveTabId(tab.id); setSidebarOpen(false); }}
-              >
+                onClick={() => { setActiveTabId(tab.id); setSidebarOpen(false); }}>
                 {tab.icon && <span className="tab-icon">{getIcon(tab.icon)}</span>}
                 <span className="tab-name">{tab.name}</span>
                 <span className="tab-count">{tab.widgets?.length || 0}</span>
@@ -312,25 +170,15 @@ function DashboardInner({ config, companyName }) {
           </nav>
         </aside>
 
-        {/* ── Main ────────────────────────────────────────────────────────── */}
         <main className="dashboard-content">
           <div className="content-header">
             <h1>{activeTab?.name || 'Dashboard'}</h1>
-            <p className="last-update">
-              Última actualización:{' '}
-              {lastUpdate ? lastUpdate.toLocaleTimeString('es-PY') : '—'}
-            </p>
           </div>
-
           <div className="widgets-grid">
-            {activeTab?.widgets?.map((widget) => (
-              <div
-                key={widget.id}
-                className={`widget-card ${widget.size === 'half' ? 'half-width' : 'full-width'}`}
-              >
-                <div className="widget-header">
-                  <h3>{widget.label}</h3>
-                </div>
+            {activeTab?.widgets?.map(widget => (
+              <div key={widget.id}
+                className={`widget-card ${widget.size === 'half' ? 'half-width' : 'full-width'}`}>
+                <div className="widget-header"><h3>{widget.label}</h3></div>
                 <div className="widget-content">
                   <WidgetRendererMulti widget={widget} />
                 </div>
@@ -344,39 +192,11 @@ function DashboardInner({ config, companyName }) {
   );
 }
 
-// ── Iconos — copia exacta de Dashboard.jsx ───────────────────────────────────
-function getIcon(iconName) {
+function getIcon(name) {
   const icons = {
-    'chart-line': (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-        <polyline points="17 6 23 6 23 12" />
-      </svg>
-    ),
-    activity: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-      </svg>
-    ),
-    'check-circle': (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-        <polyline points="22 4 12 14.01 9 11.01" />
-      </svg>
-    ),
-    'bar-chart': (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <line x1="18" y1="20" x2="18" y2="10" />
-        <line x1="12" y1="20" x2="12" y2="4" />
-        <line x1="6" y1="20" x2="6" y2="14" />
-      </svg>
-    ),
-    settings: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 1v6m0 6v6m-9-9h6m6 0h6" />
-      </svg>
-    ),
+    activity: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+    'bar-chart': <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+    settings: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m-9-9h6m6 0h6"/></svg>,
   };
-  return icons[iconName] || icons['activity'];
+  return icons[name] || icons['activity'];
 }
