@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useTopic } from '../hooks/MqttContext';
 
+function useTopicSafe(topic) {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useTopic(topic || '__none__');
+  } catch {
+    return { getField: () => null, status: 'disconnected' };
+  }
+}
+
 /**
  * SiloResumenCard
  * Resumen visual de un silo: nivel, temperatura, grano, ventilación, humedad, fecha ingreso.
@@ -19,16 +28,19 @@ import { useTopic } from '../hooks/MqttContext';
  *   }
  * }
  */
-export default function SiloResumenCard({ topic, siloName = 'SILO CENTRAL N° 1' }) {
-  const { getField, status } = useTopic(topic);
+export default function SiloResumenCard({ topic, data, siloName = 'SILO CENTRAL N° 1' }) {
+  // Modo nuevo: data prop directa desde WidgetRendererMulti (SensorContext)
+  // Modo legacy: useTopic (MqttContext)
+  const topicCtx = useTopicSafe(topic);
 
-  const nivel    = getField('nivel')    ?? 0;
-  const temp     = getField('temp');
-  const grano    = getField('grano');
-  const fans     = getField('fans');
-  const humedad  = getField('humedad');
-  const fecha    = getField('fecha');
-  const connected = getField('connected') ?? (status === 'connected');
+  const nivel     = data?.nivel    ?? topicCtx.getField('nivel')    ?? 0;
+  const temp      = data?.temp     ?? topicCtx.getField('temp');
+  const grano     = data?.grano    ?? topicCtx.getField('grano');
+  const fans      = data?.fans     ?? topicCtx.getField('fans');
+  const humedad   = data?.humedad  ?? topicCtx.getField('humedad');
+  const fecha     = data?.fecha    ?? topicCtx.getField('fecha');
+  const connected = data?.connected ?? topicCtx.getField('connected') ?? false;
+  const status    = topicCtx.status;
 
   // Color del gauge segun nivel
   const nivelColor = nivel > 85 ? '#ef4444' : nivel > 70 ? '#f59e0b' : '#00aae4';

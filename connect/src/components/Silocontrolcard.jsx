@@ -1,5 +1,14 @@
 import { useTopic } from '../hooks/MqttContext';
 
+function useTopicSafe(topic) {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useTopic(topic || '__none__');
+  } catch {
+    return { getField: () => null };
+  }
+}
+
 /**
  * SiloControlCard — solo lectura
  * Muestra el estado del sistema de aireacion recibido desde Node-RED.
@@ -19,21 +28,22 @@ import { useTopic } from '../hooks/MqttContext';
  *   end: "06:00"
  * }
  */
-export default function SiloControlCard({ topic, siloName = 'Silo Nro. 1' }) {
-  const { getField } = useTopic(topic);
+export default function SiloControlCard({ topic, data, siloName = 'Silo Nro. 1' }) {
+  const topicCtx  = useTopicSafe(topic);
+  const gf        = (k, def) => data?.[k] ?? topicCtx.getField(k) ?? def;
 
-  const nivel      = getField('nivel')         ?? 0;
-  const humGrano   = getField('humedad_grano');
-  const tempMax    = getField('temp_max');
-  const tempAvg    = getField('temp_avg');
-  const tempMin    = getField('temp_min');
-  const grano      = getField('grano')         ?? 'S/D';
-  const activo     = getField('activo')        ?? false;
-  const fansState  = getField('fans_state')    ?? false;  // estado fisico ventilador
-  const mode       = getField('mode')          ?? '--';
-  const timer      = getField('timer')         ?? false;
-  const startTime  = getField('start')         ?? '--:--';
-  const endTime    = getField('end')           ?? '--:--';
+  const nivel      = gf('nivel',         0);
+  const humGrano   = gf('humedad_grano', null);
+  const tempMax    = gf('temp_max',      null);
+  const tempAvg    = gf('temp_avg',      null);
+  const tempMin    = gf('temp_min',      null);
+  const grano      = gf('grano',         'S/D');
+  const activo     = gf('activo',        false);
+  const fansState  = gf('fans_state',    false);
+  const mode       = gf('mode',          '--');
+  const timer      = gf('timer',         false);
+  const startTime  = gf('start',         '--:--');
+  const endTime    = gf('end',           '--:--');
 
   const fmt = (v, d = 1) => v !== null && v !== undefined ? Number(v).toFixed(d) : '--';
 
