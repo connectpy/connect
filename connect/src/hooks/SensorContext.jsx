@@ -22,7 +22,7 @@ import { createContext, useContext, useEffect, useRef, useState, useCallback } f
 const SensorContext = createContext(null);
 const POLL_INTERVAL = 5000;
 
-export function SensorProvider({ clientId, apiBase = 'http://nodered.connectparaguay.com', children }) {
+export function SensorProvider({ clientId, apiBase = 'https://nodered.connectparaguay.com', children }) {
   const [sensorData, setSensorData] = useState({});   // { [sensorId]: { value, tags } }
   const [status,     setStatus]     = useState('connecting');
   const [lastUpdate, setLastUpdate] = useState(null);

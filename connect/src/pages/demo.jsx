@@ -16,7 +16,7 @@ import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx';
 // ─────────────────────────────────────────────────────────────────────────────
 const DEMO_CONFIG = {
   "client_id": "caaty",
-  "api_base":  "http://nodered.connectparaguay.com",
+  "api_base":  "https://nodered.connectparaguay.com",
   "tabs": [
 
     {
