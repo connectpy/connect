@@ -32,10 +32,10 @@ const DEMO_CONFIG = {
           size:  'full',
           label: 'Estación Meteorológica',
           stationName: 'Planta Bella Vista',
-          // sensor_ids para temperatura exterior y humedad
-          sensor_temp:    'demo/estacion/temperatura',
-          sensor_humedad: 'demo/estacion/humedad',
-          sensor_rocio:   'demo/estacion/rocio',
+          // Un mismo sensor puede exponer varios fields en tiempo real
+          sensor_temp:    'demo/estacion.fields.temperatura',
+          sensor_humedad: 'demo/estacion.fields.humedad',
+          sensor_rocio:   'demo/estacion.fields.rocio',
         },
 
         {

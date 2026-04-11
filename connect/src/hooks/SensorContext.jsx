@@ -22,6 +22,37 @@ import { createContext, useContext, useEffect, useRef, useState, useCallback } f
 const SensorContext = createContext(null);
 const POLL_INTERVAL = 5000;
 
+function parseSensorRef(sensorRef) {
+  if (!sensorRef || typeof sensorRef !== 'string') {
+    return { sensorId: sensorRef, field: null };
+  }
+
+  const marker = '.fields.';
+  const idx = sensorRef.indexOf(marker);
+  if (idx === -1) return { sensorId: sensorRef, field: null };
+
+  return {
+    sensorId: sensorRef.slice(0, idx),
+    field: sensorRef.slice(idx + marker.length) || null,
+  };
+}
+
+function normalizeFieldValue(value) {
+  if (typeof value !== 'string') return value;
+
+  const trimmed = value.trim();
+  if (trimmed === '') return value;
+
+  const numeric = Number(trimmed);
+  return Number.isNaN(numeric) ? value : numeric;
+}
+
+function normalizeFields(fields = {}) {
+  return Object.fromEntries(
+    Object.entries(fields).map(([key, value]) => [key, normalizeFieldValue(value)])
+  );
+}
+
 export function SensorProvider({ clientId, apiBase = 'https://nodered.connectparaguay.com', children }) {
   const [sensorData, setSensorData] = useState({});   // { [sensorId]: { value, tags } }
   const [status,     setStatus]     = useState('connecting');
@@ -52,12 +83,15 @@ export function SensorProvider({ clientId, apiBase = 'https://nodered.connectpar
       setSensorData(prev => {
         const next = { ...prev };
         Object.entries(raw).forEach(([sensorId, sensor]) => {
-          const value = sensor.fields?.value;
-          if (value === undefined || value === null) return;
+          const fields = normalizeFields(sensor.fields || {});
+          const value = Object.prototype.hasOwnProperty.call(fields, 'value')
+            ? fields.value
+            : null;
+
           next[sensorId] = {
-            value:  Number(value),
-            tags:   sensor.tags  || {},
-            fields: sensor.fields || {},
+            value,
+            tags: sensor.tags || {},
+            fields,
           };
         });
         return next;
@@ -128,15 +162,19 @@ export function SensorProvider({ clientId, apiBase = 'https://nodered.connectpar
  * useSensor(sensorId)
  * Suscripción a un sensor individual.
  */
-export function useSensor(sensorId) {
+export function useSensor(sensorRef) {
   const ctx = useContext(SensorContext);
   if (!ctx) throw new Error('useSensor debe usarse dentro de SensorProvider');
+  const { sensorId, field } = parseSensorRef(sensorRef);
   const sensor = ctx.sensorData[sensorId];
+  const hasField = field && Object.prototype.hasOwnProperty.call(sensor?.fields || {}, field);
+
   return {
-    value:     sensor?.value      ?? null,
-    unit:      sensor?.tags?.unit ?? '',
-    tags:      sensor?.tags       ?? {},
-    connected: sensor !== undefined,
+    value: hasField ? sensor.fields[field] : (sensor?.value ?? null),
+    unit: sensor?.tags?.unit ?? '',
+    tags: sensor?.tags ?? {},
+    fields: sensor?.fields ?? {},
+    connected: sensor !== undefined && (field ? hasField : true),
   };
 }
 
@@ -145,18 +183,24 @@ export function useSensor(sensorId) {
  * Suscripción a múltiples sensores.
  * Devuelve objeto { [sensorId]: { value, unit, tags } }
  */
-export function useSensors(sensorIds = []) {
+export function useSensors(sensorRefs = []) {
   const ctx = useContext(SensorContext);
   if (!ctx) throw new Error('useSensors debe usarse dentro de SensorProvider');
   const result = {};
-  sensorIds.forEach(id => {
-    const s = ctx.sensorData[id];
-    result[id] = {
-      value: s?.value      ?? null,
-      unit:  s?.tags?.unit ?? '',
-      tags:  s?.tags       ?? {},
+
+  sensorRefs.forEach(sensorRef => {
+    const { sensorId, field } = parseSensorRef(sensorRef);
+    const sensor = ctx.sensorData[sensorId];
+    const hasField = field && Object.prototype.hasOwnProperty.call(sensor?.fields || {}, field);
+
+    result[sensorRef] = {
+      value: hasField ? sensor.fields[field] : (sensor?.value ?? null),
+      unit: sensor?.tags?.unit ?? '',
+      tags: sensor?.tags ?? {},
+      fields: sensor?.fields ?? {},
     };
   });
+
   return result;
 }
 

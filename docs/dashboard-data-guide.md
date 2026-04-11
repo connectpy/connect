@@ -42,11 +42,29 @@ La respuesta esperada es:
 }
 ```
 
+Tambien puede traer varios `fields` dentro del mismo sensor:
+
+```json
+{
+  "demo/estacion": {
+    "id": "demo/estacion",
+    "tags": {
+      "unit": "Â°C"
+    },
+    "fields": {
+      "temperatura": 26.4,
+      "humedad": 71,
+      "rocio": 20.1
+    }
+  }
+}
+```
+
 Internamente se guarda como:
 
 ```js
 sensorData[sensorId] = {
-  value: Number(sensor.fields?.value),
+  value: sensor.fields?.value ?? null,
   tags: sensor.tags || {},
   fields: sensor.fields || {}
 }
@@ -54,10 +72,11 @@ sensorData[sensorId] = {
 
 Notas importantes:
 
-- Solo se guarda `fields.value`.
-- Si `fields.value` viene `null` o `undefined`, ese sensor no se actualiza.
-- `useSensor(sensorId)` devuelve `value`, `unit`, `tags` y `connected`.
-- `useSensors(sensorIds)` devuelve un objeto por `sensorId`.
+- Se guardan todos los `fields` del sensor.
+- Si existe `fields.value`, sigue siendo el valor por defecto para compatibilidad.
+- `useSensor(sensorId)` devuelve el valor por defecto del sensor.
+- `useSensor('demo/estacion.fields.temperatura')` devuelve ese field puntual.
+- `useSensors(sensorRefs)` devuelve un objeto por cada referencia pedida.
 
 ### Historico
 
@@ -137,7 +156,7 @@ Renderiza [GaugeWidget.jsx](/d:/connect/connect/connect/src/components/GaugeWidg
 
 ### Que datos necesita del backend
 
-- En tiempo real solo necesita `fields.value`.
+- En tiempo real puede leer `fields.value` o cualquier referencia tipo `sensor_id.fields.campo`.
 - La unidad se toma de `tags.unit`.
 
 ### Ejemplo completo
@@ -225,9 +244,9 @@ Renderiza [WeatherCArd.jsx](/d:/connect/connect/connect/src/components/WeatherCA
   "tipo": "WeatherCard",
   "label": "Estación Meteorológica",
   "stationName": "Planta Bella Vista",
-  "sensor_temp": "demo/estacion/temperatura",
-  "sensor_humedad": "demo/estacion/humedad",
-  "sensor_rocio": "demo/estacion/rocio"
+  "sensor_temp": "demo/estacion.fields.temperatura",
+  "sensor_humedad": "demo/estacion.fields.humedad",
+  "sensor_rocio": "demo/estacion.fields.rocio"
 }
 ```
 
@@ -368,7 +387,7 @@ Renderiza [Silocontrolcard.jsx](/d:/connect/connect/connect/src/components/Siloc
 ### Limitaciones actuales
 
 - La card soporta `timer`, `start` y `end`, pero `SiloControlRenderer` no los mapea desde sensores ni desde config.
-- `mode` llega desde `useSensorValue(sensor_mode)`, que siempre devuelve `value`. Como `SensorContext` convierte `fields.value` con `Number(value)`, hoy `mode` solo sirve bien si backend envia algo numerico. Si backend quisiera mandar `"auto"` o `"manual"`, se perderia.
+- `mode` llega desde `useSensorValue(sensor_mode)`. Si apuntas a `demo/silo1.fields.mode`, puede leer texto como `"auto"` o `"manual"` siempre que el backend lo envie en ese field.
 - Igual que en `SiloResumen`, `activo` y `fans_state` se calculan como `valor > 0`.
 
 ## `SiloHeatmap`
@@ -550,7 +569,7 @@ Agrupa varios widgets en una fila y los renderiza con [WidgetRendererMulti.jsx](
 
 Para que todos los widgets funcionen de forma consistente, conviene que el backend siga estas reglas:
 
-- Sensores analogicos: enviar `fields.value` numerico.
+- Sensores analogicos: enviar `fields.value` numerico, o varios `fields` numericos si un mismo sensor expone varias metricas.
 - Unidades: enviar `tags.unit`.
 - Booleanos de estado: enviar `0` o `1`.
 - Historicos: enviar siempre `timestamp` ISO y `value`.
@@ -561,7 +580,7 @@ Para que todos los widgets funcionen de forma consistente, conviene que el backe
 Estas son las cosas mas importantes que vi al revisar el codigo:
 
 - `LineChartWidget` espera `series`, pero `SensorContext` hoy no construye series en tiempo real.
-- `SensorContext` convierte `fields.value` con `Number(value)`, por lo que valores de texto como `"auto"` o `"manual"` no sobreviven bien.
+- `SensorContext` ya soporta referencias tipo `sensor.fields.campo` en tiempo real.
 - `SiloControlCard` soporta `timer`, `start` y `end`, pero el renderer actual no los alimenta.
 - `SiloHeatmap` en tiempo real no usa `sensor_hay_grano`; solo usa presencia o ausencia de valor.
 
