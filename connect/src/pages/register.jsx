@@ -191,7 +191,7 @@ function Register() {
           <div className="register-header">
             <Link to="/" className="logo">
               <img src={whitelogo} alt="Logo" height="70px" width="auto"/>
-              <span>CONNECT PARAGUAY</span>
+              <span>connect paraguay</span>
             </Link>
             <h1>Crear Cuenta</h1>
             <p>Regístrate para acceder a los dashboards</p>

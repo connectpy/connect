@@ -195,7 +195,7 @@ function DashboardInner({ config, companyName }) {
               <div className="logo">
                 <div className="empresa-logo">
                   <img src={whitelogo} alt="Logo" height="70px" width="auto" />
-                  <span>CONNECT PARAGUAY</span>
+                  <span>connect paraguay</span>
                 </div>
                 <div className="logo-cliente"><span>{companyName}</span></div>
               </div>

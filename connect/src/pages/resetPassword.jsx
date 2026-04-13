@@ -64,7 +64,7 @@ function ResetPassword() {
           <div className="login-header">
             <Link to="/" className="logo">
               <img src={whitelogo} alt="Logo" height="70px" width="auto"/>
-              <span>CONNECT PARAGUAY</span>
+              <span>connect paraguay</span>
             </Link>
             <h1>Nueva Contraseña</h1>
             <p>Ingresa tu nueva clave de acceso segura</p>
