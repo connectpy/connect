@@ -4,10 +4,10 @@
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=OCR+A+Extended&display=swap');
 
 :root {
-  --fos-font-logo: 'Michroma', sans-serif;
+  --fos-font-logo: 'OCR A Extended', sans-serif;
   --fos-bg:       #0b1120;
   --fos-bg2:      #0f172a;
   --fos-surface:  #151f35;

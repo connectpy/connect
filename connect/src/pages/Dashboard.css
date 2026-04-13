@@ -1,5 +1,5 @@
 /* src/styles/Dashboard.css */
-@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=OCR+A+Extended&display=swap');
 
 .dashboard-page {
   min-height: 100vh;
@@ -177,7 +177,7 @@
   align-items: center;
   gap: 0.5rem;
   color: #ffffff;
-  font-family: 'Michroma', sans-serif;
+  font-family: 'OCR A Extended', sans-serif;
   font-size: 1.1rem;
   font-weight: 400;
   padding: 1rem 0;
@@ -192,7 +192,7 @@
   color: #06b6d4;
 }
 .logo span {
-  font-family: 'Michroma', sans-serif;
+  font-family: 'OCR A Extended', sans-serif;
 }
 
 .header-actions {

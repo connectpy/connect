@@ -1,8 +1,8 @@
 /* ===== Variables CSS ===== */
-@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=OCR+A+Extended&display=swap');
 
 :root {
-  --font-logo: 'Michroma', sans-serif;
+  --font-logo: 'OCR A Extended', sans-serif;
   --color-primary: #06b6d4;
   --color-primary-dark: #0891b2;
   --color-secondary: #3b82f6;
