@@ -1,13 +1,8 @@
 /* ===== Variables CSS ===== */
-@font-face {
-  font-family: 'Neuropol X';
-  src: url('../assets/fonts/Neuropol%20X%20Rg.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
+@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
 
 :root {
-  --font-logo: 'Neuropol X', sans-serif;
+  --font-logo: 'Michroma', sans-serif;
   --color-primary: #06b6d4;
   --color-primary-dark: #0891b2;
   --color-secondary: #3b82f6;

@@ -1,10 +1,5 @@
 /* src/styles/Dashboard.css */
-@font-face {
-  font-family: 'Neuropol X';
-  src: url('../assets/fonts/Neuropol\ X\ Rg.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
+@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
 
 .dashboard-page {
   min-height: 100vh;
@@ -182,7 +177,7 @@
   align-items: center;
   gap: 0.5rem;
   color: #ffffff;
-  font-family: 'Neuropol X', sans-serif;
+  font-family: 'Michroma', sans-serif;
   font-size: 1.1rem;
   font-weight: 400;
   padding: 1rem 0;
@@ -197,7 +192,7 @@
   color: #06b6d4;
 }
 .logo span {
-  font-family: 'Neuropol X', sans-serif;
+  font-family: 'Michroma', sans-serif;
 }
 
 .header-actions {

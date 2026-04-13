@@ -1,10 +1,5 @@
 /* src/styles/Register.css */
-@font-face {
-  font-family: 'Neuropol X';
-  src: url('../assets/fonts/Neuropol\ X\ Rg.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
+@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
 
 .register-page {
   min-height: 100vh;
@@ -46,7 +41,7 @@
   gap: 0.5rem;
   color: #ffffff;
   text-decoration: none;
-  font-family: 'Neuropol X', sans-serif;
+  font-family: 'Michroma', sans-serif;
   font-size: 1.5rem;
   font-weight: 400;
   margin-bottom: 1.5rem;
@@ -57,7 +52,7 @@
 }
 
 .register-header .logo span {
-  font-family: 'Neuropol X', sans-serif;
+  font-family: 'Michroma', sans-serif;
 }
 
 .register-header h1 {

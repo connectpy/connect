@@ -4,15 +4,10 @@
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
-@font-face {
-  font-family: 'Neuropol X';
-  src: url('../assets/fonts/Neuropol\ X\ Rg.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
+@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
 
 :root {
-  --fos-font-logo: 'Neuropol X', sans-serif;
+  --fos-font-logo: 'Michroma', sans-serif;
   --fos-bg:       #0b1120;
   --fos-bg2:      #0f172a;
   --fos-surface:  #151f35;
