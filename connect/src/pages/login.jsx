@@ -39,8 +39,8 @@ function Login() {
         <div className="login-card">
           <div className="login-header">
             <Link to="/" className="logo">
-              <img src={whitelogo} alt="Logo" height="50px" width="auto"/>
-              <span>Connect Paraguay</span>
+              <img src={whitelogo} alt="Logo" height="70px" width="auto"/>
+              <span>CONNECT PARAGUAY</span>
             </Link>
             <h1>Iniciar Sesión</h1>
             <p>Accede a tu dashboard personalizado</p>

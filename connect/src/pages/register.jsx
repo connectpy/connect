@@ -190,8 +190,8 @@ function Register() {
         <div className="register-card">
           <div className="register-header">
             <Link to="/" className="logo">
-              <img src={whitelogo} alt="Logo" height="50px" width="auto"/>
-              <span>Connect Paraguay</span>
+              <img src={whitelogo} alt="Logo" height="70px" width="auto"/>
+              <span>CONNECT PARAGUAY</span>
             </Link>
             <h1>Crear Cuenta</h1>
             <p>Regístrate para acceder a los dashboards</p>

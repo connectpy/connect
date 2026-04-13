@@ -154,7 +154,7 @@ function ProductoPage() {
           <div className="prod-hero-content">
             <div className="prod-badge">
               <span className="prod-badge-dot" />
-              Sistema IoT Industrial — Connect Paraguay
+              Sistema IoT Industrial — CONNECT PARAGUAY
             </div>
             <h1 className="prod-hero-title">
               Protege tu cosecha con<br />

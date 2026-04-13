@@ -36,8 +36,8 @@ function ForgotPassword() {
         <div className="login-card">
           <div className="login-header">
             <Link to="/" className="logo">
-              <img src={whitelogo} alt="Logo" height="50px" width="auto"/>
-              <span>Connect Paraguay</span>
+              <img src={whitelogo} alt="Logo" height="70px" width="auto"/>
+              <span>CONNECT PARAGUAY</span>
             </Link>
             <h1>Recuperar acceso</h1>
             <p>Te enviaremos un enlace para restablecer tu contraseña</p>

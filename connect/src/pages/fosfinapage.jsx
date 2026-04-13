@@ -69,8 +69,8 @@ function Navbar() {
       <div className="container">
         <div className="nav-content">
           <div className="logo">
-            <img src={whitelogo} alt="Logo" height="50px" width="auto" />
-            <h1>Connect</h1>
+            <img src={whitelogo} alt="Logo" height="70px" width="auto" />
+            <h1>CONNECT</h1>
           </div>
           <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
             <a href="/#features" onClick={() => setMenuOpen(false)}>Características</a>
