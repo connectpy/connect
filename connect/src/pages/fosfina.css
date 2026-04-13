@@ -4,10 +4,15 @@
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=OCR+A+Extended&display=swap');
+@font-face {
+  font-family: 'OCR A Extended';
+  src: url('../assets/fonts/OCRAEXT.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 
 :root {
-  --fos-font-logo: 'OCR A Extended', sans-serif;
+  --fos-font-logo: 'OCR A Extended';
   --fos-bg:       #0b1120;
   --fos-bg2:      #0f172a;
   --fos-surface:  #151f35;

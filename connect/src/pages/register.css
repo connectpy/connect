@@ -1,5 +1,10 @@
 /* src/styles/Register.css */
-@import url('https://fonts.googleapis.com/css2?family=OCR+A+Extended&display=swap');
+@font-face {
+  font-family: 'OCR A Extended';
+  src: url('../assets/fonts/OCRAEXT.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 
 .register-page {
   min-height: 100vh;
@@ -41,7 +46,7 @@
   gap: 0.5rem;
   color: #ffffff;
   text-decoration: none;
-  font-family: 'OCR A Extended', sans-serif;
+  font-family: 'OCR A Extended';
   font-size: 1.5rem;
   font-weight: 400;
   margin-bottom: 1.5rem;
@@ -52,7 +57,7 @@
 }
 
 .register-header .logo span {
-  font-family: 'OCR A Extended', sans-serif;
+  font-family: 'OCR A Extended';
 }
 
 .register-header h1 {

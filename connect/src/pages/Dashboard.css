@@ -1,5 +1,10 @@
 /* src/styles/Dashboard.css */
-@import url('https://fonts.googleapis.com/css2?family=OCR+A+Extended&display=swap');
+@font-face {
+  font-family: 'OCR A Extended';
+  src: url('../assets/fonts/OCRAEXT.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 
 .dashboard-page {
   min-height: 100vh;
@@ -177,7 +182,7 @@
   align-items: center;
   gap: 0.5rem;
   color: #ffffff;
-  font-family: 'OCR A Extended', sans-serif;
+  font-family: 'OCR A Extended';
   font-size: 1.1rem;
   font-weight: 400;
   padding: 1rem 0;
@@ -192,7 +197,7 @@
   color: #06b6d4;
 }
 .logo span {
-  font-family: 'OCR A Extended', sans-serif;
+  font-family: 'OCR A Extended';
 }
 
 .header-actions {
