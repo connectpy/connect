@@ -3,7 +3,9 @@
    colisionar con los estilos de landing.css
    ─────────────────────────────────────────────── */
 
-:root {
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+ :root {
   --prod-bg:       #0b1120;
   --prod-bg2:      #0f172a;
   --prod-surface:  #1a2540;
@@ -15,8 +17,6 @@
   --prod-muted:    #7c8ea8;
   --prod-mono:     'JetBrains Mono', monospace;
 }
-
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ── BASE ─────────────────────────────────────────────────── */
 .prod-page {

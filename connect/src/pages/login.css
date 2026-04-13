@@ -1,4 +1,11 @@
 /* src/styles/Login.css */
+@font-face {
+  font-family: 'Neuropol X';
+  src: url('../assets/fonts/Neuropol\ X\ Rg.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 .login-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
@@ -37,13 +44,18 @@
   gap: 0.5rem;
   color: #ffffff;
   text-decoration: none;
+  font-family: 'Neuropol X', sans-serif;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 400;
   margin-bottom: 2rem;
 }
 
 .login-header .logo svg {
   color: #06b6d4;
+}
+
+.login-header .logo span {
+  font-family: 'Neuropol X', sans-serif;
 }
 
 .login-header h1 {

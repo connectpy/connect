@@ -4,7 +4,15 @@
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
+@font-face {
+  font-family: 'Neuropol X';
+  src: url('../assets/fonts/Neuropol\ X\ Rg.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
+  --fos-font-logo: 'Neuropol X', sans-serif;
   --fos-bg:       #0b1120;
   --fos-bg2:      #0f172a;
   --fos-surface:  #151f35;
@@ -648,3 +656,75 @@
 }
   .fos-compare-arrow { transform: rotate(90deg); }
   .fos-spec-row { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.9rem 1.2rem; }
+
+/* ── NAVBAR Y LOGO ─────────────────────────────────────────── */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 1rem 0;
+  transition: all 0.3s ease;
+}
+
+.navbar.scrolled {
+  background: rgba(11, 17, 32, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.nav-content {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--fos-font-logo);
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+}
+
+.logo svg {
+  color: #06b6d4;
+}
+
+.logo h1 {
+  font-family: var(--fos-font-logo);
+  font-weight: 400;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.nav-links a {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #ffffff;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.5rem;
+  cursor: pointer;
+}

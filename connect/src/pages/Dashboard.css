@@ -1,4 +1,11 @@
 /* src/styles/Dashboard.css */
+@font-face {
+  font-family: 'Neuropol X';
+  src: url('../assets/fonts/Neuropol\ X\ Rg.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 .dashboard-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
@@ -175,8 +182,9 @@
   align-items: center;
   gap: 0.5rem;
   color: #ffffff;
-  font-size: 1rem;
-  font-weight: 700;
+  font-family: 'Neuropol X', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 400;
   padding: 1rem 0;
   padding-left: 1rem;
 }
@@ -187,6 +195,9 @@
 }
 .logo svg {
   color: #06b6d4;
+}
+.logo span {
+  font-family: 'Neuropol X', sans-serif;
 }
 
 .header-actions {

@@ -1,5 +1,13 @@
 /* ===== Variables CSS ===== */
+@font-face {
+  font-family: 'Neuropol X';
+  src: url('../assets/fonts/Neuropol\ X\ Rg.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
+  --font-logo: 'Neuropol X', sans-serif;
   --color-primary: #06b6d4;
   --color-primary-dark: #0891b2;
   --color-secondary: #3b82f6;
@@ -107,13 +115,20 @@ body {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-family: var(--font-logo);
+  font-size: 1.5rem;
+  font-weight: 400;
   color: var(--color-text-white);
+  letter-spacing: 0.05em;
 }
 
 .logo svg {
   color: var(--color-primary);
+}
+
+.logo h1 {
+  font-family: var(--font-logo);
+  font-weight: 400;
 }
 
 .nav-links {
