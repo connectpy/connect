@@ -413,6 +413,19 @@
   .sidebar-overlay {
     display: block;
   }
+
+  .logo img {
+    height: 50px !important;
+  }
+  .logo span {
+    font-size: 1rem;
+  }
+  .empresa-logo img {
+    height: 50px !important;
+  }
+  .empresa-logo span {
+    font-size: 1rem;
+  }
   
   .dashboard-sidebar {
     position: fixed;

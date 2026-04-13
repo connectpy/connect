@@ -653,6 +653,8 @@
   .fos-hero-stats { gap: 1.5rem; }
   .fos-compare-arrow { transform: rotate(90deg); }
   .fos-spec-row { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.9rem 1.2rem; }
+  .logo img { height: 50px; }
+  .logo h1 { font-size: 1.4rem; }
 }
   .fos-compare-arrow { transform: rotate(90deg); }
   .fos-spec-row { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.9rem 1.2rem; }

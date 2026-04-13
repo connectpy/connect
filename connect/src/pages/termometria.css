@@ -503,4 +503,7 @@
   .prod-hero { padding: 100px 0 60px; min-height: auto; }
   .prod-viz-layout { grid-template-columns: 1fr; }
   .prod-gauge-val { font-size: 1.2rem; }
+  .prod-badge { font-size: 0.85rem; }
+  .logo img { height: 50px; }
+  .logo h1 { font-size: 1.4rem; }
 }

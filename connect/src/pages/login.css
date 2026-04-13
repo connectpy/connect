@@ -259,4 +259,11 @@
   .login-card {
     padding: 2rem;
   }
+
+  .login-header .logo img {
+    height: 50px;
+  }
+  .login-header .logo span {
+    font-size: 1rem;
+  }
 }
