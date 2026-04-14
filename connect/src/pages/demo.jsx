@@ -92,9 +92,9 @@ const DEMO_CONFIG = {
           niveles: ['N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7'],
           // matriz [cabo][nivel] = sensor_id
           sensor_matrix: [
-            ['caaty/silo1/C1N1','caaty/silo1/C1N2','caaty/silo1/C1N3','caaty/silo1/C1N4','caaty/silo1/C1N5','caaty/silo1/C1N6','caaty/silo1/C1N7'],
-            ['caaty/silo1/C2N1','caaty/silo1/C2N2','caaty/silo1/C2N3','caaty/silo1/C2N4','caaty/silo1/C2N5','caaty/silo1/C2N6','caaty/silo1/C2N7'],
-            ['caaty/silo1/C3N1','caaty/silo1/C3N2','caaty/silo1/C3N3','caaty/silo1/C3N4','caaty/silo1/C3N5','caaty/silo1/C3N6','caaty/silo1/C3N7'],
+            ['demo/T/S0/C0/T0.fields.temperatura','demo/T/S0/C0/T1.fields.temperatura','demo/T/S0/C0/T2.fields.temperatura','demo/T/S0/C0/T3.fields.temperatura','demo/T/S0/C0/T4.fields.temperatura','demo/T/S0/C0/T5.fields.temperatura','demo/T/S0/C0/T6.fields.temperatura'],
+            ['demo/T/S0/C1/T0.fields.temperatura','demo/T/S0/C1/T1.fields.temperatura','demo/T/S0/C1/T2.fields.temperatura','demo/T/S0/C1/T3.fields.temperatura','demo/T/S0/C1/T4.fields.temperatura','demo/T/S0/C1/T5.fields.temperatura','demo/T/S0/C1/T6.fields.temperatura'],
+            ['demo/T/S0/C2/T0.fields.temperatura','demo/T/S0/C2/T1.fields.temperatura','demo/T/S0/C2/T2.fields.temperatura','demo/T/S0/C2/T3.fields.temperatura','demo/T/S0/C2/T4.fields.temperatura','demo/T/S0/C2/T5.fields.temperatura','demo/T/S0/C2/T6.fields.temperatura'],
           ],
           sensor_hay_grano: 'caaty/silo1/HAY_GRANO',
           temp_min: 15,
