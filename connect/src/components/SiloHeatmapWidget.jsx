@@ -102,9 +102,9 @@ export default function SiloHeatmapWidget({ data: dataProp = {}, label = 'Termom
         textStyle: { color: '#f1f5f9', fontSize: 12 },
         formatter: (params) => {
           const val = Array.isArray(params.value) ? params.value[2] : params.data?.value?.[2];
-          const colLabel = Array.isArray(labels) ? (labels[params.value[0]] ?? params.value[0]) : params.value[0];
-          const rowLabel = Array.isArray(days)   ? (days[params.value[1]]   ?? params.value[1]) : params.value[1];
-          return `<b style="color:#00aae4">${colLabel}</b> — Día ${rowLabel}<br/>
+          const caboLabel = Array.isArray(labels) ? (labels[params.value[0]] ?? params.value[0]) : params.value[0];
+          const sensorNum = (params.value[1] ?? 0) + 1;
+          return `<b style="color:#00aae4">${caboLabel}</b> — Sensor ${sensorNum}<br/>
                   <b style="font-size:15px">${typeof val === 'number' ? val.toFixed(2) : val} °C</b>`;
         },
       },
@@ -131,7 +131,7 @@ export default function SiloHeatmapWidget({ data: dataProp = {}, label = 'Termom
 
       yAxis: {
         type: 'category',
-        data: Array.isArray(days) ? days : [],
+        data: Array.isArray(days) ? days.map((_, i) => i + 1) : [],
         axisLabel: {
           color: 'rgba(255,255,255,0.6)',
           fontSize: 11,

@@ -81,32 +81,39 @@ function SiloResumenRenderer({
 // SiloControlRenderer
 // ─────────────────────────────────────────────────────────────────────────────
 function SiloControlRenderer({
-  sensor_nivel, sensor_hum_grano,
-  sensor_temp_max, sensor_temp_avg, sensor_temp_min,
-  sensor_activo, sensor_fans, sensor_mode,
+  nivel, hum_grano,
+  temp_max, temp_avg, temp_min,
+  activo, fans, mode,
+  timer, start, end,
   siloName, label, grano,
 }) {
-  const nivel     = useSensorValue(sensor_nivel);
-  const humGrano  = useSensorValue(sensor_hum_grano);
-  const tempMax   = useSensorValue(sensor_temp_max);
-  const tempAvg   = useSensorValue(sensor_temp_avg);
-  const tempMin   = useSensorValue(sensor_temp_min);
-  const activo    = useSensorValue(sensor_activo);
-  const fans      = useSensorValue(sensor_fans);
-  const mode      = useSensorValue(sensor_mode);
+  const nivelVal     = useSensorValue(nivel);
+  const humGranoVal  = useSensorValue(hum_grano);
+  const tempMaxVal   = useSensorValue(temp_max);
+  const tempAvgVal   = useSensorValue(temp_avg);
+  const tempMinVal   = useSensorValue(temp_min);
+  const activoVal    = useSensorValue(activo);
+  const fansVal      = useSensorValue(fans);
+  const modeVal      = useSensorValue(mode);
+  const timerVal     = useSensorValue(timer);
+  const startVal     = useSensorValue(start);
+  const endVal       = useSensorValue(end);
 
   return (
     <SiloControlCard
       data={{
-        nivel:         nivel    ?? 0,
-        humedad_grano: humGrano ?? null,
-        temp_max:      tempMax  ?? null,
-        temp_avg:      tempAvg  ?? null,
-        temp_min:      tempMin  ?? null,
+        nivel:         nivelVal    ?? 0,
+        humedad_grano: humGranoVal ?? null,
+        temp_max:      tempMaxVal  ?? null,
+        temp_avg:      tempAvgVal  ?? null,
+        temp_min:      tempMinVal  ?? null,
         grano:         grano    ?? 'S/D',
-        activo:        activo   ? activo > 0 : false,
-        fans_state:    fans     ? fans   > 0 : false,
-        mode:          mode     ?? 'auto',
+        activo:        activoVal   ? activoVal > 0 : false,
+        fans_state:    fansVal     ? fansVal   > 0 : false,
+        mode:          modeVal     ?? 'auto',
+        timer:         timerVal    ? timerVal > 0 : false,
+        start:         startVal    ?? '--:--',
+        end:           endVal      ?? '--:--',
       }}
       siloName={siloName || label || 'Silo'}
     />
@@ -116,15 +123,18 @@ function SiloControlRenderer({
 // ─────────────────────────────────────────────────────────────────────────────
 // SiloHeatmapRenderer
 // Lee la matriz completa de sensor_ids y arma los datos para SiloHeatmapWidget.
-// sensor_matrix: string[][]  →  [cabo][nivel] = sensor_id
+// sensor_matrix:          string[][]  →  [cabo][nivel] = sensor_id de temperatura
+// sensor_hay_grano_matrix: string[][]  →  [cabo][nivel] = sensor_id de hayGrano (1=mostrar, 0=no mostrar)
 // cabos:         string[]    →  etiquetas de columnas
 // niveles:       string[]    →  etiquetas de filas
 // ─────────────────────────────────────────────────────────────────────────────
-function SiloHeatmapRenderer({ sensor_matrix = [], cabos = [], niveles = [], temp_min = 15, temp_max = 40, label }) {
-  const allIds   = sensor_matrix.flat();
+function SiloHeatmapRenderer({ sensor_matrix = [], sensor_hay_grano_matrix = [], cabos = [], niveles = [], temp_min = 15, temp_max = 40, label }) {
+  const tempIds = sensor_matrix.flat();
+  const granoIds = sensor_hay_grano_matrix.flat();
+  const allIds = [...tempIds, ...granoIds].filter(Boolean);
+
   const sensors  = useSensorsSafe(allIds);
 
-  // Construir data en formato [caboIdx, nivelIdx, valor]
   const data      = [];
   const showColor = [];
 
@@ -132,12 +142,17 @@ function SiloHeatmapRenderer({ sensor_matrix = [], cabos = [], niveles = [], tem
     showColor[caboIdx] = [];
     caboSensors.forEach((sensorId, nivelIdx) => {
       const s = sensors[sensorId];
-      if (s?.value !== null && s?.value !== undefined) {
+      const granoId = sensor_hay_grano_matrix[caboIdx]?.[nivelIdx];
+      const g = granoId ? sensors[granoId] : null;
+
+      const hasTemp = s?.value !== null && s?.value !== undefined;
+      const hasGrano = g?.value !== null && g?.value !== undefined;
+      const showColorFlag = hasGrano ? g.value >= 1 : hasTemp;
+
+      if (hasTemp) {
         data.push([caboIdx, nivelIdx, s.value]);
-        showColor[caboIdx][nivelIdx] = true;
-      } else {
-        showColor[caboIdx][nivelIdx] = false;
       }
+      showColor[caboIdx][nivelIdx] = showColorFlag;
     });
   });
 
