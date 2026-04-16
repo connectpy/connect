@@ -116,31 +116,31 @@ const DEMO_CONFIG = {
           max:    40,
           cabos: [
             {
-              id:    'c1',
+              id:    'cabo1',
               label: 'Cabo 1',
               sensorIds: [
-                'caaty/silo1/C1N1','caaty/silo1/C1N2','caaty/silo1/C1N3',
-                'caaty/silo1/C1N4','caaty/silo1/C1N5','caaty/silo1/C1N6','caaty/silo1/C1N7',
+                'demo/T/S0/C0/T0','demo/T/S0/C0/T1','demo/T/S0/C0/T2',
+                'demo/T/S0/C0/T3','demo/T/S0/C0/T4','demo/T/S0/C0/T5','demo/T/S0/C0/T6',
               ],
-              queryConfig: { field: 'value', window: '12h', fn: 'mean' },
+              queryConfig: { field: 'temperatura', window: '1h', fn: 'mean' },
             },
             {
-              id:    'c2',
+              id:    'cabo2',
               label: 'Cabo 2',
               sensorIds: [
-                'caaty/silo1/C2N1','caaty/silo1/C2N2','caaty/silo1/C2N3',
-                'caaty/silo1/C2N4','caaty/silo1/C2N5','caaty/silo1/C2N6','caaty/silo1/C2N7',
+                'demo/T/S0/C1/T0','demo/T/S0/C1/T1','demo/T/S0/C1/T2',
+                'demo/T/S0/C1/T3','demo/T/S0/C1/T4','demo/T/S0/C1/T5','demo/T/S0/C1/T6',
               ],
-              queryConfig: { field: 'value', window: '12h', fn: 'mean' },
+              queryConfig: { field: 'temperatura', window: '1h', fn: 'mean' },
             },
             {
-              id:    'c3',
+              id:    'cabo3',
               label: 'Cabo 3',
               sensorIds: [
-                'caaty/silo1/C3N1','caaty/silo1/C3N2','caaty/silo1/C3N3',
-                'caaty/silo1/C3N4','caaty/silo1/C3N5','caaty/silo1/C3N6','caaty/silo1/C3N7',
+                'demo/T/S0/C2/T0','demo/T/S0/C2/T1','demo/T/S0/C2/T2',
+                'demo/T/S0/C2/T3','demo/T/S0/C2/T4','demo/T/S0/C2/T5','demo/T/S0/C2/T6',
               ],
-              queryConfig: { field: 'value', window: '12h', fn: 'mean' },
+              queryConfig: { field: 'temperatura', window: '1h', fn: 'mean' },
             },
           ],
         },

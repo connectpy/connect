@@ -58,21 +58,6 @@ function WeatherIcon({ temp, size = 32 }) {
   );
 }
 
-// ── Punto animado de estado ────────────────────────────────────────────────
-function PulseDot({ online }) {
-  return (
-    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", marginRight: 6 }}>
-      <span style={{
-        width: 7, height: 7, borderRadius: "50%", display: "block",
-        background: online ? "#22c55e" : "#ef4444",
-        boxShadow: online ? "0 0 6px #22c55e" : "none",
-        animation: online ? "wsPulse 1.8s ease-in-out infinite" : "none",
-      }} />
-      <style>{`@keyframes wsPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0)}}`}</style>
-    </span>
-  );
-}
-
 // ── Componente principal ────────────────────────────────────────────────────
 /**
  * WeatherCard
@@ -213,16 +198,11 @@ export default function WeatherCard({
       }}>
         {/* Badge online/offline */}
         <span style={{
-          display: "inline-flex", alignItems: "center",
-          background: connected ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-          border: `1px solid ${connected ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
-          borderRadius: 50, padding: "4px 12px",
-          fontSize: "0.58rem", fontWeight: 800, letterSpacing: "1.5px",
-          color: connected ? "#22c55e" : "#ef4444",
-          width: "fit-content",
+          fontSize: "0.6rem", padding: "4px 10px", borderRadius: 50, fontWeight: 700,
+          border: connected ? "1px solid rgba(0,170,228,0.5)" : "1px solid rgba(255,255,255,0.1)",
+          color: connected ? "#00aae4" : "rgba(255,255,255,0.3)",
         }}>
-          <PulseDot online={connected} />
-          {connected ? "SISTEMA ACTIVO" : "OFFLINE"}
+          {connected ? "CONECTADO" : "DESCONECTADO"}
         </span>
 
         {/* Punto de rocío */}

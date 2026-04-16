@@ -165,6 +165,23 @@ function SiloHeatmapRenderer({ sensor_matrix = [], sensor_hay_grano_matrix = [],
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SpatialHeatmapRenderer
+// Grilla espacial de sensores con temperatura.
+// layout: string[][] | { sensor_id: string, label: string }[][]
+// ─────────────────────────────────────────────────────────────────────────────
+function SpatialHeatmapRenderer({ layout = [], min = 0, max = 100, unit, label }) {
+  return (
+    <SpatialHeatmapWidget
+      layout={layout}
+      min={min}
+      max={max}
+      unit={unit}
+      label={label}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Helpers — hooks seguros fuera de contexto
 // ─────────────────────────────────────────────────────────────────────────────
 function useSensorValue(sensorId) {
@@ -220,10 +237,11 @@ const SENSOR_RENDERERS = {
 };
 
 const COMPLEX_RENDERERS = {
-  WeatherCard: WeatherCardRenderer,
-  SiloResumen: SiloResumenRenderer,
-  SiloControl: SiloControlRenderer,
-  SiloHeatmap: SiloHeatmapRenderer,
+  WeatherCard:     WeatherCardRenderer,
+  SiloResumen:     SiloResumenRenderer,
+  SiloControl:     SiloControlRenderer,
+  SiloHeatmap:     SiloHeatmapRenderer,
+  SpatialHeatmap:  SpatialHeatmapRenderer,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

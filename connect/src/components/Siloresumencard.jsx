@@ -79,22 +79,12 @@ export default function SiloResumenCard({ data = {}, siloName = 'SILO CENTRAL NÂ
           </span>
         </div>
 
-        {/* Badge estado */}
         <span style={{
-          fontSize: '0.6rem', background: 'rgba(0,0,0,0.3)',
-          padding: '5px 12px', borderRadius: 50,
-          border: connected ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.1)',
-          display: 'flex', alignItems: 'center', gap: 6,
-          color: connected ? '#22c55e' : 'rgba(255,255,255,0.4)',
-          fontWeight: 700, letterSpacing: '1px',
+          fontSize: '0.6rem', padding: '4px 10px', borderRadius: 50, fontWeight: 700,
+          border: connected ? '1px solid rgba(0,170,228,0.5)' : '1px solid rgba(255,255,255,0.1)',
+          color: connected ? '#00aae4' : 'rgba(255,255,255,0.3)',
         }}>
-          <span style={{
-            height: 6, width: 6, background: connected ? '#22c55e' : '#475569',
-            borderRadius: '50%', display: 'inline-block',
-            boxShadow: connected ? '0 0 8px #22c55e' : 'none',
-            animation: connected ? 'siloP 2s infinite' : 'none',
-          }} />
-          {connected ? 'SISTEMA ACTIVO' : 'OFFLINE'}
+          {connected ? 'CONECTADO' : 'DESCONECTADO'}
         </span>
       </div>
 
@@ -208,7 +198,6 @@ export default function SiloResumenCard({ data = {}, siloName = 'SILO CENTRAL NÂ
       </div>
 
       <style>{`
-        @keyframes siloP    { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0)} }
         @keyframes siloSpin { to { transform: rotate(360deg); } }
       `}</style>
     </div>

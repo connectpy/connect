@@ -2,61 +2,71 @@ import { useSensors } from '../hooks/SensorContext';
 
 /**
  * SpatialHeatmapWidget
- * Grilla visual de sensores coloreados por temperatura.
+ * Grilla visual de sensores posicionados espacialmente.
  *
- * Modo nuevo (sensor_ids en layout):
- *   layout: [ ["caaty/secadero/T7","caaty/secadero/T8"], [...] ]
- *   → los valores vienen de SensorContext por polling HTTP
- *   → label de celda: último segmento del sensor_id (T7, T8, ...)
- *   → unidad: tags.unit del primer sensor que tenga valor
+ * JSON de configuración:
+ * {
+ *   layout: [
+ *     // Modo string (usa último segmento como label):
+ *     ["caaty/secadero/T1", "caaty/secadero/T2", "caaty/secadero/T3"],
+ *     ["caaty/secadero/T4", null, "caaty/secadero/T5"],  // null = espacio vacío
  *
- * Modo legacy (fields + topic):
- *   layout: [["T7","T8"], ["T1","T2"]]
- *   fields: ["T1","T2","T7","T8"]
- *   → los valores vienen de props directas (valueMap)
+ *     // Modo objeto (label personalizado):
+ *     [{ sensor_id: "caaty/secadero/T7", label: "Zona A1" }, ...]
+ *   ],
+ *   min: 0,          // valor mínimo del rango
+ *   max: 100,        // valor máximo del rango
+ *   unit: "°C",      // unidad a mostrar
+ *   label: "Mapa de Temperaturas"
+ * }
+ *
+ * Para dejar un espacio vacío usa: null o undefined
  *
  * Props:
- *   layout    : string[][]        ← filas de sensor_ids o field names
- *   valueMap  : { [key]: number } ← override directo (legacy)
- *   unit      : string            ← override de unidad
- *   min       : number
- *   max       : number
- *   label     : string
+ *   layout  : (string | { sensor_id: string, label: string } | null)[][]
+ *   unit    : string
+ *   min     : number
+ *   max     : number
+ *   label   : string
  */
 export default function SpatialHeatmapWidget({
-  layout   = [],
-  valueMap,        // legacy
-  unit:     unitProp,
+  layout     = [],
+  unit:      unitProp,
   min = 0,
   max = 100,
   label,
 }) {
-  // Aplanar todos los ids del layout
-  const allIds = layout.flat();
+  // Normalizar layout: strings → { sensor_id, label }, null/undefined → null
+  const normalizedLayout = layout.map(row =>
+    row.map(cell => {
+      if (cell === null || cell === undefined) {
+        return null;
+      }
+      if (typeof cell === 'string') {
+        return { sensor_id: cell, label: cell.split('/').pop() };
+      }
+      return { sensor_id: cell.sensor_id, label: cell.label ?? cell.sensor_id.split('/').pop() };
+    })
+  );
 
-  // SensorContext — seguro si no hay contexto o si son field names legacy
+  const allIds = normalizedLayout.flat().filter(Boolean).map(c => c.sensor_id);
+
   const sensorData = useSensorsSafe(allIds);
 
-  // Resolver valor y label de celda
-  function resolveCell(key) {
-    if (valueMap && valueMap[key] !== undefined) {
-      // Modo legacy
-      return { value: valueMap[key], label: key };
-    }
-    const s = sensorData[key];
+  function resolveCell(cell) {
+    if (!cell) return null;
+    const s = sensorData[cell.sensor_id];
     return {
       value: s?.value  ?? null,
-      label: key.split('/').pop(),   // "caaty/secadero/T1" → "T1"
+      label: cell.label,
     };
   }
 
-  // Unidad: prop > primer sensor con unit
   const unit = unitProp ?? Object.values(sensorData).find(s => s?.unit)?.unit ?? '';
 
-  // Contar sensores activos
-  const totalCount   = allIds.length;
-  const activeCount  = allIds.filter(id => resolveCell(id).value !== null).length;
-  const hasAnyData   = activeCount > 0;
+  const totalCount  = allIds.length;
+  const activeCount = normalizedLayout.flat().filter(c => c && resolveCell(c)?.value !== null).length;
+  const hasAnyData  = activeCount > 0;
 
   return (
     <div style={{ width: '100%', padding: '8px 0' }}>
@@ -88,13 +98,24 @@ export default function SpatialHeatmapWidget({
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:8, alignItems:'center' }}>
-          {layout.map((row, rowIdx) => (
+          {normalizedLayout.map((row, rowIdx) => (
             <div key={rowIdx} style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
-              {row.map(key => {
-                const { value, label: cellLabel } = resolveCell(key);
+              {row.map((cell, cellIdx) => {
+                if (cell === null) {
+                  return (
+                    <div key={`${rowIdx}-${cellIdx}`}
+                      style={{
+                        width:72, height:72, borderRadius:10,
+                        background:'transparent', border:'1px dashed rgba(255,255,255,0.05)',
+                        flexShrink: 0,
+                      }}
+                    />
+                  );
+                }
+                const { value, label: cellLabel } = resolveCell(cell);
                 const { bg, text, border } = getTempColor(value, min, max);
                 return (
-                  <div key={key}
+                  <div key={`${rowIdx}-${cellIdx}`}
                     title={`${cellLabel}: ${value !== null ? `${value}${unit}` : 'Sin datos'}`}
                     style={{
                       width:72, height:72, borderRadius:10,

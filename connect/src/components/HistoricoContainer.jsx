@@ -309,8 +309,7 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
         backgroundColor: '#0f172a', borderColor: '#1e293b', borderWidth: 1,
         textStyle: { color: '#f1f5f9', fontSize: 12 },
         formatter: p => {
-          const [fi, si, temp] = p.value;
-          const tiene = p.seriesIndex === 0;
+          const [fi, si, temp, tiene] = p.value;
           return `
             <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:4px">${fechas[fi]}</div>
             <b style="color:#00aae4">${sensors[si]}</b><br/>
@@ -340,23 +339,22 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
         splitLine: { show:false },
       },
       visualMap: {
-        min, max, show:false, seriesIndex:0,
-        inRange: { color:['#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444'] },
+        min, max, show: false,
+        calculable: false,
+        inRange: { color: ['#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444'] },
       },
       series: [
         {
-          name:'Con grano', type:'heatmap', data:dataConGrano,
-          label: { show:true, fontSize:10, fontWeight:700, color:'#fff',
+          name: 'Temperatura',
+          type: 'heatmap',
+          data: [...dataConGrano, ...dataSinGrano].map(d => {
+            const tiene = dataConGrano.some(g => g[0] === d[0] && g[1] === d[1]);
+            return [...d, tiene ? 1 : 0];
+          }),
+          label: { show: true, fontSize: 10, fontWeight: 700, color: '#fff',
                    formatter: p => Number(p.value[2]).toFixed(1) },
-          itemStyle: { borderWidth:2, borderColor:'rgba(5,12,25,0.8)', borderRadius:3 },
-          emphasis: { itemStyle:{ shadowBlur:10, shadowColor:'rgba(0,170,228,0.4)', borderColor:'#00aae4', borderWidth:2 } },
-        },
-        {
-          name:'Sin grano', type:'heatmap', data:dataSinGrano,
-          label: { show:true, fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.2)',
-                   formatter: p => Number(p.value[2]).toFixed(1) },
-          itemStyle: { color:'rgba(22,32,50,0.95)', borderWidth:2, borderColor:'rgba(5,12,25,0.8)', borderRadius:3 },
-          emphasis: { itemStyle:{ color:'rgba(40,55,80,0.95)', borderColor:'rgba(100,116,139,0.4)', borderWidth:2 } },
+          itemStyle: { borderWidth: 2, borderColor: 'rgba(5,12,25,0.8)', borderRadius: 3 },
+          emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,170,228,0.4)', borderColor: '#00aae4', borderWidth: 2 } },
         },
       ],
     }, true);
