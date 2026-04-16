@@ -75,7 +75,7 @@ const DEMO_CONFIG = {
           temp_max:   'demo/silo1.fields.temperaturaMaxima',
           temp_avg:   'demo/silo1.fields.temperaturaMedia',
           temp_min:   'demo/silo1.fields.temperaturaMinima',
-          activo:     'demo/silo1.fields.activo',
+          activo:     'demo/silo1.fields.connected',
           fans:       'demo/silo1.fields.fan',
           mode:       'demo/silo1.fields.fanMode',
           timer:      'demo/silo1.fields.fanTimer',

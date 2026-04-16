@@ -251,9 +251,6 @@ export default function SiloControlCard({ data = {}, siloName = 'Silo Nro. 1' })
           }}>
             {fansState ? 'VENTILADORES ENCENDIDOS' : 'VENTILADORES APAGADOS'}
           </span>
-          <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: 2, display: 'block' }}>
-            Estado físico confirmado
-          </span>
         </div>
       </div>
 
