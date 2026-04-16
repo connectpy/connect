@@ -242,6 +242,9 @@ function transformData(data, sensorIds, tempField = 'value') {
     const hRow  = { fecha };
     const gRow  = { fecha };
 
+    const tieneGrano = {};
+    let hayAireacion = false;
+
     sensorIds.forEach(id => {
       const label = labelOf(id);
       const punto = idx[id][ts];
@@ -249,18 +252,30 @@ function transformData(data, sensorIds, tempField = 'value') {
         const tempValue = punto[tempField] ?? punto.value;
         hRow[label] = tempValue;
         gRow[label] = hasGrano(punto);
+        tieneGrano[label] = hasGrano(punto);
 
-        if (!linaAcc[ts]) linaAcc[ts] = { sum: 0, count: 0, aireacion: false };
-        linaAcc[ts].sum   += Number(tempValue);
-        linaAcc[ts].count += 1;
         if (punto.aireacion === true || punto.aireacion === 1) {
-          linaAcc[ts].aireacion = true;
+          hayAireacion = true;
         }
       }
     });
 
     heatmap.push(hRow);
     hayGrano.push(gRow);
+
+    if (hayAireacion) return;
+
+    if (!linaAcc[ts]) linaAcc[ts] = { sum: 0, count: 0, aireacion: false };
+    sensorIds.forEach(id => {
+      const label = labelOf(id);
+      const punto = idx[id][ts];
+      if (punto && tieneGrano[label]) {
+        const tempValue = punto[tempField] ?? punto.value;
+        linaAcc[ts].sum   += Number(tempValue);
+        linaAcc[ts].count += 1;
+      }
+    });
+    linaAcc[ts].aireacion = hayAireacion;
   });
 
   const linea = timestamps

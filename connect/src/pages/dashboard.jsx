@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import whitelogo from '../assets/whitelogo.svg';
 import './Dashboard.css';
-import { MqttProvider, useMqttStatus } from '../hooks/MqttContext';
+import { SensorProvider, useSensorStatus } from '../hooks/SensorContext';
 import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -12,7 +12,7 @@ import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx';
 // Flujo:
 //   1. Verifica sesión con Supabase
 //   2. Carga dashboard_config de la tabla EMPRESAS
-//   3. Usa config.ws_url para conectar el MqttProvider
+//   3. Usa config.api_base para conectar el SensorProvider
 //   4. Cada widget se suscribe a su topic via useTopic()
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
@@ -78,45 +78,30 @@ export default function Dashboard() {
     );
   }
 
-  if (!config?.ws_url) {
-    return (
-      <div className="dashboard-loading">
-        <p style={{ color: '#ef4444' }}>
-          No se encontró configuración de WebSocket para esta empresa.
-        </p>
-      </div>
-    );
-  }
+  const API_BASE = config?.api_base || 'https://nodered.connectparaguay.com';
+  const clientId = config?.client_id || 'demo';
 
-  // ws_url viene del JSON de la DB: config.ws_url
+  console.log('Dashboard config:', config);
+  console.log('API_BASE:', API_BASE);
+  console.log('clientId:', clientId);
+
   return (
-    <MqttProvider url={config.ws_url}>
+    <SensorProvider clientId={clientId} apiBase={API_BASE}>
       <DashboardInner
         user={user}
         config={config}
         companyName={companyName}
       />
-    </MqttProvider>
+    </SensorProvider>
   );
 }
 
-// ─── Inner (dentro del MqttProvider, puede usar useMqttStatus) ───────────────
+// ─── Inner (dentro del SensorProvider, puede usar useSensorStatus) ───────────
 function DashboardInner({ user, config, companyName }) {
   const navigate = useNavigate();
-  const { status, lastUpdate, sendMessage } = useMqttStatus();
+  const { status, lastUpdate } = useSensorStatus();
   const [activeTabId, setActiveTabId] = useState(config?.tabs?.[0]?.id || null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Al conectar, avisar a Node-RED que hay un cliente activo
-  useEffect(() => {
-    if (status === 'connected') {
-      sendMessage({
-        action: 'get_current_status',
-        client: 'dashboard_web',
-        company: companyName,
-      });
-    }
-  }, [status, sendMessage, companyName]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -125,13 +110,13 @@ function DashboardInner({ user, config, companyName }) {
 
   const activeTab = config?.tabs?.find((tab) => tab.id === activeTabId);
 
-  const WS_STATUS = {
+  const STATUS_MAP = {
     connected:    { color: '#22c55e', label: 'Conectado',   glow: '#22c55e' },
     connecting:   { color: '#f59e0b', label: 'Conectando…', glow: '#f59e0b' },
     error:        { color: '#ef4444', label: 'Error',        glow: '#ef4444' },
     disconnected: { color: '#475569', label: 'Desconectado', glow: 'transparent' },
   };
-  const { color: dotColor, label: dotLabel, glow: dotGlow } = WS_STATUS[status] || WS_STATUS.disconnected;
+  const { color: dotColor, label: dotLabel, glow: dotGlow } = STATUS_MAP[status] || STATUS_MAP.disconnected;
 
   return (
     <div className="dashboard-page">
@@ -167,7 +152,7 @@ function DashboardInner({ user, config, companyName }) {
             </div>
 
             <div className="header-actions">
-              {/* Estado WebSocket */}
+              {/* Estado de conexión */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#64748b' }}>
                 <div style={{
                   width: 8, height: 8, borderRadius: '50%',
@@ -177,6 +162,11 @@ function DashboardInner({ user, config, companyName }) {
                   transition: 'background 0.3s, box-shadow 0.3s',
                 }} />
                 {dotLabel}
+                {lastUpdate && (
+                  <span style={{ color: '#334155', marginLeft: 4 }}>
+                    · {lastUpdate.toLocaleTimeString('es-PY')}
+                  </span>
+                )}
               </div>
               <div className="user-info">
                 <span>{user?.email}</span>
