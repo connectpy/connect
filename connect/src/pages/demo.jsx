@@ -122,7 +122,7 @@ const DEMO_CONFIG = {
                 'demo/T/S0/C0/T0','demo/T/S0/C0/T1','demo/T/S0/C0/T2',
                 'demo/T/S0/C0/T3','demo/T/S0/C0/T4','demo/T/S0/C0/T5','demo/T/S0/C0/T6',
               ],
-              queryConfig: { field: 'temperatura', window: '1h', fn: 'mean' },
+              queryConfig: { fields: ['temperatura', 'hayGrano'], window: '1h', fn: 'mean' },
             },
             {
               id:    'cabo2',
@@ -131,7 +131,7 @@ const DEMO_CONFIG = {
                 'demo/T/S0/C1/T0','demo/T/S0/C1/T1','demo/T/S0/C1/T2',
                 'demo/T/S0/C1/T3','demo/T/S0/C1/T4','demo/T/S0/C1/T5','demo/T/S0/C1/T6',
               ],
-              queryConfig: { field: 'temperatura', window: '1h', fn: 'mean' },
+              queryConfig: { fields: ['temperatura', 'hayGrano'], window: '1h', fn: 'mean' },
             },
             {
               id:    'cabo3',
@@ -140,7 +140,7 @@ const DEMO_CONFIG = {
                 'demo/T/S0/C2/T0','demo/T/S0/C2/T1','demo/T/S0/C2/T2',
                 'demo/T/S0/C2/T3','demo/T/S0/C2/T4','demo/T/S0/C2/T5','demo/T/S0/C2/T6',
               ],
-              queryConfig: { field: 'temperatura', window: '1h', fn: 'mean' },
+              queryConfig: { fields: ['temperatura', 'hayGrano'], window: '1h', fn: 'mean' },
             },
           ],
         },

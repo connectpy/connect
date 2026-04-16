@@ -54,11 +54,16 @@ export default function HistoricoContainer({
     if (!caboActivo) return;
     const cfg = caboActivo.queryConfig || {};
 
+    const rawFields = cfg.fields ?? cfg.field;
+    const fields = rawFields
+      ? (Array.isArray(rawFields) ? rawFields : [rawFields])
+      : ['value', 'hayGrano'];
+
     await query({
       sensorIds: caboActivo.sensorIds || [],
       desde:     `${from}T00:00:00Z`,
       hasta:     `${to}T23:59:59Z`,
-      field:     cfg.field  || 'value',
+      fields,
       window:    cfg.window || '1h',
       fn:        cfg.fn     || 'mean',
     });
@@ -66,8 +71,11 @@ export default function HistoricoContainer({
   }, [caboActivo, from, to, query]);
 
   // Transformar respuesta del backend para los gráficos
-  // data = { [sensorId]: [{ timestamp, value, hay_grano? }] }
-  const { sensors, heatmap, hayGrano, linea } = transformData(data, caboActivo?.sensorIds || []);
+  const { sensors, heatmap, hayGrano, linea } = transformData(
+    data,
+    caboActivo?.sensorIds || [],
+    caboActivo?.queryConfig?.fields?.[0] || 'value'
+  );
 
   // ── Estilos ────────────────────────────────────────────────────────────────
   const inputStyle = {
@@ -95,25 +103,24 @@ export default function HistoricoContainer({
         {/* Cabos */}
         <div>
           <label style={labelCss}>Cabo</label>
-          <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+          <select
+            value={cabo ?? ''}
+            onChange={e => { setCabo(e.target.value); setQueried(false); }}
+            style={{
+              ...inputStyle,
+              minWidth: 140,
+              cursor: 'pointer',
+              appearance: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 10px center',
+              paddingRight: 32,
+            }}
+          >
             {cabos.map(c => (
-              <button key={c.id} onClick={() => { setCabo(c.id); setQueried(false); }}
-                style={{
-                  padding:'7px 16px', border:'none', borderRadius:8,
-                  cursor:'pointer', fontSize:12, fontWeight:700, transition:'all 0.18s',
-                  background: cabo === c.id
-                    ? 'linear-gradient(135deg,#00aae4,#0076b3)'
-                    : 'rgba(255,255,255,0.05)',
-                  color:  cabo === c.id ? '#fff' : 'rgba(255,255,255,0.4)',
-                  border: cabo === c.id
-                    ? '1px solid rgba(0,170,228,0.5)'
-                    : '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: cabo === c.id ? '0 0 12px rgba(0,170,228,0.25)' : 'none',
-                }}>
-                {c.label}
-              </button>
+              <option key={c.id} value={c.id}>{c.label}</option>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Desde */}
@@ -186,21 +193,22 @@ export default function HistoricoContainer({
 // transformData
 // Convierte la respuesta del backend en las estructuras que usan los gráficos.
 //
-// Entrada: data = { [sensorId]: [{ timestamp, value, hay_grano?, aireacion? }] }
+// Entrada:
+//   data = { [sensorId]: [{ timestamp, [tempField]: value, hayGrano?, hay_grano? }] }
+//   sensorIds = string[]
+//   tempField = nombre del campo de temperatura (ej: 'value', 'temperatura')
 // Salida:
 //   sensors  : ['T1','T2',...]              ← parte final del sensorId
-//   heatmap  : [{ fecha, T1, T2, ... }]    ← agrupado por timestamp
-//   hayGrano : [{ fecha, T1, T2, ... }]    ← booleanos por timestamp
+//   heatmap  : [{ fecha, T1, T2, ... }]    ← valores de temperatura por timestamp
+//   hayGrano : [{ fecha, T1, T2, ... }]    ← booleanos (true = hay grano → se colorea)
 //   linea    : [{ timestamp, temp, aireacion }]  ← promedio de todos los sensores
 // ─────────────────────────────────────────────────────────────────────────────
-function transformData(data, sensorIds) {
+function transformData(data, sensorIds, tempField = 'value') {
   if (!data || !sensorIds.length) return { sensors: [], heatmap: [], hayGrano: [], linea: [] };
 
-  // Etiqueta corta del sensor (último segmento del id)
   const labelOf = id => id.split('/').pop();
   const sensors = sensorIds.map(labelOf);
 
-  // Reunir todos los timestamps únicos
   const tsSet = new Set();
   sensorIds.forEach(id => {
     (data[id] || []).forEach(p => tsSet.add(p.timestamp));
@@ -213,7 +221,6 @@ function transformData(data, sensorIds) {
          + ' ' + d.toLocaleTimeString('es-PY', { hour:'2-digit', minute:'2-digit' });
   };
 
-  // Índice rápido: { sensorId: { timestamp: punto } }
   const idx = {};
   sensorIds.forEach(id => {
     idx[id] = {};
@@ -222,7 +229,13 @@ function transformData(data, sensorIds) {
 
   const heatmap  = [];
   const hayGrano = [];
-  const linaAcc  = {};   // { timestamp: { sum, count, aireacion } }
+  const linaAcc  = {};
+
+  const hasGrano = (punto) => {
+    if (!punto) return false;
+    const val = punto.hayGrano ?? punto.hay_grano;
+    return val === true || val === 1 || val === 'true' || val === '1';
+  };
 
   timestamps.forEach(ts => {
     const fecha = formatFecha(ts);
@@ -233,12 +246,12 @@ function transformData(data, sensorIds) {
       const label = labelOf(id);
       const punto = idx[id][ts];
       if (punto) {
-        hRow[label] = punto.value;
-        gRow[label] = punto.hay_grano === true || punto.hay_grano === 1 || punto.hay_grano === 'true';
+        const tempValue = punto[tempField] ?? punto.value;
+        hRow[label] = tempValue;
+        gRow[label] = hasGrano(punto);
 
-        // Acumular para la línea
         if (!linaAcc[ts]) linaAcc[ts] = { sum: 0, count: 0, aireacion: false };
-        linaAcc[ts].sum   += Number(punto.value);
+        linaAcc[ts].sum   += Number(tempValue);
         linaAcc[ts].count += 1;
         if (punto.aireacion === true || punto.aireacion === 1) {
           linaAcc[ts].aireacion = true;
@@ -284,8 +297,7 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
     const granoIdx = {};
     hayGrano.forEach(r => { granoIdx[r.fecha] = r; });
 
-    const dataConGrano = [];
-    const dataSinGrano = [];
+    const modifiedData = [];
 
     heatmap.forEach((row, fi) => {
       const gr = granoIdx[row.fecha] || {};
@@ -293,8 +305,17 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
         const t = row[s];
         if (t == null) return;
         const tiene = gr[s] === true;
-        if (tiene) dataConGrano.push([fi, si, Number(t)]);
-        else       dataSinGrano.push([fi, si, Number(t)]);
+        const value = [fi, si, Number(t)];
+
+        if (!tiene) {
+          modifiedData.push({
+            value,
+            itemStyle: { color: 'rgba(255,255,255,0.06)' },
+            label: { color: 'rgba(255,255,255,0.2)' },
+          });
+        } else {
+          modifiedData.push(value);
+        }
       });
     });
 
@@ -309,11 +330,14 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
         backgroundColor: '#0f172a', borderColor: '#1e293b', borderWidth: 1,
         textStyle: { color: '#f1f5f9', fontSize: 12 },
         formatter: p => {
-          const [fi, si, temp, tiene] = p.value;
+          const val = Array.isArray(p.value) ? p.value[2] : p.data?.value?.[2];
+          const fi = Array.isArray(p.value) ? p.value[0] : p.data?.value?.[0];
+          const si = Array.isArray(p.value) ? p.value[1] : p.data?.value?.[1];
+          const tiene = p.data?.itemStyle == null;
           return `
             <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:4px">${fechas[fi]}</div>
             <b style="color:#00aae4">${sensors[si]}</b><br/>
-            <b style="font-size:17px">${Number(temp).toFixed(1)} ${unit}</b><br/>
+            <b style="font-size:17px">${Number(val).toFixed(1)} ${unit}</b><br/>
             <span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:4px;
               font-size:10px;font-weight:700;
               background:${tiene ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.15)'};
@@ -340,23 +364,20 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
       },
       visualMap: {
         min, max, show: false,
-        calculable: false,
         inRange: { color: ['#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444'] },
       },
-      series: [
-        {
-          name: 'Temperatura',
-          type: 'heatmap',
-          data: [...dataConGrano, ...dataSinGrano].map(d => {
-            const tiene = dataConGrano.some(g => g[0] === d[0] && g[1] === d[1]);
-            return [...d, tiene ? 1 : 0];
-          }),
-          label: { show: true, fontSize: 10, fontWeight: 700, color: '#fff',
-                   formatter: p => Number(p.value[2]).toFixed(1) },
-          itemStyle: { borderWidth: 2, borderColor: 'rgba(5,12,25,0.8)', borderRadius: 3 },
-          emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,170,228,0.4)', borderColor: '#00aae4', borderWidth: 2 } },
-        },
-      ],
+      series: [{
+        name: 'Temperatura',
+        type: 'heatmap',
+        data: modifiedData,
+        label: { show: true, fontSize: 10, fontWeight: 700, color: '#fff',
+                 formatter: p => {
+                   const val = Array.isArray(p.value) ? p.value[2] : p.data?.value?.[2];
+                   return Number(val).toFixed(1);
+                 }},
+        itemStyle: { borderWidth: 2, borderColor: 'rgba(5,12,25,0.8)', borderRadius: 3 },
+        emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,170,228,0.4)', borderColor: '#00aae4', borderWidth: 2 } },
+      }],
     }, true);
   }, [heatmap, hayGrano, sensors, unit, min, max]);
 

@@ -122,29 +122,28 @@ export function SensorProvider({ clientId, apiBase = 'https://nodered.connectpar
 
   // ── Función de consulta histórica ─────────────────────────────────────────
   // Llamada manualmente desde componentes (botón Consultar).
-  // Devuelve { [sensorId]: [{ timestamp, value }] }
+  // Devuelve { [sensorId]: [{ timestamp, value, ...fields }] }
   const fetchHistorico = useCallback(async ({
     sensorIds,   // string[]
     desde,       // ISO string o 'YYYY-MM-DD'
     hasta,       // ISO string o 'YYYY-MM-DD'
-    field,       // 'value' | 'humedad' | 'hay_grano' | ...
+    fields,      // string | string[]  (ej: 'value' o ['value', 'hayGrano'])
     window: win, // '1h' | '12h' | '1d' ...
     fn,          // 'mean' | 'last' | 'median'
   }) => {
+    const fieldsStr = Array.isArray(fields) ? fields.join(',') : (fields || 'value');
     const params = new URLSearchParams({
       sensorId: Array.isArray(sensorIds) ? sensorIds.join(',') : sensorIds,
       desde,
       hasta,
-      field,
-      window: win,
-      fn,
+      field: fieldsStr,
+      window: win || '1h',
+      fn: fn || 'mean',
     });
 
     const res = await fetch(`${apiBase}/api/consulta/${clientId}?${params}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
-    // Respuesta esperada: { [sensorId]: [{ timestamp, value }] }
-    // o si es un solo sensor: [{ timestamp, value }]
   }, [clientId, apiBase]);
 
   return (
