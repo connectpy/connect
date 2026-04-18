@@ -277,7 +277,9 @@ function ContainerWidget({ widget }) {
   return (
     <div style={{ display:'flex', flexDirection:'row', gap:16, width:'100%', flexWrap:'wrap' }}>
       {(widget.charts || []).map(chart => (
-        <ChartRenderer key={chart.id} chart={chart} />
+        <div key={chart.id} style={{ flex: '1 1 300px', minWidth: 0 }}>
+          <ChartRenderer chart={chart} />
+        </div>
       ))}
     </div>
   );
