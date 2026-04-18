@@ -1,11 +1,11 @@
-import { useTopic } from '../hooks/MqttContext';
+import { useSensor } from '../hooks/SensorContext';
 
 /**
  * ValueCardWidget
- * Muestra el valor actual de un topic con estilo de tarjeta.
+ * Muestra el valor actual de un sensor con estilo de tarjeta.
  *
  * Config:
- *   topic      : "estacion/temperatura"
+ *   sensor_id  : "caaty/secadero/T1.fields.temperatura"
  *   title      : "Temperatura"
  *   unit       : "°C"
  *   icon       : "🌡️"         (opcional, emoji o string)
@@ -18,15 +18,19 @@ import { useTopic } from '../hooks/MqttContext';
  *   ]
  */
 export default function ValueCardWidget({
-  topic,
+  sensor_id,
   title = 'Valor',
-  unit = '',
+  unit: unitProp = '',
   icon = null,
   color = '#3b82f6',
   decimals = 1,
   thresholds = null,
 }) {
-  const { current, lastUpdate } = useTopic(topic);
+  const sensor = useSensorSafe(sensor_id);
+  
+  const current = sensor?.value ?? null;
+  const unit = unitProp || sensor?.unit || '';
+  const lastUpdate = null; // SensorContext no provee timestamp por ahora
 
   const displayValue = current !== null ? parseFloat(current).toFixed(decimals) : '—';
 
@@ -89,4 +93,13 @@ export default function ValueCardWidget({
       }} />
     </div>
   );
+}
+
+function useSensorSafe(sensorId) {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useSensor(sensorId || '__none__');
+  } catch {
+    return null;
+  }
 }

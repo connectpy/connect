@@ -97,56 +97,57 @@ export default function SpatialHeatmapWidget({
           <style>{`@keyframes shPulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2);background:#06b6d4}}`}</style>
         </div>
       ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:8, alignItems:'center' }}>
-          {normalizedLayout.map((row, rowIdx) => (
-            <div key={rowIdx} style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
-              {row.map((cell, cellIdx) => {
-                if (cell === null) {
-                  return (
-                    <div key={`${rowIdx}-${cellIdx}`}
-                      style={{
-                        width:72, height:72, borderRadius:10,
-                        background:'transparent', border:'1px dashed rgba(255,255,255,0.05)',
-                        flexShrink: 0,
-                      }}
-                    />
-                  );
-                }
-                const { value, label: cellLabel } = resolveCell(cell);
-                const { bg, text, border } = getTempColor(value, min, max);
-                return (
-                  <div key={`${rowIdx}-${cellIdx}`}
-                    title={`${cellLabel}: ${value !== null ? `${value}${unit}` : 'Sin datos'}`}
-                    style={{
-                      width:72, height:72, borderRadius:10,
-                      background:bg, border:`1.5px solid ${border}`,
-                      display:'flex', flexDirection:'column', alignItems:'center',
-                      justifyContent:'center', gap:2, cursor:'default', position:'relative',
-                      overflow:'hidden', transition:'background 0.6s, border-color 0.6s',
-                    }}>
-                    <div style={{
-                      position:'absolute', inset:0,
-                      background:`radial-gradient(circle at 30% 30%, ${border}22, transparent 70%)`,
-                      pointerEvents:'none',
-                    }} />
-                    <span style={{ fontSize:10, color:'#64748b', fontWeight:600, letterSpacing:'0.05em', zIndex:1 }}>
-                      {cellLabel}
-                    </span>
-                    <span style={{
-                      fontSize: value !== null ? 18 : 14, fontWeight:800, lineHeight:1, zIndex:1,
-                      color: value !== null ? text : '#334155',
-                      fontVariantNumeric:'tabular-nums', transition:'color 0.6s',
-                    }}>
-                      {value !== null ? parseFloat(value).toFixed(1) : '—'}
-                    </span>
-                    {value !== null && (
-                      <span style={{ fontSize:9, color:'#64748b', zIndex:1 }}>{unit}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: `repeat(${normalizedLayout[0]?.length || 1}, 72px)`,
+          gap: 8,
+          justifyContent: 'center'
+        }}>
+          {normalizedLayout.flat().map((cell, flatIdx) => {
+            if (cell === null) {
+              return (
+                <div key={`empty-${flatIdx}`}
+                  style={{
+                    width: 72, height: 72, borderRadius: 10,
+                    background: 'transparent', border: '1px dashed rgba(255,255,255,0.05)',
+                    flexShrink: 0,
+                  }}
+                />
+              );
+            }
+            const { value, label: cellLabel } = resolveCell(cell);
+            const { bg, text, border } = getTempColor(value, min, max);
+            return (
+              <div key={`cell-${flatIdx}`}
+                title={`${cellLabel}: ${value !== null ? `${value}${unit}` : 'Sin datos'}`}
+                style={{
+                  width: 72, height: 72, borderRadius: 10,
+                  background: bg, border: `1.5px solid ${border}`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  justifyContent: 'center', gap: 2, cursor: 'default', position: 'relative',
+                  overflow: 'hidden', transition: 'background 0.6s, border-color 0.6s',
+                }}>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: `radial-gradient(circle at 30% 30%, ${border}22, transparent 70%)`,
+                  pointerEvents: 'none',
+                }} />
+                <span style={{ fontSize: 10, color: '#64748b', fontWeight: 600, letterSpacing: '0.05em', zIndex: 1 }}>
+                  {cellLabel}
+                </span>
+                <span style={{
+                  fontSize: value !== null ? 18 : 14, fontWeight: 800, lineHeight: 1, zIndex: 1,
+                  color: value !== null ? text : '#334155',
+                  fontVariantNumeric: 'tabular-nums', transition: 'color 0.6s',
+                }}>
+                  {value !== null ? parseFloat(value).toFixed(1) : '—'}
+                </span>
+                {value !== null && (
+                  <span style={{ fontSize: 9, color: '#64748b', zIndex: 1 }}>{unit}</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
