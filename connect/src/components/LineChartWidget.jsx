@@ -1,33 +1,35 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import * as echarts from 'echarts';
-import { useSensor } from '../hooks/SensorContext';
+import { useHistorico } from '../hooks/SensorContext';
 import { WaitingPlaceholder } from './GaugeWidget';
 
 const RANGE_MS = {
   '-1h':  3600000,   '-3h':  10800000,
   '-6h':  21600000,  '-24h': 86400000,
-  '-7d':  604800000,
+  '-7d': 604800000,
 };
 
 /**
  * LineChartWidget
  *
- * Modo nuevo (sensor_id):
- *   <LineChartWidget sensor_id="caaty/secadero/T1" label="T1" />
- *   → acumula la serie en tiempo real con los valores del polling HTTP
- *   → unidad automática desde tags.unit
+ * Modo consulta historica (sensor_id + timeRange):
+ *   <LineChartWidget sensor_id="caaty/secadero/T1" timeRange="-24h" />
+ *   → consulta api/consulta/{clientId} automaticamente
+ *   → unidad automatica desde tags.unit
  *
  * Modo legacy (series como prop):
  *   <LineChartWidget series={[{timestamp, value}]} unit="°C" label="T1" />
  *
  * Props:
- *   sensor_id : string
+ *   sensor_id : string                 ← ID del sensor para consulta historica
  *   series    : [{ timestamp, value }]   ← override directo
  *   label     : string
  *   unit      : string
  *   timeRange : '-1h' | '-3h' | '-6h' | '-24h' | '-7d'
  *   color     : string
  *   showArea  : boolean
+ *   window    : '1h' | '12h' | '1d'   ← ventana de agregacion
+ *   fn        : 'mean' | 'last' | 'max' | 'min'  ← funcion de agregacion
  */
 export default function LineChartWidget({
   sensor_id,
@@ -37,16 +39,38 @@ export default function LineChartWidget({
   timeRange = '-24h',
   color     = '#06b6d4',
   showArea  = true,
+  window = '1h',
+  fn = 'mean',
 }) {
-  // SensorContext — seguro si no hay contexto
-  const sensor = useSensorSafe(sensor_id);
-
-  // Fuente de datos: prop directa > SensorContext
-  const rawSeries = seriesProp !== undefined ? seriesProp : (sensor?.series || []);
-  const unit      = unitProp   !== undefined ? unitProp   : (sensor?.unit  || '');
-
   const chartRef      = useRef(null);
   const chartInstance = useRef(null);
+
+  // Si hay sensor_id, usar useHistorico para obtener datos
+  const { query, data, loading, error } = useHistorico();
+  const [hasQueried, setHasQueried] = useState(false);
+
+  // Trigger consulta cuando cambia sensor_id o timeRange
+  useEffect(() => {
+    if (!sensor_id || hasQueried) return;
+
+    const now = new Date();
+    const desde = new Date(now.getTime() - (RANGE_MS[timeRange] || RANGE_MS['-24h']));
+
+    query({
+      sensorIds: [sensor_id],
+      desde: desde.toISOString(),
+      hasta: now.toISOString(),
+      fields: 'value',
+      window: window,
+      fn: fn,
+    }).then(() => setHasQueried(true));
+  }, [sensor_id, timeRange, window, fn, query, hasQueried]);
+
+  // Fuente de datos: prop directa > historico query
+  const rawSeries = seriesProp || (data?.[sensor_id] || []);
+  const unit = unitProp || '';
+
+  const hasData = rawSeries.length > 0;
 
   useEffect(() => {
     if (chartRef.current && !chartInstance.current) {
@@ -139,20 +163,17 @@ export default function LineChartWidget({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '300px' }}>
-      {points.length === 0 && (
-        <WaitingPlaceholder text={sensor_id ? `Esperando datos de ${sensor_id}…` : 'Sin datos'} />
+      {loading && (
+        <WaitingPlaceholder text={`Cargando ${label}…`} />
+      )}
+      {error && (
+        <WaitingPlaceholder text={`Error: ${error}`} />
+      )}
+      {!loading && !error && points.length === 0 && (
+        <WaitingPlaceholder text={sensor_id ? `Sin datos para ${label}` : 'Sin datos'} />
       )}
       <div ref={chartRef}
         style={{ width: '100%', height: '100%', opacity: points.length > 0 ? 1 : 0, transition: 'opacity 0.4s' }} />
     </div>
   );
-}
-
-function useSensorSafe(sensorId) {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useSensor(sensorId || '__none__');
-  } catch {
-    return null;
-  }
 }

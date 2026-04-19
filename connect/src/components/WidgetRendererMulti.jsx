@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import GaugeWidget          from './GaugeWidget';
 import LineChartWidget      from './LineChartWidget';
 import SpatialHeatmapWidget from './SpatialHeatmapWidget';
-import HistoricoContainer   from './HistoricoContainer';
+import HistoricoCabo   from './historicoCabo';
+import { HistoricoProvider } from './HistoricoContainer';
+import LineChartHistorico from './LineChartHistorico';
 import WeatherCard          from './WeatherCArd';
 import SiloResumenCard      from './Siloresumencard';
 import SiloControlCard      from './Silocontrolcard';
@@ -291,10 +293,23 @@ function ContainerWidget({ widget }) {
 export default function WidgetRendererMulti({ widget }) {
   if (!widget) return null;
 
-  // historico_cabo — heatmap + línea por cabo
+  // historico — container con controles de fecha
+  if (widget.tipo === 'historico') {
+    return (
+      <HistoricoProvider
+        defaultFromDays={widget.defaultFromDays ?? 7}
+        defaultWindow={widget.defaultWindow ?? '1h'}
+        defaultFn={widget.defaultFn ?? 'mean'}
+      >
+        {widget.children}
+      </HistoricoProvider>
+    );
+  }
+
+  // historico_cabo — heatmap + línea por cabo (legacy)
   if (widget.tipo === 'historico_cabo') {
     return (
-      <HistoricoContainer
+      <HistoricoCabo
         cabos={widget.cabos   || []}
         siloId={widget.siloId || 'silo'}
         unit={widget.unit     || '°C'}

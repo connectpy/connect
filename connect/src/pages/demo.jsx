@@ -9,7 +9,7 @@ import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx';
 // DEMO_CONFIG — Caaty
 //
 // Pestaña "Resumen" : WeatherCard + SiloResumenCard
-// Pestaña "Silo 1"  : SiloControlCard + SiloHeatmapWidget + HistoricoContainer
+// Pestaña "Silo 1"  : SiloControlCard + SiloHeatmapWidget + HistoricoCabo
 //
 // Todos los widgets de tiempo real usan sensor_id → SensorContext (polling HTTP)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -140,7 +140,7 @@ const DEMO_CONFIG = {
                 'demo/T/S0/C2/T0','demo/T/S0/C2/T1','demo/T/S0/C2/T2',
                 'demo/T/S0/C2/T3','demo/T/S0/C2/T4','demo/T/S0/C2/T5','demo/T/S0/C2/T6',
               ],
-              queryConfig: { fields: ['temperatura', 'hayGrano'], window: '1h', fn: 'mean' },
+              queryConfig: { fields: ['temperatura', 'hayGrano'], window: '12h', fn: 'mean' },
             },
           ],
         },

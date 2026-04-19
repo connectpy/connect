@@ -2,15 +2,18 @@
 
 Esta guia esta basada en la implementacion actual de:
 
-- [WidgetRendererMulti.jsx](/d:/connect/connect/connect/src/components/WidgetRendererMulti.jsx)
-- [SensorContext.jsx](/d:/connect/connect/connect/src/hooks/SensorContext.jsx)
-- [GaugeWidget.jsx](/d:/connect/connect/connect/src/components/GaugeWidget.jsx)
-- [LineChartWidget.jsx](/d:/connect/connect/connect/src/components/LineChartWidget.jsx)
-- [WeatherCArd.jsx](/d:/connect/connect/connect/src/components/WeatherCArd.jsx)
-- [Siloresumencard.jsx](/d:/connect/connect/connect/src/components/Siloresumencard.jsx)
-- [Silocontrolcard.jsx](/d:/connect/connect/connect/src/components/Silocontrolcard.jsx)
-- [SiloHeatmapWidget.jsx](/d:/connect/connect/connect/src/components/SiloHeatmapWidget.jsx)
-- [HistoricoContainer.jsx](/d:/connect/connect/connect/src/components/HistoricoContainer.jsx)
+- [WidgetRendererMulti.jsx](/connect/src/components/WidgetRendererMulti.jsx)
+- [SensorContext.jsx](/connect/src/hooks/SensorContext.jsx)
+- [GaugeWidget.jsx](/connect/src/components/GaugeWidget.jsx)
+- [LineChartWidget.jsx](/connect/src/components/LineChartWidget.jsx)
+- [ValueCardWidget.jsx](/connect/src/components/ValueCardWidget.jsx)
+- [SpatialHeatmapWidget.jsx](/connect/src/components/SpatialHeatmapWidget.jsx)
+- [WeatherCArd.jsx](/connect/src/components/WeatherCArd.jsx)
+- [Siloresumencard.jsx](/connect/src/components/Siloresumencard.jsx)
+- [Silocontrolcard.jsx](/connect/src/components/Silocontrolcard.jsx)
+- [SiloHeatmapWidget.jsx](/connect/src/components/SiloHeatmapWidget.jsx)
+- [historicoCabo.jsx](/connect/src/components/historicoCabo.jsx)
+- [LineChartZones.jsx](/connect/src/components/LineChartZones.jsx)
 
 ## 1. Como fluye la data hoy
 
@@ -94,7 +97,7 @@ La respuesta puede ser:
 }
 ```
 
-Para `HistoricoContainer`, cada punto puede incluir tambien:
+Para `historicoCabo`, cada punto puede incluir tambien:
 
 ```json
 {
@@ -111,10 +114,12 @@ Para `HistoricoContainer`, cada punto puede incluir tambien:
 
 - `gauge`
 - `line`
+- `ValueCardWidget`
 - `WeatherCard`
 - `SiloResumen`
 - `SiloControl`
 - `SiloHeatmap`
+- `SpatialHeatmap`
 - `historico_cabo`
 - `container`
 
@@ -122,7 +127,7 @@ Para `HistoricoContainer`, cada punto puede incluir tambien:
 
 ## `gauge`
 
-Renderiza [GaugeWidget.jsx](/d:/connect/connect/connect/src/components/GaugeWidget.jsx).
+Renderiza [GaugeWidget.jsx](/connect/src/components/GaugeWidget.jsx).
 
 ### Configuracion minima
 
@@ -179,7 +184,7 @@ Renderiza [GaugeWidget.jsx](/d:/connect/connect/connect/src/components/GaugeWidg
 
 ## `line`
 
-Renderiza [LineChartWidget.jsx](/d:/connect/connect/connect/src/components/LineChartWidget.jsx).
+Renderiza [LineChartWidget.jsx](/connect/src/components/LineChartWidget.jsx).
 
 ### Configuracion minima
 
@@ -230,11 +235,67 @@ El componente espera una serie de puntos `[{ timestamp, value }]`, pero hoy `use
 }
 ```
 
+## `ValueCardWidget`
+
+Renderiza [ValueCardWidget.jsx](/connect/src/components/ValueCardWidget.jsx). Muestra el valor actual de un sensor en una tarjeta con estilo visual.
+
+### Configuracion minima
+
+```json
+{
+  "id": "temp-card",
+  "tipo": "ValueCardWidget",
+  "sensor_id": "planta/secadero/T1.fields.temperatura"
+}
+```
+
+### Props soportadas
+
+- `id`: identificador unico del widget.
+- `tipo`: debe ser `"ValueCardWidget"`.
+- `sensor_id`: sensor a leer desde `SensorContext`. Soporta referencias tipo `sensor.fields.campo`.
+- `title`: titulo visible de la tarjeta.
+- `unit`: unidad a mostrar (ej: "°C", "%"). Si no se especifica, usa la del sensor.
+- `icon`: emoji o icono a mostrar (ej: "🌡️").
+- `color`: color por defecto del valor (hex).
+- `decimals`: cantidad de decimales a mostrar.
+- `thresholds`: arreglo de umbrales para cambiar el color segun el valor.
+
+### Formato de `thresholds`
+
+```json
+[
+  { "max": 20, "color": "#3b82f6" },
+  { "max": 35, "color": "#22c55e" },
+  { "max": 50, "color": "#ef4444" }
+]
+```
+
+### Ejemplo completo
+
+```json
+{
+  "id": "temp-actual",
+  "tipo": "ValueCardWidget",
+  "sensor_id": "caaty/secadero/T1.fields.temperatura",
+  "title": "Temperatura",
+  "unit": "°C",
+  "icon": "🌡️",
+  "color": "#3b82f6",
+  "decimals": 1,
+  "thresholds": [
+    { "max": 20, "color": "#3b82f6" },
+    { "max": 35, "color": "#22c55e" },
+    { "max": 50, "color": "#ef4444" }
+  ]
+}
+```
+
 ## 4. Widgets compuestos
 
 ## `WeatherCard`
 
-Renderiza [WeatherCArd.jsx](/d:/connect/connect/connect/src/components/WeatherCArd.jsx) mediante `WeatherCardRenderer`.
+Renderiza [WeatherCArd.jsx](/connect/src/components/WeatherCArd.jsx) mediante `WeatherCardRenderer`.
 
 ### Configuracion recomendada
 
@@ -276,7 +337,7 @@ Pero hoy `WeatherCardRenderer` no se los pasa.
 
 ## `SiloResumen`
 
-Renderiza [Siloresumencard.jsx](/d:/connect/connect/connect/src/components/Siloresumencard.jsx) mediante `SiloResumenRenderer`.
+Renderiza [Siloresumencard.jsx](/connect/src/components/Siloresumencard.jsx) mediante `SiloResumenRenderer`.
 
 ### Configuracion recomendada
 
@@ -332,7 +393,7 @@ Eso funciona bien si el backend manda `0` o `1`. Si manda `"auto"`, `"true"` o `
 
 ## `SiloControl`
 
-Renderiza [Silocontrolcard.jsx](/d:/connect/connect/connect/src/components/Silocontrolcard.jsx) mediante `SiloControlRenderer`.
+Renderiza [Silocontrolcard.jsx](/connect/src/components/Silocontrolcard.jsx) mediante `SiloControlRenderer`.
 
 ### Configuracion recomendada
 
@@ -392,7 +453,7 @@ Renderiza [Silocontrolcard.jsx](/d:/connect/connect/connect/src/components/Siloc
 
 ## `SiloHeatmap`
 
-Renderiza [SiloHeatmapWidget.jsx](/d:/connect/connect/connect/src/components/SiloHeatmapWidget.jsx) mediante `SiloHeatmapRenderer`.
+Renderiza [SiloHeatmapWidget.jsx](/connect/src/components/SiloHeatmapWidget.jsx) mediante `SiloHeatmapRenderer`.
 
 ### Configuracion recomendada
 
@@ -448,9 +509,76 @@ Solo se agrega un punto a `data` si el sensor tiene valor. Si no tiene valor:
 
 En la config demo existe `sensor_hay_grano`, pero `SiloHeatmapRenderer` no lo usa. Hoy el heatmap en tiempo real decide si colorear una celda solo por disponibilidad del valor, no por un sensor real de presencia de grano.
 
+## `SpatialHeatmap`
+
+Renderiza [SpatialHeatmapWidget.jsx](/connect/src/components/SpatialHeatmapWidget.jsx). Muestra una grilla visual de sensores posicionados espacialmente.
+
+### Configuracion minima (modo string)
+
+```json
+{
+  "id": "mapa-temp",
+  "tipo": "SpatialHeatmap",
+  "layout": [
+    ["caaty/silo1/T1", "caaty/silo1/T2"],
+    ["caaty/silo1/T3", "caaty/silo1/T4"]
+  ]
+}
+```
+
+### Configuracion con labels personalizados
+
+```json
+{
+  "id": "mapa-temp",
+  "tipo": "SpatialHeatmap",
+  "label": "Mapa de Temperaturas",
+  "min": 15,
+  "max": 40,
+  "unit": "°C",
+  "layout": [
+    [
+      { "sensor_id": "caaty/silo1/T1", "label": "F1-A" },
+      { "sensor_id": "caaty/silo1/T2", "label": "F1-B" }
+    ],
+    [
+      { "sensor_id": "caaty/silo1/T3", "label": "F2-A" },
+      null
+    ]
+  ]
+}
+```
+
+### Props soportadas
+
+- `id`
+- `tipo`: debe ser `"SpatialHeatmap"`.
+- `label`: titulo del widget.
+- `layout`: matriz 2D de sensores. Cada elemento puede ser:
+  - String: usa el ID como label (ultimo segmento).
+  - Objeto `{ sensor_id, label }`: label personalizado.
+  - `null` o `undefined`: espacio vacio.
+- `min`: valor minimo del rango de temperatura.
+- `max`: valor maximo del rango de temperatura.
+- `unit`: unidad a mostrar.
+
+### Como se usa layout
+
+El layout define la estructura visual de la grilla. Cada fila es un array y cada celda puede ser:
+
+- `"sensor/id"`: usa el ultimo segmento como label
+- `{ sensor_id: "sensor/id", label: "Zona A1" }`: con label personalizado
+- `null`: deja un espacio vacio en esa posicion
+
+### Importante
+
+- El widget usa CSS Grid con numero fijo de columnas (toma el ancho de la primera fila).
+- Las posiciones son fijas y no se reordenan en mobile.
+- El gradiente de color va de azul (frio) a rojo (caliente).
+
 ## `historico_cabo`
 
-Renderiza [HistoricoContainer.jsx](/d:/connect/connect/connect/src/components/HistoricoContainer.jsx).
+Renderiza [historicoCabo.jsx](/connect/src/components/historicoCabo.jsx).
 
 ### Configuracion recomendada
 
@@ -524,7 +652,7 @@ Por cada `sensorId`, la respuesta ideal es:
 
 ## `container`
 
-Agrupa varios widgets en una fila y los renderiza con [WidgetRendererMulti.jsx](/d:/connect/connect/connect/src/components/WidgetRendererMulti.jsx).
+Agrupa varios widgets en una fila y los renderiza con [WidgetRendererMulti.jsx](/connect/src/components/WidgetRendererMulti.jsx).
 
 ### Estructura
 
@@ -558,10 +686,12 @@ Agrupa varios widgets en una fila y los renderiza con [WidgetRendererMulti.jsx](
 | --- | --- | --- |
 | `gauge` | tiempo real | `id`, `tipo`, `sensor_id` |
 | `line` | serie/manual | `id`, `tipo`, `sensor_id` o `series` |
+| `ValueCardWidget` | tiempo real | `id`, `tipo`, `sensor_id` |
 | `WeatherCard` | tiempo real | `id`, `tipo`, `sensor_temp`, `sensor_humedad` |
 | `SiloResumen` | tiempo real + config | `id`, `tipo`, `sensor_nivel`, `sensor_temp`, `sensor_humedad`, `sensor_fans` |
 | `SiloControl` | tiempo real + config | `id`, `tipo`, sensores de nivel, humedad, temps, activo, fans, mode |
 | `SiloHeatmap` | tiempo real | `id`, `tipo`, `cabos`, `niveles`, `sensor_matrix` |
+| `SpatialHeatmap` | tiempo real | `id`, `tipo`, `layout` |
 | `historico_cabo` | consulta historica | `id`, `tipo`, `cabos` |
 | `container` | composicion | `id`, `tipo`, `charts` |
 
@@ -583,6 +713,11 @@ Estas son las cosas mas importantes que vi al revisar el codigo:
 - `SensorContext` ya soporta referencias tipo `sensor.fields.campo` en tiempo real.
 - `SiloControlCard` soporta `timer`, `start` y `end`, pero el renderer actual no los alimenta.
 - `SiloHeatmap` en tiempo real no usa `sensor_hay_grano`; solo usa presencia o ausencia de valor.
+- `ValueCardWidget` fue migrate de MqttContext a SensorContext.
+- `SpatialHeatmap` usa CSS Grid para mantener posiciones fijas en mobile.
+- `historicoCabo` filtra datos: solo promedia temperaturas donde hay grano y excluye timestamps con aireacion activa.
+- El dashboard real (dashboard.jsx) usa `SensorProvider` (HTTP polling) en lugar de MQTT.
+- El container ahora asigna ancho fijo (`flex: 1 1 300px`) a cada widget para que gauges uniformes tengan el mismo tamano.
 
 ## 8. Plantilla base para crear un widget nuevo en config
 
