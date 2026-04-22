@@ -293,16 +293,14 @@ function ContainerWidget({ widget }) {
 export default function WidgetRendererMulti({ widget }) {
   if (!widget) return null;
 
-  // historico — container con controles de fecha
   if (widget.tipo === 'historico') {
     return (
       <HistoricoProvider
+        widget={widget}
         defaultFromDays={widget.defaultFromDays ?? 7}
         defaultWindow={widget.defaultWindow ?? '1h'}
         defaultFn={widget.defaultFn ?? 'mean'}
-      >
-        {widget.children}
-      </HistoricoProvider>
+      />
     );
   }
 

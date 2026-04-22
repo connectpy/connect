@@ -2,6 +2,22 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import { useHistorico } from '../hooks/SensorContext';
 import './HistoricoContainer.css';
 
+// ── helpers ────────────────────────────────────────────────────────────────
+/** Garantiza que el valor siempre sea un array de strings. */
+function toArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') return value.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+}
+
+/** Genera una clave estable para un chart aunque sensorIds sea string o array. */
+function chartKey(chart, idx) {
+  if (chart.id) return chart.id;
+  const ids = toArray(chart.sensorIds);
+  return ids.length ? ids.join('-') : `chart-${idx}`;
+}
+
 const HistoricoContext = createContext(null);
 
 /**
@@ -19,73 +35,119 @@ const HistoricoContext = createContext(null);
  *   <Heatmap sensorIds={['sensor1', 'sensor2']} />
  * </HistoricoProvider>
  */
+import LineChartHistorico from './LineChartHistorico';
+import HeatmapHistorico from './HeatmapHistorico';
+import LineAreaHistorico from './LineAreaHistorico';
+
+const HISTORICO_RENDERERS = {
+  line:               LineChartHistorico,
+  LineChartHistorico: LineChartHistorico,
+  heatmap:            HeatmapHistorico,
+  HeatmapHistorico:   HeatmapHistorico,
+  lineArea:           LineAreaHistorico,
+  LineAreaHistorico:  LineAreaHistorico,
+};
+
 export function HistoricoProvider({ 
+  widget,
   children, 
   defaultFromDays = 7,
   defaultWindow = '1h',
   defaultFn = 'mean',
   fields = 'value',
 }) {
+  const initFromDays = widget?.defaultFromDays ?? defaultFromDays;
+  const initWindow = widget?.defaultWindow ?? defaultWindow;
+  const initFn = widget?.defaultFn ?? defaultFn;
   const { query, data, loading, error } = useHistorico();
   
   const now = new Date();
-  const defaultFrom = new Date(now.getTime() - defaultFromDays * 86400000);
+  const defaultFrom = new Date(now.getTime() - initFromDays * 86400000);
   
   const [from, setFrom] = useState(defaultFrom.toISOString().slice(0, 10));
   const [to, setTo] = useState(now.toISOString().slice(0, 10));
-  const [window, setWindow] = useState(defaultWindow);
-  const [fn, setFn] = useState(defaultFn);
+  const [windowState, setWindow] = useState(initWindow);
+  const [fn, setFn] = useState(initFn);
   const [queried, setQueried] = useState(false);
   const [currentSensorIds, setCurrentSensorIds] = useState([]);
+  const [currentFields, setCurrentFields] = useState(['value']);
   
-  // Callback para que los hijos puedan registrar sus sensorIds
+  // Registra sensorIds desde los hijos
   const registerSensors = useCallback((sensorIds) => {
-    setCurrentSensorIds(prev => {
-      const combined = [...new Set([...prev, ...sensorIds])];
-      return Array.from(combined);
-    });
+    const ids = toArray(sensorIds);
+    if (!ids.length) return;
+    setCurrentSensorIds(prev => Array.from(new Set([...prev, ...ids])));
+  }, []);
+
+  // Registra fields desde los hijos (acumula los únicos)
+  const registerFields = useCallback((newFields) => {
+    const flds = toArray(newFields);
+    if (!flds.length) return;
+    setCurrentFields(prev => Array.from(new Set([...prev, ...flds])));
   }, []);
 
   const handleQuery = useCallback(async (sensorIdsToQuery, extraFields) => {
-    const ids = sensorIdsToQuery || currentSensorIds;
+    const ids = toArray(sensorIdsToQuery).length
+      ? toArray(sensorIdsToQuery)
+      : currentSensorIds;
     if (!ids.length) return;
-    
-    const queryFields = extraFields || fields;
+
+    // Usa los fields acumulados por los charts, o los que vengan explícitos
+    const queryFields = extraFields
+      ? toArray(extraFields)
+      : (currentFields.length > 1 ? currentFields : toArray(fields));
     
     await query({
       sensorIds: ids,
       desde: `${from}T00:00:00Z`,
       hasta: `${to}T23:59:59Z`,
-      fields: Array.isArray(queryFields) ? queryFields : [queryFields],
-      window,
+      fields: queryFields,
+      window: windowState,
       fn,
     });
     setQueried(true);
-  }, [from, to, window, fn, query, fields, currentSensorIds]);
+  }, [from, to, windowState, fn, query, fields, currentSensorIds, currentFields]);
 
   const value = {
-    from,
-    to,
-    setFrom,
-    setTo,
-    window,
-    setWindow,
-    fn,
-    setFn,
+    from, to, setFrom, setTo,
+    window: windowState, setWindow,
+    fn, setFn,
     handleQuery,
     registerSensors,
-    data,
-    loading,
-    error,
-    queried,
-    setQueried,
+    registerFields,
+    data, loading, error,
+    queried, setQueried,
   };
+
+  const charts = widget?.charts || widget?.children || [];
 
   return (
     <HistoricoContext.Provider value={value}>
       <div className="historico-container">
         <HistoricoControls onConsultar={() => handleQuery()} />
         {children}
+        {charts.length > 0 && (
+          <div className="historico-charts" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '16px' }}>
+            {charts.map((chart, idx) => {
+              const ChartComp = HISTORICO_RENDERERS[chart.tipo];
+              if (!ChartComp) {
+                console.warn(`[HistoricoContainer] tipo desconocido: "${chart.tipo}". Tipos disponibles:`, Object.keys(HISTORICO_RENDERERS));
+                return (
+                  <div key={chartKey(chart, idx)} style={{ flex: '1 1 300px', minWidth: 0, padding: 12,
+                    color: '#ef4444', fontSize: 12, background: 'rgba(239,68,68,0.08)', borderRadius: 8 }}>
+                    Tipo histórico desconocido: <b>{chart.tipo}</b>
+                  </div>
+                );
+              }
+              const normalizedChart = { ...chart, sensorIds: toArray(chart.sensorIds) };
+              return (
+                <div key={chartKey(chart, idx)} style={{ flex: '1 1 300px', minWidth: 0 }}>
+                  <ChartComp {...normalizedChart} />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </HistoricoContext.Provider>
   );
