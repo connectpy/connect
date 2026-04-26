@@ -59,8 +59,9 @@ export default function HeatmapHistorico({
   unit = '',
   min = 0,
   max = 100,
-  colorFrom = '#0ea5e9',
-  colorTo   = '#ef4444',
+  colorFrom = '#06b6d4',
+  colorMiddle = '#f59e0b',
+  colorTo = '#ef4444',
 }) {
   const sensorIds = toArray(sensorIdsProp);
   const fieldName = Array.isArray(fields) ? fields[0] : (fields || 'value');
@@ -182,7 +183,7 @@ export default function HeatmapHistorico({
         orient: 'horizontal',
         left: 'center',
         bottom: 0,
-        inRange: { color: [colorFrom, colorTo] },
+        inRange: { color: [colorFrom, colorMiddle, colorTo] },
         textStyle: { color: '#94a3b8', fontSize: 10 },
         formatter: v => `${v}${unit}`,
       },
