@@ -6,14 +6,11 @@ Esta guia esta basada en la implementacion actual de:
 - [SensorContext.jsx](/connect/src/hooks/SensorContext.jsx)
 - [GaugeWidget.jsx](/connect/src/components/GaugeWidget.jsx)
 - [LineChartWidget.jsx](/connect/src/components/LineChartWidget.jsx)
-- [ValueCardWidget.jsx](/connect/src/components/ValueCardWidget.jsx)
-- [SpatialHeatmapWidget.jsx](/connect/src/components/SpatialHeatmapWidget.jsx)
 - [WeatherCArd.jsx](/connect/src/components/WeatherCArd.jsx)
 - [Siloresumencard.jsx](/connect/src/components/Siloresumencard.jsx)
 - [Silocontrolcard.jsx](/connect/src/components/Silocontrolcard.jsx)
 - [SiloHeatmapWidget.jsx](/connect/src/components/SiloHeatmapWidget.jsx)
 - [historicoCabo.jsx](/connect/src/components/historicoCabo.jsx)
-- [LineChartZones.jsx](/connect/src/components/LineChartZones.jsx)
 
 ## 1. Como fluye la data hoy
 
@@ -24,74 +21,63 @@ El dashboard tiene dos fuentes principales:
 
 ### Tiempo real
 
-`SensorProvider` consulta:
+`SensorProvider` consulta cada 5 segundos:
 
 - `GET {apiBase}/api/estado/{clientId}`
 
-La respuesta esperada es:
+La respuesta ahora viene con estructura anidada y se aplana automáticamente:
 
 ```json
 {
-  "sensor/id": {
-    "id": "sensor/id",
-    "measurement": "temperatura",
-    "tags": {
-      "unit": "°C"
-    },
-    "fields": {
-      "value": 26.4
+  "cliente1": {
+    "device1": {
+      "campos": {
+        "temperatura": 26.4,
+        "humedad": 71
+      }
     }
   }
 }
 ```
 
-Tambien puede traer varios `fields` dentro del mismo sensor:
+Internamente se aplana usando `flattenObject()` para convertir a:
 
 ```json
 {
-  "demo/estacion": {
-    "id": "demo/estacion",
-    "tags": {
-      "unit": "Â°C"
-    },
-    "fields": {
-      "temperatura": 26.4,
-      "humedad": 71,
-      "rocio": 20.1
-    }
-  }
+  "cliente1.device1.campos.temperatura": 26.4,
+  "cliente1.device1.campos.humedad": 71
 }
 ```
 
-Internamente se guarda como:
+Luego se guarda como:
 
 ```js
 sensorData[sensorId] = {
-  value: sensor.fields?.value ?? null,
+  value: sensor?.value ?? null,
   tags: sensor.tags || {},
-  fields: sensor.fields || {}
+  fields: sensor || {}
 }
 ```
 
 Notas importantes:
 
-- Se guardan todos los `fields` del sensor.
-- Si existe `fields.value`, sigue siendo el valor por defecto para compatibilidad.
-- `useSensor(sensorId)` devuelve el valor por defecto del sensor.
-- `useSensor('demo/estacion.fields.temperatura')` devuelve ese field puntual.
-- `useSensors(sensorRefs)` devuelve un objeto por cada referencia pedida.
+- Los `sensor_id` en la configuración deben usar la notación con puntos: `"cliente1.device1.campos.temperatura"`
+- `useSensor(sensorId)` devuelve el valor del sensor.
+- `useSensors(deviceIds)` devuelve un objeto por cada deviceId pedido.
+- La estructura anidada se aplana automáticamente en `SensorContext`.
 
 ### Historico
 
 `useHistorico().query()` consulta:
 
-- `GET {apiBase}/api/consulta/{clientId}?sensorId=...&desde=...&hasta=...&field=...&window=...&fn=...`
+- `GET {apiBase}/api/consulta/{clientId}?deviceId=...&desde=...&hasta=...&field=...&window=...&fn=...`
+- Header: `cliente: [nombre_del_cliente]`
 
 La respuesta puede ser:
 
 ```json
 {
-  "sensor/id": [
+  "cliente1/device1": [
     { "timestamp": "2026-03-01T00:00:00Z", "value": 26.1 }
   ]
 }
@@ -464,10 +450,15 @@ Renderiza [SiloHeatmapWidget.jsx](/connect/src/components/SiloHeatmapWidget.jsx)
   "label": "Termometría — Silo 1",
   "cabos": ["Cabo 1", "Cabo 2", "Cabo 3"],
   "niveles": ["N1", "N2", "N3", "N4", "N5", "N6", "N7"],
-  "sensor_matrix": [
-    ["caaty/silo1/C1N1", "caaty/silo1/C1N2", "caaty/silo1/C1N3"],
-    ["caaty/silo1/C2N1", "caaty/silo1/C2N2", "caaty/silo1/C2N3"],
-    ["caaty/silo1/C3N1", "caaty/silo1/C3N2", "caaty/silo1/C3N3"]
+  "device_matrix": [
+    ["cliente1.device1.campos.temperatura", "cliente1.device1.campos.temperatura", "cliente1.device2.campos.temperatura"],
+    ["cliente1.device2.campos.temperatura", "cliente1.device3.campos.temperatura", "cliente1.device3.campos.temperatura"],
+    ["cliente1.device4.campos.temperatura", "cliente1.device4.campos.temperatura", "cliente1.device5.campos.temperatura"]
+  ],
+  "device_hay_grano_matrix": [
+    ["cliente1.device1.campos.hay_grano", "cliente1.device1.campos.hay_grano", "cliente1.device2.campos.hay_grano"],
+    ["cliente1.device2.campos.hay_grano", "cliente1.device3.campos.hay_grano", "cliente1.device3.campos.hay_grano"],
+    ["cliente1.device4.campos.hay_grano", "cliente1.device4.campos.hay_grano", "cliente1.device5.campos.hay_grano"]
   ],
   "temp_min": 15,
   "temp_max": 40
@@ -478,7 +469,8 @@ Renderiza [SiloHeatmapWidget.jsx](/connect/src/components/SiloHeatmapWidget.jsx)
 
 - `cabos`: etiquetas de columnas.
 - `niveles`: etiquetas de filas.
-- `sensor_matrix`: matriz `string[][]` con forma `[cabo][nivel]`.
+- `device_matrix`: matriz `string[][]` con forma `[cabo][nivel]` - IDs de dispositivos para temperatura.
+- `device_hay_grano_matrix`: matriz `string[][]` con forma `[cabo][nivel]` - IDs de dispositivos para hay_grano.
 - `temp_min`
 - `temp_max`
 - `label`
@@ -595,13 +587,13 @@ Renderiza [historicoCabo.jsx](/connect/src/components/historicoCabo.jsx).
     {
       "id": "c1",
       "label": "Cabo 1",
-      "sensorIds": [
-        "caaty/silo1/C1N1",
-        "caaty/silo1/C1N2",
-        "caaty/silo1/C1N3"
+      "deviceIds": [
+        "cliente1/device1.campos.temperatura",
+        "cliente1/device2.campos.temperatura",
+        "cliente1/device3.campos.temperatura"
       ],
       "queryConfig": {
-        "field": "value",
+        "fields": ["temperatura", "hay_grano"],
         "window": "12h",
         "fn": "mean"
       }
@@ -622,8 +614,8 @@ Renderiza [historicoCabo.jsx](/connect/src/components/historicoCabo.jsx).
 
 - `id`
 - `label`
-- `sensorIds`: arreglo de sensores que forman ese cabo.
-- `queryConfig.field`
+- `deviceIds`: arreglo de dispositivos que forman ese cabo.
+- `queryConfig.fields`
 - `queryConfig.window`
 - `queryConfig.fn`
 
@@ -682,7 +674,7 @@ Agrupa varios widgets en una fila y los renderiza con [WidgetRendererMulti.jsx](
 
 ## 5. Resumen rapido por tipo
 
-| Tipo | Fuente | Campos minimos |
+| Tipo | Fuente | Campos mínimos |
 | --- | --- | --- |
 | `gauge` | tiempo real | `id`, `tipo`, `sensor_id` |
 | `line` | serie/manual | `id`, `tipo`, `sensor_id` o `series` |
@@ -690,19 +682,20 @@ Agrupa varios widgets en una fila y los renderiza con [WidgetRendererMulti.jsx](
 | `WeatherCard` | tiempo real | `id`, `tipo`, `sensor_temp`, `sensor_humedad` |
 | `SiloResumen` | tiempo real + config | `id`, `tipo`, `sensor_nivel`, `sensor_temp`, `sensor_humedad`, `sensor_fans` |
 | `SiloControl` | tiempo real + config | `id`, `tipo`, sensores de nivel, humedad, temps, activo, fans, mode |
-| `SiloHeatmap` | tiempo real | `id`, `tipo`, `cabos`, `niveles`, `sensor_matrix` |
+| `SiloHeatmap` | tiempo real | `id`, `tipo`, `cabos`, `niveles`, `device_matrix`, `device_hay_grano_matrix` |
 | `SpatialHeatmap` | tiempo real | `id`, `tipo`, `layout` |
-| `historico_cabo` | consulta historica | `id`, `tipo`, `cabos` |
+| `historico_cabo` | consulta historica | `id`, `tipo`, `cabos` con `deviceIds` |
 | `container` | composicion | `id`, `tipo`, `charts` |
 
 ## 6. Convenciones recomendadas para tus datos
 
 Para que todos los widgets funcionen de forma consistente, conviene que el backend siga estas reglas:
 
-- Sensores analogicos: enviar `fields.value` numerico, o varios `fields` numericos si un mismo sensor expone varias metricas.
-- Unidades: enviar `tags.unit`.
-- Booleanos de estado: enviar `0` o `1`.
-- Historicos: enviar siempre `timestamp` ISO y `value`.
+- En tiempo real: enviar estructura anidada `{ cliente: { deviceId: { campos: { temperatura: 26.4 } } }` que se aplanará automáticamente.
+- Sensores analógicos: enviar valores numéricos en los campos.
+- Unidades: enviar en el campo correspondiente.
+- Booleanos de estado: enviar `0` o `1`, `true` o `false`.
+- Historicos: enviar siempre `timestamp` ISO y `value`. Usar `deviceId` en params y `cliente` en header.
 - Historicos de silo: incluir `hay_grano` y `aireacion` cuando aplique.
 
 ## 7. Observaciones de la revision
@@ -710,12 +703,12 @@ Para que todos los widgets funcionen de forma consistente, conviene que el backe
 Estas son las cosas mas importantes que vi al revisar el codigo:
 
 - `LineChartWidget` espera `series`, pero `SensorContext` hoy no construye series en tiempo real.
-- `SensorContext` ya soporta referencias tipo `sensor.fields.campo` en tiempo real.
+- `SensorContext` ya soporta referencias tipo `cliente.deviceId.campos.campo` en tiempo real (se aplana automáticamente).
 - `SiloControlCard` soporta `timer`, `start` y `end`, pero el renderer actual no los alimenta.
-- `SiloHeatmap` en tiempo real no usa `sensor_hay_grano`; solo usa presencia o ausencia de valor.
-- `ValueCardWidget` fue migrate de MqttContext a SensorContext.
+- `SiloHeatmap` ahora usa `device_matrix` y `device_hay_grano_matrix` para temperatura y presencia de grano.
 - `SpatialHeatmap` usa CSS Grid para mantener posiciones fijas en mobile.
-- `historicoCabo` filtra datos: solo promedia temperaturas donde hay grano y excluye timestamps con aireacion activa.
+- `historicoCabo` usa `deviceIds` y filtra datos: solo promedia temperaturas donde `hay_grano` es true.
+- Las consultas históricas envían `deviceId` en params y `cliente` (nombre del cliente) en el header.
 - El dashboard real (dashboard.jsx) usa `SensorProvider` (HTTP polling) en lugar de MQTT.
 - El container ahora asigna ancho fijo (`flex: 1 1 300px`) a cada widget para que gauges uniformes tengan el mismo tamano.
 
