@@ -7,7 +7,7 @@ import { useEffect } from 'react';
  * historicoCabo
  *
  * Props (vienen del JSON config del widget):
- *   cabos   : [{ id, label, sensorIds: ['s1','s2',...], queryConfig: { field, window, fn } }]
+ *   cabos   : [{ id, label, deviceIds: ['d1','d2',...], queryConfig: { field, window, fn } }]
  *   siloId  : string
  *   unit    : string
  *   min     : number
@@ -16,7 +16,7 @@ import { useEffect } from 'react';
  * Flujo:
  *   1. Usuario elige cabo + rango de fechas y presiona Consultar
  *   2. useHistorico().query() hace GET /api/consulta/:clientId con los params
- *   3. Respuesta: { [sensorId]: [{ timestamp, value }] }
+ *   3. Respuesta: { [deviceId]: [{ timestamp, value }] }
  *   4. Se renderizan CaboHeatmap + LineChartArea con los datos
  *
  * Formato de respuesta esperada del backend:
@@ -27,8 +27,8 @@ import { useEffect } from 'react';
  *   ],
  *   "caaty/secadero/T2": [...],
  * }
- * El heatmap construye filas=sensorIds, columnas=timestamps agrupados.
- * La línea usa un sensorId de referencia (el primero) para temperatura media.
+ * El heatmap construye filas=deviceIds, columnas=timestamps agrupados.
+ * La línea usa un deviceId de referencia (el primero) para temperatura media.
  * hay_grano viene como field separado si se configuró en queryConfig.
  */
 export default function historicoCabo({
@@ -60,7 +60,7 @@ export default function historicoCabo({
       : ['value', 'hayGrano'];
 
     await query({
-      sensorIds: caboActivo.sensorIds || [],
+      deviceIds: caboActivo.deviceIds || [],
       desde:     `${from}T00:00:00Z`,
       hasta:     `${to}T23:59:59Z`,
       fields,
@@ -73,7 +73,7 @@ export default function historicoCabo({
   // Transformar respuesta del backend para los gráficos
   const { sensors, heatmap, hayGrano, linea } = transformData(
     data,
-    caboActivo?.sensorIds || [],
+    caboActivo?.deviceIds || [],
     caboActivo?.queryConfig?.fields?.[0] || 'value'
   );
 
@@ -194,23 +194,23 @@ export default function historicoCabo({
 // Convierte la respuesta del backend en las estructuras que usan los gráficos.
 //
 // Entrada:
-//   data = { [sensorId]: [{ timestamp, [tempField]: value, hayGrano?, hay_grano? }] }
-//   sensorIds = string[]
+//   data = { [deviceId]: [{ timestamp, [tempField]: value, hayGrano?, hay_grano? }] }
+//   deviceIds = string[]
 //   tempField = nombre del campo de temperatura (ej: 'value', 'temperatura')
 // Salida:
-//   sensors  : ['T1','T2',...]              ← parte final del sensorId
+//   sensors  : ['T1','T2',...]              ← parte final del deviceId
 //   heatmap  : [{ fecha, T1, T2, ... }]    ← valores de temperatura por timestamp
 //   hayGrano : [{ fecha, T1, T2, ... }]    ← booleanos (true = hay grano → se colorea)
-//   linea    : [{ timestamp, temp, aireacion }]  ← promedio de todos los sensores
+//   linea    : [{ timestamp, temp, aireacion }]  ← promedio de todos los dispositivos
 // ─────────────────────────────────────────────────────────────────────────────
-function transformData(data, sensorIds, tempField = 'value') {
-  if (!data || !sensorIds.length) return { sensors: [], heatmap: [], hayGrano: [], linea: [] };
+function transformData(data, deviceIds, tempField = 'value') {
+  if (!data || !deviceIds.length) return { sensors: [], heatmap: [], hayGrano: [], linea: [] };
 
   const labelOf = id => id.split('/').pop();
-  const sensors = sensorIds.map(labelOf);
+  const sensors = deviceIds.map(labelOf);
 
   const tsSet = new Set();
-  sensorIds.forEach(id => {
+  deviceIds.forEach(id => {
     (data[id] || []).forEach(p => tsSet.add(p.timestamp));
   });
   const timestamps = [...tsSet].sort();
@@ -222,7 +222,7 @@ function transformData(data, sensorIds, tempField = 'value') {
   };
 
   const idx = {};
-  sensorIds.forEach(id => {
+  deviceIds.forEach(id => {
     idx[id] = {};
     (data[id] || []).forEach(p => { idx[id][p.timestamp] = p; });
   });
@@ -245,7 +245,7 @@ function transformData(data, sensorIds, tempField = 'value') {
     const tieneGrano = {};
     let hayAireacion = false;
 
-    sensorIds.forEach(id => {
+    deviceIds.forEach(id => {
       const label = labelOf(id);
       const punto = idx[id][ts];
       if (punto) {
@@ -266,7 +266,7 @@ function transformData(data, sensorIds, tempField = 'value') {
     if (hayAireacion) return;
 
     if (!linaAcc[ts]) linaAcc[ts] = { sum: 0, count: 0, aireacion: false };
-    sensorIds.forEach(id => {
+    deviceIds.forEach(id => {
       const label = labelOf(id);
       const punto = idx[id][ts];
       if (punto && tieneGrano[label]) {

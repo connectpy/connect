@@ -33,9 +33,9 @@ const DEMO_CONFIG = {
           label: 'Estación Meteorológica',
           stationName: 'Planta Bella Vista',
           // Un mismo sensor puede exponer varios fields en tiempo real
-          sensor_temp:    'demo/estacion.fields.temperatura',
-          sensor_humedad: 'demo/estacion.fields.humedad',
-          sensor_rocio:   'demo/estacion.fields.rocio',
+          sensor_temp:    'demo/estacion/E001/temperatura',
+          sensor_humedad: 'demo/estacion/E001/humedad',
+          sensor_rocio:   'demo/estacion/E001/rocio',
         },
 
         {
@@ -45,10 +45,10 @@ const DEMO_CONFIG = {
           label:     'Silo Central N° 1',
           siloName:  'SILO CENTRAL N° 1',
           // sensor_ids que alimentan la card
-          sensor_nivel:   'demo/silo1.fields.nivel',
-          sensor_temp:    'demo/silo1.fields.temperaturaMedia',
-          sensor_humedad: 'demo/silo1.fields.humedad',
-          sensor_fans:    'demo/silo1.fields.fan',
+          sensor_nivel:   'demo/silo/S001/nivel',
+          sensor_temp:    'demo/silo/S001/temperaturaMedia',
+          sensor_humedad: 'demo/silo/S001/humedad',
+          sensor_fans:    'demo/silo/S001/fan',
           grano:          'SOJA',
           fecha:          '15/03/2026',
         },
@@ -70,36 +70,36 @@ const DEMO_CONFIG = {
           label:    'Control de Aireación — Silo 1',
           siloName: 'Silo Nro. 1',
           // sensor_ids del sistema de aireación
-          nivel:      'demo/silo1.fields.nivel',
-          hum_grano:  'demo/silo1.fields.humedad',
-          temp_max:   'demo/silo1.fields.temperaturaMaxima',
-          temp_avg:   'demo/silo1.fields.temperaturaMedia',
-          temp_min:   'demo/silo1.fields.temperaturaMinima',
-          activo:     'demo/silo1.fields.connected',
-          fans:       'demo/silo1.fields.fan',
-          mode:       'demo/silo1.fields.fanMode',
-          timer:      'demo/silo1.fields.fanTimer',
-          start:      'demo/silo1.fields.fanTimerStart',
-          end:        'demo/silo1.fields.fanTimerEnd',
+          nivel:      'demo/silo/S001/nivel',
+          hum_grano:  'demo/silo/S001/humedad',
+          temp_max:   'demo/silo/S001/temperaturaMaxima',
+          temp_avg:   'demo/silo/S001/temperaturaMedia',
+          temp_min:   'demo/silo/S001/temperaturaMinima',
+          activo:     'demo/silo/S001/connected',
+          fans:       'demo/silo/S001/fan',
+          mode:       'demo/silo/S001/fanMode',
+          timer:      'demo/silo/S001/fanTimer',
+          start:      'demo/silo/S001/fanTimerStart',
+          end:        'demo/silo/S001/fanTimerEnd',
           grano:      'SOJA',
         },
 
-        {
+         {
           id:    'silo1-heatmap',
           tipo:  'SiloHeatmap',
           size:  'full',
           label: 'Termometría — Silo 1',
           cabos:   ['Cabo 1', 'Cabo 2', 'Cabo 3'],
           niveles: ['1', '2', '3', '4', '5', '6', '7'],
-          sensor_matrix: [
-            ['demo/T/S0/C0/T0.fields.temperatura','demo/T/S0/C0/T1.fields.temperatura','demo/T/S0/C0/T2.fields.temperatura','demo/T/S0/C0/T3.fields.temperatura','demo/T/S0/C0/T4.fields.temperatura','demo/T/S0/C0/T5.fields.temperatura','demo/T/S0/C0/T6.fields.temperatura'],
-            ['demo/T/S0/C1/T0.fields.temperatura','demo/T/S0/C1/T1.fields.temperatura','demo/T/S0/C1/T2.fields.temperatura','demo/T/S0/C1/T3.fields.temperatura','demo/T/S0/C1/T4.fields.temperatura','demo/T/S0/C1/T5.fields.temperatura','demo/T/S0/C1/T6.fields.temperatura'],
-            ['demo/T/S0/C2/T0.fields.temperatura','demo/T/S0/C2/T1.fields.temperatura','demo/T/S0/C2/T2.fields.temperatura','demo/T/S0/C2/T3.fields.temperatura','demo/T/S0/C2/T4.fields.temperatura','demo/T/S0/C2/T5.fields.temperatura','demo/T/S0/C2/T6.fields.temperatura'],
+          device_matrix: [
+            ['silo-0-c0-s0.campos.temperatura','silo-0-c0-s1.campos.temperatura','silo-0-c0-s2.campos.temperatura','silo-0-c0-s3.campos.temperatura','silo-0-c0-s4.campos.temperatura','silo-0-c0-s5.campos.temperatura','silo-0-c0-s6.campos.temperatura'],
+            ['silo-0-c1-s1.campos.temperatura','silo-0-c1-s1.campos.temperatura','silo-0-c1-s2.campos.temperatura','silo-0-c1-s3.campos.temperatura','silo-0-c1-s4.campos.temperatura','silo-0-c1-s5.campos.temperatura','silo-0-c1-s6.campos.temperatura'],
+            ['silo-0-c2-s1.campos.temperatura','silo-0-c2-s1.campos.temperatura','silo-0-c2-s2.campos.temperatura','silo-0-c2-s3.campos.temperatura','silo-0-c2-s4.campos.temperatura','silo-0-c2-s5.campos.temperatura','silo-0-c2-s6.campos.temperatura'],
           ],
-          sensor_hay_grano_matrix: [
-            ['demo/T/S0/C0/T0.fields.hayGrano','demo/T/S0/C0/T1.fields.hayGrano','demo/T/S0/C0/T2.fields.hayGrano','demo/T/S0/C0/T3.fields.hayGrano','demo/T/S0/C0/T4.fields.hayGrano','demo/T/S0/C0/T5.fields.hayGrano','demo/T/S0/C0/T6.fields.hayGrano'],
-            ['demo/T/S0/C1/T0.fields.hayGrano','demo/T/S0/C1/T1.fields.hayGrano','demo/T/S0/C1/T2.fields.hayGrano','demo/T/S0/C1/T3.fields.hayGrano','demo/T/S0/C1/T4.fields.hayGrano','demo/T/S0/C1/T5.fields.hayGrano','demo/T/S0/C1/T6.fields.hayGrano'],
-            ['demo/T/S0/C2/T0.fields.hayGrano','demo/T/S0/C2/T1.fields.hayGrano','demo/T/S0/C2/T2.fields.hayGrano','demo/T/S0/C2/T3.fields.hayGrano','demo/T/S0/C2/T4.fields.hayGrano','demo/T/S0/C2/T5.fields.hayGrano','demo/T/S0/C2/T6.fields.hayGrano'],
+          device_hay_grano_matrix: [
+            ['silo-0-c0-s1.campos.hayGrano','silo-0-c0-s1.campos.hayGrano','silo-0-c0-s2.campos.hayGrano','silo-0-c0-s3.campos.hayGrano','silo-0-c0-s4 campos.hayGrano','silo-0-c0-s5 camos.hayGrano','silo-0-c0-s6 camos.hayGrano'],
+            ['silo-0-c1-s1.campos.hayGrano','silo-0-c1-s1.campos.hayGrano','silo-0-c1-s2.campos.hayGrano','silo-0-c1-s3.campos.hayGrano','silo-0-c1-s4.campos.hayGrano','silo-0-c1-s5.campos.hayGrano','silo-0-c1-s6.campos.hayGrano'],
+            ['silo-0-c2-s1.campos.hayGrano','silo-0-c2-s1.campos.hayGrano','silo-0-c2-s2.campos.hayGrano','silo-0-c2-s3.campos.hayGrano','silo-0-c2-s4.campos.hayGrano','silo-0-c2-s5.campos.hayGrano','silo-0-c2-s6.campos.hayGrano'],
           ],
           temp_min: 15,
           temp_max: 40,
@@ -118,29 +118,29 @@ const DEMO_CONFIG = {
             {
               id:    'cabo1',
               label: 'Cabo 1',
-              sensorIds: [
-                'demo/T/S0/C0/T0','demo/T/S0/C0/T1','demo/T/S0/C0/T2',
-                'demo/T/S0/C0/T3','demo/T/S0/C0/T4','demo/T/S0/C0/T5','demo/T/S0/C0/T6',
+              deviceIds: [
+                'silo-0-c0-s0','silo-0-c0-s1','silo-0-c0-s2',
+                'silo-0-c0-s3','silo-0-c0-s4','silo-0-c0-s5','silo-0-c0-s6',
               ],
-              queryConfig: { fields: ['temperatura', 'hayGrano'], window: '1h', fn: 'mean' },
+              queryConfig: { fields: ['temperatura', 'hay_grano'], window: '1h', fn: 'mean' },
             },
             {
               id:    'cabo2',
               label: 'Cabo 2',
-              sensorIds: [
-                'demo/T/S0/C1/T0','demo/T/S0/C1/T1','demo/T/S0/C1/T2',
-                'demo/T/S0/C1/T3','demo/T/S0/C1/T4','demo/T/S0/C1/T5','demo/T/S0/C1/T6',
+              deviceIds: [
+                'silo-0-c1-s0','silo-0-c1-s1','silo-0-c1-s2',
+                'silo-0-c1-s3','silo-0-c1-s4','silo-0-c1-s5','silo-0-c1-s6',
               ],
-              queryConfig: { fields: ['temperatura', 'hayGrano'], window: '1h', fn: 'mean' },
+              queryConfig: { fields: ['temperatura', 'hay_grano'], window: '1h', fn: 'mean' },
             },
             {
               id:    'cabo3',
               label: 'Cabo 3',
-              sensorIds: [
-                'demo/T/S0/C2/T0','demo/T/S0/C2/T1','demo/T/S0/C2/T2',
-                'demo/T/S0/C2/T3','demo/T/S0/C2/T4','demo/T/S0/C2/T5','demo/T/S0/C2/T6',
+              deviceIds: [
+                'silo-0-c2-s0','silo-0-c2-s1','silo-0-c2-s2',
+                'silo-0-c2-s3','silo-0-c2-s4','silo-0-c2-s5','silo-0-c2-s6',
               ],
-              queryConfig: { fields: ['temperatura', 'hayGrano'], window: '12h', fn: 'mean' },
+              queryConfig: { fields: ['temperatura', 'hay_grano'], window: '12h', fn: 'mean' },
             },
           ],
         },
@@ -159,7 +159,7 @@ export default function DemoDashboard({ clientId, apiBase }) {
     api_base:  apiBase  || DEMO_CONFIG.api_base,
   };
   return (
-    <SensorProvider clientId={config.client_id} apiBase={config.api_base}>
+    <SensorProvider clientId={config.client_id} clientName={config.client_id} apiBase={config.api_base}>
       <DashboardInner config={config} companyName={config.client_id} />
     </SensorProvider>
   );

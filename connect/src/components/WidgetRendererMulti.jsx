@@ -124,15 +124,15 @@ function SiloControlRenderer({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SiloHeatmapRenderer
-// Lee la matriz completa de sensor_ids y arma los datos para SiloHeatmapWidget.
-// sensor_matrix:          string[][]  →  [cabo][nivel] = sensor_id de temperatura
-// sensor_hay_grano_matrix: string[][]  →  [cabo][nivel] = sensor_id de hayGrano (1=mostrar, 0=no mostrar)
+// Lee la matriz completa de device_ids y arma los datos para SiloHeatmapWidget.
+// device_matrix:          string[][]  →  [cabo][nivel] = device_id de temperatura
+// device_hay_grano_matrix: string[][]  →  [cabo][nivel] = device_id de hayGrano (1=mostrar, 0=no mostrar)
 // cabos:         string[]    →  etiquetas de columnas
 // niveles:       string[]    →  etiquetas de filas
 // ─────────────────────────────────────────────────────────────────────────────
-function SiloHeatmapRenderer({ sensor_matrix = [], sensor_hay_grano_matrix = [], cabos = [], niveles = [], temp_min = 15, temp_max = 40, label }) {
-  const tempIds = sensor_matrix.flat();
-  const granoIds = sensor_hay_grano_matrix.flat();
+function SiloHeatmapRenderer({ device_matrix = [], device_hay_grano_matrix = [], cabos = [], niveles = [], temp_min = 15, temp_max = 40, label }) {
+  const tempIds = device_matrix.flat();
+  const granoIds = device_hay_grano_matrix.flat();
   const allIds = [...tempIds, ...granoIds].filter(Boolean);
 
   const sensors  = useSensorsSafe(allIds);
@@ -140,11 +140,11 @@ function SiloHeatmapRenderer({ sensor_matrix = [], sensor_hay_grano_matrix = [],
   const data      = [];
   const showColor = [];
 
-  sensor_matrix.forEach((caboSensors, caboIdx) => {
+  device_matrix.forEach((caboSensors, caboIdx) => {
     showColor[caboIdx] = [];
-    caboSensors.forEach((sensorId, nivelIdx) => {
-      const s = sensors[sensorId];
-      const granoId = sensor_hay_grano_matrix[caboIdx]?.[nivelIdx];
+    caboSensors.forEach((deviceId, nivelIdx) => {
+      const s = sensors[deviceId];
+      const granoId = device_hay_grano_matrix[caboIdx]?.[nivelIdx];
       const g = granoId ? sensors[granoId] : null;
 
       const hasTemp = s?.value !== null && s?.value !== undefined;

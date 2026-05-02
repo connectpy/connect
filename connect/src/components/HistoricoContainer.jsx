@@ -11,10 +11,10 @@ function toArray(value) {
   return [];
 }
 
-/** Genera una clave estable para un chart aunque sensorIds sea string o array. */
+/** Genera una clave estable para un chart aunque deviceIds sea string o array. */
 function chartKey(chart, idx) {
   if (chart.id) return chart.id;
-  const ids = toArray(chart.sensorIds);
+  const ids = toArray(chart.deviceIds);
   return ids.length ? ids.join('-') : `chart-${idx}`;
 }
 
@@ -31,8 +31,8 @@ const HistoricoContext = createContext(null);
  *
  * Uso:
  * <HistoricoProvider defaultFromDays={7}>
- *   <LineChart sensorIds={['sensor1']} />
- *   <Heatmap sensorIds={['sensor1', 'sensor2']} />
+ *   <LineChart deviceIds={['device1']} />
+ *   <Heatmap deviceIds={['device1', 'device2']} />
  * </HistoricoProvider>
  */
 import LineChartHistorico from './LineChartHistorico';
@@ -69,14 +69,14 @@ export function HistoricoProvider({
   const [windowState, setWindow] = useState(initWindow);
   const [fn, setFn] = useState(initFn);
   const [queried, setQueried] = useState(false);
-  const [currentSensorIds, setCurrentSensorIds] = useState([]);
+  const [currentDeviceIds, setCurrentDeviceIds] = useState([]);
   const [currentFields, setCurrentFields] = useState(['value']);
   
-  // Registra sensorIds desde los hijos
-  const registerSensors = useCallback((sensorIds) => {
-    const ids = toArray(sensorIds);
+  // Registra deviceIds desde los hijos
+  const registerSensors = useCallback((deviceIds) => {
+    const ids = toArray(deviceIds);
     if (!ids.length) return;
-    setCurrentSensorIds(prev => Array.from(new Set([...prev, ...ids])));
+    setCurrentDeviceIds(prev => Array.from(new Set([...prev, ...ids])));
   }, []);
 
   // Registra fields desde los hijos (acumula los únicos)
@@ -86,10 +86,10 @@ export function HistoricoProvider({
     setCurrentFields(prev => Array.from(new Set([...prev, ...flds])));
   }, []);
 
-  const handleQuery = useCallback(async (sensorIdsToQuery, extraFields) => {
-    const ids = toArray(sensorIdsToQuery).length
-      ? toArray(sensorIdsToQuery)
-      : currentSensorIds;
+  const handleQuery = useCallback(async (deviceIdsToQuery, extraFields) => {
+    const ids = toArray(deviceIdsToQuery).length
+      ? toArray(deviceIdsToQuery)
+      : currentDeviceIds;
     if (!ids.length) return;
 
     // Usa los fields acumulados por los charts, o los que vengan explícitos
@@ -98,7 +98,7 @@ export function HistoricoProvider({
       : (currentFields.length > 1 ? currentFields : toArray(fields));
     
     await query({
-      sensorIds: ids,
+      deviceIds: ids,
       desde: `${from}T00:00:00Z`,
       hasta: `${to}T23:59:59Z`,
       fields: queryFields,
@@ -106,7 +106,7 @@ export function HistoricoProvider({
       fn,
     });
     setQueried(true);
-  }, [from, to, windowState, fn, query, fields, currentSensorIds, currentFields]);
+  }, [from, to, windowState, fn, query, fields, currentDeviceIds, currentFields]);
 
   const value = {
     from, to, setFrom, setTo,
@@ -139,7 +139,7 @@ export function HistoricoProvider({
                   </div>
                 );
               }
-              const normalizedChart = { ...chart, sensorIds: toArray(chart.sensorIds) };
+              const normalizedChart = { ...chart, deviceIds: toArray(chart.deviceIds) };
               return (
                 <div key={chartKey(chart, idx)} style={{ flex: '1 1 300px', minWidth: 0 }}>
                   <ChartComp {...normalizedChart} />
@@ -230,25 +230,25 @@ function HistoricoControls({ onConsultar }) {
  * HOC que provee datos históricos a un componente
  * 
  * Uso:
- * const LineChart = withHistorico(({ data, sensorIds }) => {
- *   // renderizar con data[sensorIds[0]]
+ * const LineChart = withHistorico(({ data, deviceIds }) => {
+ *   // renderizar con data[deviceIds[0]]
  * });
  */
 export function withHistorico(Component) {
-  return function HistoricoWrapped({ sensorIds, fields = 'value', ...props }) {
+  return function HistoricoWrapped({ deviceIds, fields = 'value', ...props }) {
     const { handleQuery, data, loading, error, registerSensors, queried } = useHistoricoContext();
     
-    // Registrar sensores al montar
+    // Registrar dispositivos al montar
     useEffect(() => {
-      if (sensorIds?.length) {
-        registerSensors(sensorIds);
+      if (deviceIds?.length) {
+        registerSensors(deviceIds);
       }
-    }, [sensorIds, registerSensors]);
+    }, [deviceIds, registerSensors]);
 
     // Trigger query automáticamente al presionar consultar o al cambiar fechas
     const widgetData = {};
-    if (sensorIds?.length) {
-      sensorIds.forEach(id => {
+    if (deviceIds?.length) {
+      deviceIds.forEach(id => {
         widgetData[id] = data?.[id] || [];
       });
     }
@@ -257,10 +257,10 @@ export function withHistorico(Component) {
       <Component 
         {...props} 
         data={widgetData} 
-        sensorIds={sensorIds}
+        deviceIds={deviceIds}
         loading={loading}
         error={error}
-        onQuery={() => handleQuery(sensorIds, fields)}
+        onQuery={() => handleQuery(deviceIds, fields)}
       />
     );
   };

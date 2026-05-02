@@ -1,11 +1,11 @@
-import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+ import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 
 /**
  * SensorContext
  *
  * Tiempo real — polling HTTP cada 5s:
  *   GET http://nodered.connectparaguay.com/api/estado/:clientId
- *   Respuesta: { [sensorId]: { id, measurement, tags, fields } }
+ *   Respuesta: { [sensorId]: { id, tags, fields } }
  *
  * Histórico — fetch bajo demanda (botón Consultar):
  *   GET http://nodered.connectparaguay.com/api/consulta/:clientId
@@ -21,21 +21,6 @@ import { createContext, useContext, useEffect, useRef, useState, useCallback } f
 
 const SensorContext = createContext(null);
 const POLL_INTERVAL = 5000;
-
-function parseSensorRef(sensorRef) {
-  if (!sensorRef || typeof sensorRef !== 'string') {
-    return { sensorId: sensorRef, field: null };
-  }
-
-  const marker = '.fields.';
-  const idx = sensorRef.indexOf(marker);
-  if (idx === -1) return { sensorId: sensorRef, field: null };
-
-  return {
-    sensorId: sensorRef.slice(0, idx),
-    field: sensorRef.slice(idx + marker.length) || null,
-  };
-}
 
 function normalizeFieldValue(value) {
   if (typeof value !== 'string') return value;
@@ -53,7 +38,25 @@ function normalizeFields(fields = {}) {
   );
 }
 
-export function SensorProvider({ clientId, apiBase = 'https://nodered.connectparaguay.com', children }) {
+/**
+ * Aplana un objeto anidado usando notación de puntos
+ * Ej: { cliente1: { device1: { campos: { temp: 26 } } } }
+ *   → { "cliente1.device1.campos.temp": 26 }
+ */
+function flattenObject(obj, prefix = '') {
+  const result = {};
+  for (const key of Object.keys(obj)) {
+    const newKey = prefix ? `${prefix}.${key}` : key;
+    if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+      Object.assign(result, flattenObject(obj[key], newKey));
+    } else {
+      result[newKey] = obj[key];
+    }
+  }
+  return result;
+}
+
+export function SensorProvider({ clientId, clientName = '', apiBase = 'https://nodered.connectparaguay.com', children }) {
   const [sensorData, setSensorData] = useState({});   // { [sensorId]: { value, tags } }
   const [status,     setStatus]     = useState('connecting');
   const [lastUpdate, setLastUpdate] = useState(null);
@@ -79,20 +82,29 @@ export function SensorProvider({ clientId, apiBase = 'https://nodered.connectpar
       const raw = await res.json();
       if (!isMounted.current) return;
 
-      // Parsear respuesta plana: { [sensorId]: { id, tags, fields } }
+      // Aplanar por si viene estructura anidada (cliente.deviceId.campos.campo)
+      const flattened = flattenObject(raw);
+
       setSensorData(prev => {
         const next = { ...prev };
-        Object.entries(raw).forEach(([sensorId, sensor]) => {
-          const fields = normalizeFields(sensor.fields || {});
-          const value = Object.prototype.hasOwnProperty.call(fields, 'value')
-            ? fields.value
-            : null;
-
-          next[sensorId] = {
-            value,
-            tags: sensor.tags || {},
-            fields,
-          };
+        Object.entries(flattened).forEach(([sensorId, sensor]) => {
+          // Si sensor es objeto con fields (formato original)
+          if (typeof sensor === 'object' && sensor !== null && sensor.fields) {
+            const fields = normalizeFields(sensor.fields || {});
+            const value = Object.prototype.hasOwnProperty.call(fields, 'value')
+              ? fields.value
+              : null;
+            next[sensorId] = { value, tags: sensor.tags || {}, fields };
+          } else {
+            // Formato nuevo: valor escalar directo
+            const val = typeof sensor === 'object' && sensor !== null ? sensor : { value: sensor };
+            const fields = normalizeFields(typeof sensor === 'object' && sensor !== null ? sensor : { value: sensor });
+            next[sensorId] = {
+              value: typeof sensor === 'object' && sensor !== null ? (sensor.value ?? null) : sensor,
+              tags: {},
+              fields,
+            };
+          }
         });
         return next;
       });
@@ -122,9 +134,10 @@ export function SensorProvider({ clientId, apiBase = 'https://nodered.connectpar
 
   // ── Función de consulta histórica ─────────────────────────────────────────
   // Llamada manualmente desde componentes (botón Consultar).
-  // Devuelve { [sensorId]: [{ timestamp, value, ...fields }] }
+  // Devuelve { [deviceId]: [{ timestamp, value }] }
+  // Se envía deviceId en params y cliente en el header
   const fetchHistorico = useCallback(async ({
-    sensorIds,   // string[]
+    deviceIds,   // string[] - IDs de dispositivos
     desde,       // ISO string o 'YYYY-MM-DD'
     hasta,       // ISO string o 'YYYY-MM-DD'
     fields,      // string | string[]  (ej: 'value' o ['value', 'hayGrano'])
@@ -133,7 +146,7 @@ export function SensorProvider({ clientId, apiBase = 'https://nodered.connectpar
   }) => {
     const fieldsStr = Array.isArray(fields) ? fields.join(',') : (fields || 'value');
     const params = new URLSearchParams({
-      sensorId: Array.isArray(sensorIds) ? sensorIds.join(',') : sensorIds,
+      deviceId: Array.isArray(deviceIds) ? deviceIds.join(',') : deviceIds,
       desde,
       hasta,
       field: fieldsStr,
@@ -141,10 +154,16 @@ export function SensorProvider({ clientId, apiBase = 'https://nodered.connectpar
       fn: fn || 'mean',
     });
 
-    const res = await fetch(`${apiBase}/api/consulta/${clientId}?${params}`);
+    const headers = {};
+    // Enviar nombre del cliente en el header
+    if (clientName) {
+      headers['cliente'] = clientName;
+    }
+
+    const res = await fetch(`${apiBase}/api/consulta/${clientId}?${params}`, { headers });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
-  }, [clientId, apiBase]);
+  }, [clientId, clientName, apiBase]);
 
   return (
     <SensorContext.Provider value={{ sensorData, status, lastUpdate, fetchHistorico, clientId, apiBase }}>
@@ -161,19 +180,17 @@ export function SensorProvider({ clientId, apiBase = 'https://nodered.connectpar
  * useSensor(sensorId)
  * Suscripción a un sensor individual.
  */
-export function useSensor(sensorRef) {
+export function useSensor(sensorId) {
   const ctx = useContext(SensorContext);
   if (!ctx) throw new Error('useSensor debe usarse dentro de SensorProvider');
-  const { sensorId, field } = parseSensorRef(sensorRef);
   const sensor = ctx.sensorData[sensorId];
-  const hasField = field && Object.prototype.hasOwnProperty.call(sensor?.fields || {}, field);
 
   return {
-    value: hasField ? sensor.fields[field] : (sensor?.value ?? null),
+    value: sensor?.value ?? null,
     unit: sensor?.tags?.unit ?? '',
     tags: sensor?.tags ?? {},
     fields: sensor?.fields ?? {},
-    connected: sensor !== undefined && (field ? hasField : true),
+    connected: sensor !== undefined,
   };
 }
 
@@ -182,18 +199,16 @@ export function useSensor(sensorRef) {
  * Suscripción a múltiples sensores.
  * Devuelve objeto { [sensorId]: { value, unit, tags } }
  */
-export function useSensors(sensorRefs = []) {
+export function useSensors(sensorIds = []) {
   const ctx = useContext(SensorContext);
   if (!ctx) throw new Error('useSensors debe usarse dentro de SensorProvider');
   const result = {};
 
-  sensorRefs.forEach(sensorRef => {
-    const { sensorId, field } = parseSensorRef(sensorRef);
+  sensorIds.forEach(sensorId => {
     const sensor = ctx.sensorData[sensorId];
-    const hasField = field && Object.prototype.hasOwnProperty.call(sensor?.fields || {}, field);
 
-    result[sensorRef] = {
-      value: hasField ? sensor.fields[field] : (sensor?.value ?? null),
+    result[sensorId] = {
+      value: sensor?.value ?? null,
       unit: sensor?.tags?.unit ?? '',
       tags: sensor?.tags ?? {},
       fields: sensor?.fields ?? {},

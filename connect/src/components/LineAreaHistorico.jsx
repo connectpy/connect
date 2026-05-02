@@ -69,7 +69,7 @@ function calcMarkAreas(points, fieldBool, xLabels) {
  * Si se proveen ambos, `areas` tiene prioridad.
  *
  * Props desde config JSON:
- *   sensorIds   string | string[]  Sensor a consultar
+ *   deviceIds   string | string[]  Dispositivo a consultar
  *   fieldTemp   string             Campo numérico para la línea
  *   areas       object[]           Array de { field, color, label } — múltiples áreas
  *   fieldBool   string             Campo booleano — modo simple (un área)
@@ -81,7 +81,7 @@ function calcMarkAreas(points, fieldBool, xLabels) {
  *   color       string             Color de la línea
  */
 export default function LineAreaHistorico({
-  sensorIds: sensorIdsProp = [],
+  deviceIds: deviceIdsProp = [],
   fieldTemp  = 'temperatura',
   // Múltiples áreas
   areas: areasProp,
@@ -95,8 +95,8 @@ export default function LineAreaHistorico({
   unit        = '°C',
   color       = '#06b6d4',
 }) {
-  const sensorIds = toArray(sensorIdsProp);
-  const sensorId  = sensorIds[0];
+  const deviceIds = toArray(deviceIdsProp);
+  const deviceId  = deviceIds[0];
 
   // Normalizar la definición de áreas:
   // si viene `areas`, la usamos; si no, construimos una desde las props simples
@@ -106,11 +106,11 @@ export default function LineAreaHistorico({
 
   const { data, loading, error, registerSensors, registerFields, queried } = useHistoricoContext();
 
-  // Registrar sensor y TODOS los fields necesarios
+  // Registrar dispositivo y TODOS los fields necesarios
   useEffect(() => {
-    if (sensorIds.length) registerSensors(sensorIds);
+    if (deviceIds.length) registerSensors(deviceIds);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(sensorIds)]);
+  }, [JSON.stringify(deviceIds)]);
 
   useEffect(() => {
     const allFields = [fieldTemp, ...areaDefs.map(a => a.field)].filter(Boolean);
@@ -118,12 +118,12 @@ export default function LineAreaHistorico({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fieldTemp, JSON.stringify(areaDefs)]);
 
-  const rawData = data?.[sensorId] || [];
+  const rawData = data?.[deviceId] || [];
 
   // Debug
   useEffect(() => {
     if (!queried) return;
-    console.log(`[LineAreaHistorico] "${label}" sensorId="${sensorId}"`);
+    console.log(`[LineAreaHistorico] "${label}" deviceId="${deviceId}"`);
     console.log(`[LineAreaHistorico] data keys:`, data ? Object.keys(data) : 'null');
     console.log(`[LineAreaHistorico] rawData (${rawData.length} pts):`, rawData.slice(0, 2));
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -145,7 +145,7 @@ export default function LineAreaHistorico({
       chartInstance.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sensorId]);
+  }, [deviceId]);
 
   // Actualizar cuando llegan datos
   useEffect(() => {

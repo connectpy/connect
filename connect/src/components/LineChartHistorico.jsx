@@ -16,36 +16,36 @@ function toArray(value) {
  * Gráfico de línea que usa el contexto de HistoricoProvider
  * 
  * Uso:
- * <LineChartHistorico sensorIds={['sensor1']} label="Temperatura" />
+ * <LineChartHistorico deviceIds={['device1']} label="Temperatura" />
  */
 export default function LineChartHistorico({
-  sensorIds: sensorIdsProp = [],
+  deviceIds: deviceIdsProp = [],
   fields = 'value',
   label = 'Gráfico',
-  sensorLabel,          // Nombre legible del sensor (opcional, para tooltip)
+  sensorLabel,          // Nombre legible del dispositivo (opcional, para tooltip)
   unit = '°C',
   color = '#06b6d4',
   showArea = true,
 }) {
-  const sensorIds = toArray(sensorIdsProp);
+  const deviceIds = toArray(deviceIdsProp);
   // Primer field pedido (puede ser string o array)
   const fieldName = Array.isArray(fields) ? fields[0] : (fields || 'value');
 
   const { data, loading, error, registerSensors, queried } = useHistoricoContext();
 
-  // Registrar sensores al montar
+  // Registrar dispositivos al montar
   useEffect(() => {
-    if (sensorIds.length) registerSensors(sensorIds);
+    if (deviceIds.length) registerSensors(deviceIds);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(sensorIds)]);
+  }, [JSON.stringify(deviceIds)]);
 
-  const sensorId = sensorIds[0];
-  const rawData = data?.[sensorId] || [];
+  const deviceId = deviceIds[0];
+  const rawData = data?.[deviceId] || [];
 
   // Debug — ver qué llega del backend
   useEffect(() => {
     if (!queried) return;
-    console.log(`[Historico] "${label}" sensorId="${sensorId}" field="${fieldName}"`);
+    console.log(`[Historico] "${label}" deviceId="${deviceId}" field="${fieldName}"`);
     console.log(`[Historico] data keys:`, data ? Object.keys(data) : 'null');
     console.log(`[Historico] rawData (${rawData.length} pts):`, rawData.slice(0, 2));
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,7 +67,7 @@ export default function LineChartHistorico({
       chartInstance.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sensorId]);
+  }, [deviceId]);
 
   // Actualizar serie cuando llegan datos
   useEffect(() => {

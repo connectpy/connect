@@ -21,7 +21,7 @@ const RANGE_MS = {
  *   <LineChartWidget series={[{timestamp, value}]} unit="°C" label="T1" />
  *
  * Props:
- *   sensor_id : string                 ← ID del sensor para consulta historica
+ *   sensor_id : string                 ← ID del dispositivo para consulta historica
  *   series    : [{ timestamp, value }]   ← override directo
  *   label     : string
  *   unit      : string
@@ -57,7 +57,7 @@ export default function LineChartWidget({
     const desde = new Date(now.getTime() - (RANGE_MS[timeRange] || RANGE_MS['-24h']));
 
     query({
-      sensorIds: [sensor_id],
+      deviceIds: [sensor_id],
       desde: desde.toISOString(),
       hasta: now.toISOString(),
       fields: 'value',

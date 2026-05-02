@@ -86,7 +86,7 @@ export default function Dashboard() {
   console.log('clientId:', clientId);
 
   return (
-    <SensorProvider clientId={clientId} apiBase={API_BASE}>
+    <SensorProvider clientId={clientId} clientName={companyName} apiBase={API_BASE}>
       <DashboardInner
         user={user}
         config={config}

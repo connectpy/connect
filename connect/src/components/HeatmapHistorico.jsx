@@ -37,12 +37,12 @@ function fmtTime(ts) {
  *
  * Heatmap histórico con:
  *   - Eje X: tiempo
- *   - Eje Y: sensores (cada sensorId es una fila)
+ *   - Eje Y: dispositivos (cada deviceId es una fila)
  *   - Color: valor numérico
  *
  * Props (vienen de la config del widget):
- *   sensorIds  string | string[]   IDs de sensores (una fila por sensor)
- *   labels     string[]            Etiquetas para cada fila (mismo orden que sensorIds)
+ *   deviceIds  string | string[]   IDs de dispositivos (una fila por dispositivo)
+ *   labels     string[]            Etiquetas para cada fila (mismo orden que deviceIds)
  *   fields     string | string[]   Campo a leer de cada punto
  *   label      string              Título del gráfico
  *   unit       string              Unidad (ej: '°C')
@@ -52,7 +52,7 @@ function fmtTime(ts) {
  *   colorTo    string              Color fin del gradiente
  */
 export default function HeatmapHistorico({
-  sensorIds: sensorIdsProp = [],
+  deviceIds: deviceIdsProp = [],
   labels: labelsProp = [],
   fields = 'value',
   label = 'Heatmap',
@@ -63,26 +63,26 @@ export default function HeatmapHistorico({
   colorMiddle = '#f59e0b',
   colorTo = '#ef4444',
 }) {
-  const sensorIds = toArray(sensorIdsProp);
+  const deviceIds = toArray(deviceIdsProp);
   const fieldName = Array.isArray(fields) ? fields[0] : (fields || 'value');
 
-  // Etiquetas de fila: usa labelsProp si existe, sino "Sensor N" (nunca el ID interno)
-  const rowLabels = sensorIds.map((id, i) => labelsProp[i] || `Sensor ${i + 1}`);
+  // Etiquetas de fila: usa labelsProp si existe, sino "Dispositivo N" (nunca el ID interno)
+  const rowLabels = deviceIds.map((id, i) => labelsProp[i] || `Dispositivo ${i + 1}`);
 
   const { data, loading, error, registerSensors, queried } = useHistoricoContext();
 
-  // Registrar todos los sensores al montar
+  // Registrar todos los dispositivos al montar
   useEffect(() => {
-    if (sensorIds.length) registerSensors(sensorIds);
+    if (deviceIds.length) registerSensors(deviceIds);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(sensorIds)]);
+  }, [JSON.stringify(deviceIds)]);
 
   // Debug
   useEffect(() => {
     if (!queried) return;
-    console.log(`[HeatmapHistorico] "${label}" sensorIds:`, sensorIds, 'field:', fieldName);
+    console.log(`[HeatmapHistorico] "${label}" deviceIds:`, deviceIds, 'field:', fieldName);
     console.log(`[HeatmapHistorico] data keys:`, data ? Object.keys(data) : 'null');
-    sensorIds.forEach(id => {
+    deviceIds.forEach(id => {
       console.log(`  [${id}] ${data?.[id]?.length ?? 0} pts`, data?.[id]?.slice(0, 1));
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,7 +112,7 @@ export default function HeatmapHistorico({
 
     // Recolectar todos los timestamps únicos (eje X)
     const tsSet = new Set();
-    sensorIds.forEach(id => {
+    deviceIds.forEach(id => {
       (data?.[id] || []).forEach(pt => {
         const ts = pt.timestamp || pt.time || pt._time;
         if (ts) tsSet.add(ts);
@@ -125,7 +125,7 @@ export default function HeatmapHistorico({
 
     // Construir datos: [xIdx, yIdx, value]
     const heatData = [];
-    sensorIds.forEach((id, yIdx) => {
+    deviceIds.forEach((id, yIdx) => {
       const points = data?.[id] || [];
       const ptMap = {};
       points.forEach(pt => {
@@ -138,7 +138,7 @@ export default function HeatmapHistorico({
       });
     });
 
-    const chartHeight = Math.max(200, sensorIds.length * 50 + 80);
+    const chartHeight = Math.max(200, deviceIds.length * 50 + 80);
     if (chartRef.current) chartRef.current.style.height = `${chartHeight}px`;
     chartInstance.current.resize();
 
@@ -194,7 +194,7 @@ export default function HeatmapHistorico({
         type: 'heatmap',
         data: heatData,
         label: {
-          show: sensorIds.length <= 5 && timestamps.length <= 48,
+          show: deviceIds.length <= 5 && timestamps.length <= 48,
           formatter: p => p.data[2] !== null ? String(p.data[2]) : '',
           fontSize: 9,
           color: '#fff',
@@ -204,19 +204,19 @@ export default function HeatmapHistorico({
         },
       }],
     }, true);
-  }, [data, sensorIds, rowLabels, fieldName, label, unit, min, max, colorFrom, colorTo]);
+  }, [data, deviceIds, rowLabels, fieldName, label, unit, min, max, colorFrom, colorTo]);
 
   // Overlay de estado sobre el chart (el div siempre existe)
   const overlay = (() => {
     if (!queried)        return 'Presione "Consultar" para cargar datos';
     if (loading)         return `Cargando ${label}…`;
     if (error)           return `Error: ${error}`;
-    const hasData = sensorIds.some(id => (data?.[id]?.length ?? 0) > 0);
+    const hasData = deviceIds.some(id => (data?.[id]?.length ?? 0) > 0);
     if (!hasData)        return 'Sin datos para el período seleccionado';
     return null;
   })();
 
-  const chartH = Math.max(200, sensorIds.length * 50 + 80);
+  const chartH = Math.max(200, deviceIds.length * 50 + 80);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: chartH }}>
