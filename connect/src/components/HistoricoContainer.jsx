@@ -87,16 +87,31 @@ export function HistoricoProvider({
   }, []);
 
   const handleQuery = useCallback(async (deviceIdsToQuery, extraFields) => {
-    const ids = toArray(deviceIdsToQuery).length
-      ? toArray(deviceIdsToQuery)
-      : currentDeviceIds;
+    // Prioridad de deviceIds:
+    //   1) arg explícito (llamada directa desde un hijo)
+    //   2) directo de widget.children — igual que historico_cabo lee caboActivo.deviceIds
+    //   3) acumulado via registerSensors (fallback si los hijos son JSX, no config JSON)
+    let ids = toArray(deviceIdsToQuery);
+    if (!ids.length && widget?.children?.length) {
+      ids = widget.children.flatMap(c => toArray(c.deviceIds));
+    }
+    if (!ids.length) ids = currentDeviceIds;
     if (!ids.length) return;
 
-    // Usa los fields acumulados por los charts, o los que vengan explícitos
-    const queryFields = extraFields
-      ? toArray(extraFields)
-      : (currentFields.length > 1 ? currentFields : toArray(fields));
-    
+    // Prioridad de fields:
+    //   1) arg explícito
+    //   2) directo de widget.children (unión de todos los fields pedidos)
+    //   3) acumulado via registerFields / prop fields del provider
+    let queryFields;
+    if (extraFields) {
+      queryFields = toArray(extraFields);
+    } else if (widget?.children?.length) {
+      const childFields = widget.children.flatMap(c => toArray(c.fields));
+      queryFields = childFields.length ? [...new Set(childFields)] : toArray(fields);
+    } else {
+      queryFields = currentFields.length > 1 ? currentFields : toArray(fields);
+    }
+
     await query({
       deviceIds: ids,
       desde: `${from}T00:00:00Z`,
@@ -106,7 +121,7 @@ export function HistoricoProvider({
       fn,
     });
     setQueried(true);
-  }, [from, to, windowState, fn, query, fields, currentDeviceIds, currentFields]);
+  }, [from, to, windowState, fn, query, fields, currentDeviceIds, currentFields, widget]);
 
   const value = {
     from, to, setFrom, setTo,
