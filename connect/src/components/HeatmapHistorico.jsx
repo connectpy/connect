@@ -104,7 +104,7 @@ export default function HeatmapHistorico({
       chartInstance.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(sensorIds)]);
+  }, [JSON.stringify(deviceIds)]);
 
   // Actualizar chart cuando llegan datos
   useEffect(() => {
