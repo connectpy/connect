@@ -64,10 +64,20 @@ export default function HeatmapHistorico({
   colorTo = '#ef4444',
 }) {
   const deviceIds = toArray(deviceIdsProp);
-  const fieldName = Array.isArray(fields) ? fields[0] : (fields || 'value');
 
-  // Etiquetas de fila: usa labelsProp si existe, sino "Dispositivo N" (nunca el ID interno)
-  const rowLabels = deviceIds.map((id, i) => labelsProp[i] || `Dispositivo ${i + 1}`);
+  // Normalizar fields siempre a array
+  const fieldsArray = (Array.isArray(fields) ? fields : toArray(fields)).filter(Boolean);
+  if (!fieldsArray.length) fieldsArray.push('value');
+  const fieldName = fieldsArray[0]; // campo para modo normal (N devices × 1 field)
+
+  // Modo multi-field: 1 device + N fields → cada field es una fila del heatmap
+  // Activa cuando fields es array con más de un elemento y solo hay un deviceId
+  const isMultiFieldMode = fieldsArray.length > 1 && deviceIds.length === 1;
+
+  // Etiquetas de fila según modo
+  const rowLabels = isMultiFieldMode
+    ? fieldsArray.map((f, i) => labelsProp[i] || f)        // etiqueta del field
+    : deviceIds.map((id, i) => labelsProp[i] || `Dispositivo ${i + 1}`); // etiqueta del device
 
   const { data, loading, error, registerSensors, queried } = useHistoricoContext();
 
@@ -110,35 +120,70 @@ export default function HeatmapHistorico({
   useEffect(() => {
     if (!chartInstance.current) return;
 
-    // Recolectar todos los timestamps únicos (eje X)
-    const tsSet = new Set();
-    deviceIds.forEach(id => {
-      (data?.[id] || []).forEach(pt => {
+    // ── Recolectar timestamps y construir heatData según el modo ──────────────
+    let timestamps, heatData;
+
+    if (isMultiFieldMode) {
+      // Modo: 1 device × N fields → rows = fields, cols = timestamps
+      // Backend responde: { deviceId: [{ timestamp, T1, T2, ..., T12 }] }
+      const deviceId = deviceIds[0];
+      const points = data?.[deviceId] || [];
+
+      const tsSet = new Set();
+      points.forEach(pt => {
         const ts = pt.timestamp || pt.time || pt._time;
         if (ts) tsSet.add(ts);
       });
-    });
-    const timestamps = Array.from(tsSet).sort();
-    if (!timestamps.length) return;
+      timestamps = Array.from(tsSet).sort();
+      if (!timestamps.length) return;
 
-    const xLabels = timestamps.map(fmtTime);
-
-    // Construir datos: [xIdx, yIdx, value]
-    const heatData = [];
-    deviceIds.forEach((id, yIdx) => {
-      const points = data?.[id] || [];
+      // Mapa timestamp → punto completo (acceso a cualquier field)
       const ptMap = {};
       points.forEach(pt => {
         const ts = pt.timestamp || pt.time || pt._time;
-        if (ts) ptMap[ts] = extractValue(pt, fieldName);
+        if (ts) ptMap[ts] = pt;
       });
-      timestamps.forEach((ts, xIdx) => {
-        const v = ptMap[ts] ?? null;
-        heatData.push([xIdx, yIdx, v]);
-      });
-    });
 
-    const chartHeight = Math.max(200, deviceIds.length * 50 + 80);
+      heatData = [];
+      fieldsArray.forEach((fld, yIdx) => {
+        timestamps.forEach((ts, xIdx) => {
+          const pt = ptMap[ts];
+          const v = pt ? extractValue(pt, fld) : null;
+          heatData.push([xIdx, yIdx, v]);
+        });
+      });
+    } else {
+      // Modo original: N devices × 1 field → rows = deviceIds, cols = timestamps
+      const tsSet = new Set();
+      deviceIds.forEach(id => {
+        (data?.[id] || []).forEach(pt => {
+          const ts = pt.timestamp || pt.time || pt._time;
+          if (ts) tsSet.add(ts);
+        });
+      });
+      timestamps = Array.from(tsSet).sort();
+      if (!timestamps.length) return;
+
+      heatData = [];
+      deviceIds.forEach((id, yIdx) => {
+        const points = data?.[id] || [];
+        const ptMap = {};
+        points.forEach(pt => {
+          const ts = pt.timestamp || pt.time || pt._time;
+          if (ts) ptMap[ts] = extractValue(pt, fieldName);
+        });
+        timestamps.forEach((ts, xIdx) => {
+          const v = ptMap[ts] ?? null;
+          heatData.push([xIdx, yIdx, v]);
+        });
+      });
+    }
+
+    // xLabels siempre se calcula después del if/else, cuando timestamps ya está definido
+    const xLabels = timestamps.map(fmtTime);
+
+    const rowCount = isMultiFieldMode ? fieldsArray.length : deviceIds.length;
+    const chartHeight = Math.max(200, rowCount * 50 + 80);
     if (chartRef.current) chartRef.current.style.height = `${chartHeight}px`;
     chartInstance.current.resize();
 
@@ -204,19 +249,23 @@ export default function HeatmapHistorico({
         },
       }],
     }, true);
-  }, [data, deviceIds, rowLabels, fieldName, label, unit, min, max, colorFrom, colorTo]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, JSON.stringify(deviceIds), JSON.stringify(fieldsArray), isMultiFieldMode, rowLabels, fieldName, label, unit, min, max, colorFrom, colorTo]);
 
   // Overlay de estado sobre el chart (el div siempre existe)
   const overlay = (() => {
     if (!queried)        return 'Presione "Consultar" para cargar datos';
     if (loading)         return `Cargando ${label}…`;
     if (error)           return `Error: ${error}`;
-    const hasData = deviceIds.some(id => (data?.[id]?.length ?? 0) > 0);
+    const hasData = isMultiFieldMode
+      ? (data?.[deviceIds[0]]?.length ?? 0) > 0
+      : deviceIds.some(id => (data?.[id]?.length ?? 0) > 0);
     if (!hasData)        return 'Sin datos para el período seleccionado';
     return null;
   })();
 
-  const chartH = Math.max(200, deviceIds.length * 50 + 80);
+  const rowCount = isMultiFieldMode ? fieldsArray.length : deviceIds.length;
+  const chartH = Math.max(200, rowCount * 50 + 80);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: chartH }}>
