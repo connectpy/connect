@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { useHistoricoContext } from './HistoricoContainer';
-import { WaitingPlaceholder } from './GaugeWidget';
+import { useHistorico } from '../hooks/SensorContext';
 
 /** Normaliza a array independientemente del tipo recibido. */
 function toArray(value) {
@@ -35,21 +35,12 @@ function fmtTime(ts) {
 /**
  * HeatmapHistorico
  *
- * Heatmap histórico con:
- *   - Eje X: tiempo
- *   - Eje Y: dispositivos (cada deviceId es una fila)
- *   - Color: valor numérico
+ * Lanza su propia query al backend cuando el usuario presiona Consultar
+ * (reaccionando al queryCount del HistoricoProvider).
  *
- * Props (vienen de la config del widget):
- *   deviceIds  string | string[]   IDs de dispositivos (una fila por dispositivo)
- *   labels     string[]            Etiquetas para cada fila (mismo orden que deviceIds)
- *   fields     string | string[]   Campo a leer de cada punto
- *   label      string              Título del gráfico
- *   unit       string              Unidad (ej: '°C')
- *   min        number              Mínimo del rango de color
- *   max        number              Máximo del rango de color
- *   colorFrom  string              Color inicio del gradiente
- *   colorTo    string              Color fin del gradiente
+ * Modos:
+ *   - N devices × 1 field  → deviceIds: ["d1","d2"], fields: "value"
+ *   - 1 device  × N fields → deviceIds: ["secadero"], fields: ["T1","T2",...,"T12"]
  */
 export default function HeatmapHistorico({
   deviceIds: deviceIdsProp = [],
@@ -59,9 +50,10 @@ export default function HeatmapHistorico({
   unit = '',
   min = 0,
   max = 100,
-  colorFrom = '#06b6d4',
+  colorFrom   = '#06b6d4',
   colorMiddle = '#f59e0b',
-  colorTo = '#ef4444',
+  colorTo     = '#ef4444',
+  window: timeWindow = '1h',  // renombrado para no pisar el global window
 }) {
   const deviceIds = toArray(deviceIdsProp);
 
@@ -71,34 +63,43 @@ export default function HeatmapHistorico({
   const fieldName = fieldsArray[0]; // campo para modo normal (N devices × 1 field)
 
   // Modo multi-field: 1 device + N fields → cada field es una fila del heatmap
-  // Activa cuando fields es array con más de un elemento y solo hay un deviceId
   const isMultiFieldMode = fieldsArray.length > 1 && deviceIds.length === 1;
 
   // Etiquetas de fila según modo
   const rowLabels = isMultiFieldMode
-    ? fieldsArray.map((f, i) => labelsProp[i] || f)        // etiqueta del field
-    : deviceIds.map((id, i) => labelsProp[i] || `Dispositivo ${i + 1}`); // etiqueta del device
+    ? fieldsArray.map((f, i) => labelsProp[i] || f)
+    : deviceIds.map((id, i) => labelsProp[i] || `Dispositivo ${i + 1}`);
 
-  const { data, loading, error, registerSensors, queried } = useHistoricoContext();
+  // ── Estado y query propia ──────────────────────────────────────────────────
+  const { from, to, fn, queryCount } = useHistoricoContext();
+  const { query, data, loading, error } = useHistorico();
+  const [queried, setQueried] = useState(false);
 
-  // Registrar todos los dispositivos al montar
+  // Lanzar query propia cuando el usuario presiona Consultar
   useEffect(() => {
-    if (deviceIds.length) registerSensors(deviceIds);
+    if (queryCount === 0 || !deviceIds.length) return;
+    query({
+      deviceIds,
+      desde:  `${from}T00:00:00Z`,
+      hasta:  `${to}T23:59:59Z`,
+      fields: fieldsArray,
+      window: timeWindow,
+      fn,
+    });
+    setQueried(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(deviceIds)]);
+  }, [queryCount]);
 
   // Debug
   useEffect(() => {
     if (!queried) return;
-    console.log(`[HeatmapHistorico] "${label}" deviceIds:`, deviceIds, 'field:', fieldName);
+    console.log(`[HeatmapHistorico] "${label}" mode=${isMultiFieldMode ? 'multi-field' : 'multi-device'}`);
+    console.log(`[HeatmapHistorico] deviceIds:`, deviceIds, 'fields:', fieldsArray);
     console.log(`[HeatmapHistorico] data keys:`, data ? Object.keys(data) : 'null');
-    deviceIds.forEach(id => {
-      console.log(`  [${id}] ${data?.[id]?.length ?? 0} pts`, data?.[id]?.slice(0, 1));
-    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queried, data]);
 
-  const chartRef = useRef(null);
+  const chartRef      = useRef(null);
   const chartInstance = useRef(null);
 
   // Init ECharts
@@ -125,9 +126,9 @@ export default function HeatmapHistorico({
 
     if (isMultiFieldMode) {
       // Modo: 1 device × N fields → rows = fields, cols = timestamps
-      // Backend responde: { deviceId: [{ timestamp, T1, T2, ..., T12 }] }
+      // Backend: { deviceId: [{ timestamp, T1, T2, ..., T12 }] }
       const deviceId = deviceIds[0];
-      const points = data?.[deviceId] || [];
+      const points   = data?.[deviceId] || [];
 
       const tsSet = new Set();
       points.forEach(pt => {
@@ -148,7 +149,7 @@ export default function HeatmapHistorico({
       fieldsArray.forEach((fld, yIdx) => {
         timestamps.forEach((ts, xIdx) => {
           const pt = ptMap[ts];
-          const v = pt ? extractValue(pt, fld) : null;
+          const v  = pt ? extractValue(pt, fld) : null;
           heatData.push([xIdx, yIdx, v]);
         });
       });
@@ -167,7 +168,7 @@ export default function HeatmapHistorico({
       heatData = [];
       deviceIds.forEach((id, yIdx) => {
         const points = data?.[id] || [];
-        const ptMap = {};
+        const ptMap  = {};
         points.forEach(pt => {
           const ts = pt.timestamp || pt.time || pt._time;
           if (ts) ptMap[ts] = extractValue(pt, fieldName);
@@ -179,10 +180,10 @@ export default function HeatmapHistorico({
       });
     }
 
-    // xLabels siempre se calcula después del if/else, cuando timestamps ya está definido
+    // xLabels siempre después del if/else, cuando timestamps ya está definido
     const xLabels = timestamps.map(fmtTime);
 
-    const rowCount = isMultiFieldMode ? fieldsArray.length : deviceIds.length;
+    const rowCount    = isMultiFieldMode ? fieldsArray.length : deviceIds.length;
     const chartHeight = Math.max(200, rowCount * 50 + 80);
     if (chartRef.current) chartRef.current.style.height = `${chartHeight}px`;
     chartInstance.current.resize();
@@ -239,7 +240,7 @@ export default function HeatmapHistorico({
         type: 'heatmap',
         data: heatData,
         label: {
-          show: deviceIds.length <= 5 && timestamps.length <= 48,
+          show: rowLabels.length <= 20 && timestamps.length <= 100,
           formatter: p => p.data[2] !== null ? String(p.data[2]) : '',
           fontSize: 9,
           color: '#fff',
@@ -250,22 +251,22 @@ export default function HeatmapHistorico({
       }],
     }, true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, JSON.stringify(deviceIds), JSON.stringify(fieldsArray), isMultiFieldMode, rowLabels, fieldName, label, unit, min, max, colorFrom, colorTo]);
+  }, [data, JSON.stringify(deviceIds), JSON.stringify(fieldsArray), isMultiFieldMode, JSON.stringify(rowLabels), label, unit, min, max, colorFrom, colorTo]);
 
-  // Overlay de estado sobre el chart (el div siempre existe)
+  // Overlay de estado
   const overlay = (() => {
-    if (!queried)        return 'Presione "Consultar" para cargar datos';
-    if (loading)         return `Cargando ${label}…`;
-    if (error)           return `Error: ${error}`;
+    if (!queried)  return 'Presione "Consultar" para cargar datos';
+    if (loading)   return `Cargando ${label}…`;
+    if (error)     return `Error: ${error}`;
     const hasData = isMultiFieldMode
       ? (data?.[deviceIds[0]]?.length ?? 0) > 0
       : deviceIds.some(id => (data?.[id]?.length ?? 0) > 0);
-    if (!hasData)        return 'Sin datos para el período seleccionado';
+    if (!hasData)  return 'Sin datos para el período seleccionado';
     return null;
   })();
 
   const rowCount = isMultiFieldMode ? fieldsArray.length : deviceIds.length;
-  const chartH = Math.max(200, rowCount * 50 + 80);
+  const chartH   = Math.max(200, rowCount * 50 + 80);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: chartH }}>

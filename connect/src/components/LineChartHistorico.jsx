@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { useHistoricoContext } from './HistoricoContainer';
-import { WaitingPlaceholder } from './GaugeWidget';
+import { useHistorico } from '../hooks/SensorContext';
 
 /** Normaliza sensorIds a array independientemente del tipo recibido. */
 function toArray(value) {
@@ -13,48 +13,64 @@ function toArray(value) {
 
 /**
  * LineChartHistorico
- * Gráfico de línea que usa el contexto de HistoricoProvider
- * 
+ *
+ * Gráfico de línea que lanza su propia query al backend cuando queryCount cambia.
+ *
  * Uso:
- * <LineChartHistorico deviceIds={['device1']} label="Temperatura" />
+ * <LineChartHistorico deviceIds={['device1']} fields="value" label="Temperatura" />
  */
 export default function LineChartHistorico({
   deviceIds: deviceIdsProp = [],
-  fields = 'value',
-  label = 'Gráfico',
-  sensorLabel,          // Nombre legible del dispositivo (opcional, para tooltip)
-  unit = '°C',
-  color = '#06b6d4',
-  showArea = true,
+  fields     = 'value',
+  label      = 'Gráfico',
+  sensorLabel,
+  unit       = '°C',
+  color      = '#06b6d4',
+  showArea   = true,
+  window: timeWindow = '1h',  // renombrado para no pisar el global window
 }) {
   const deviceIds = toArray(deviceIdsProp);
   // Primer field pedido (puede ser string o array)
   const fieldName = Array.isArray(fields) ? fields[0] : (fields || 'value');
+  const fieldsArr = toArray(fields).filter(Boolean);
+  if (!fieldsArr.length) fieldsArr.push('value');
 
-  const { data, loading, error, registerSensors, queried } = useHistoricoContext();
+  // ── Estado y query propia ──────────────────────────────────────────────────
+  const { from, to, fn, queryCount } = useHistoricoContext();
+  const { query, data, loading, error } = useHistorico();
+  const [queried, setQueried] = useState(false);
 
-  // Registrar dispositivos al montar
+  // Lanzar query propia cuando el usuario presiona Consultar
   useEffect(() => {
-    if (deviceIds.length) registerSensors(deviceIds);
+    if (queryCount === 0 || !deviceIds.length) return;
+    query({
+      deviceIds,
+      desde:  `${from}T00:00:00Z`,
+      hasta:  `${to}T23:59:59Z`,
+      fields: fieldsArr,
+      window: timeWindow,
+      fn,
+    });
+    setQueried(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(deviceIds)]);
+  }, [queryCount]);
 
   const deviceId = deviceIds[0];
-  const rawData = data?.[deviceId] || [];
+  const rawData  = data?.[deviceId] || [];
 
-  // Debug — ver qué llega del backend
+  // Debug
   useEffect(() => {
     if (!queried) return;
-    console.log(`[Historico] "${label}" deviceId="${deviceId}" field="${fieldName}"`);
-    console.log(`[Historico] data keys:`, data ? Object.keys(data) : 'null');
-    console.log(`[Historico] rawData (${rawData.length} pts):`, rawData.slice(0, 2));
+    console.log(`[LineChartHistorico] "${label}" deviceId="${deviceId}" field="${fieldName}"`);
+    console.log(`[LineChartHistorico] data keys:`, data ? Object.keys(data) : 'null');
+    console.log(`[LineChartHistorico] rawData (${rawData.length} pts):`, rawData.slice(0, 2));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queried, data]);
 
-  const chartRef = React.useRef(null);
+  const chartRef      = React.useRef(null);
   const chartInstance = React.useRef(null);
 
-  // Inicializar ECharts — el div SIEMPRE existe en el DOM
+  // Inicializar ECharts
   useEffect(() => {
     if (!chartRef.current) return;
     chartInstance.current?.dispose();
@@ -86,7 +102,7 @@ export default function LineChartHistorico({
         borderColor: '#1e293b',
         textStyle: { color: '#f1f5f9', fontSize: 13 },
         formatter: params => {
-          const p = params[0];
+          const p          = params[0];
           const seriesName = sensorLabel || label;
           return `<span style="color:#64748b;font-size:11px">${p.name}</span><br/>` +
                  `<span style="color:#94a3b8;font-size:11px">${seriesName}</span>: ` +
@@ -130,7 +146,6 @@ export default function LineChartHistorico({
     }, true);
   }, [rawData, label, unit, color, showArea, fieldName]);
 
-  // El overlay se muestra encima del div del chart (que siempre existe)
   const overlay = (() => {
     if (!queried)        return 'Presione "Consultar" para cargar datos';
     if (loading)         return `Cargando ${label}…`;
@@ -141,7 +156,6 @@ export default function LineChartHistorico({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: 300 }}>
-      {/* El div del chart siempre está montado para que ECharts pueda init */}
       <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
       {overlay && (
         <div style={{
@@ -159,7 +173,6 @@ export default function LineChartHistorico({
 
 /**
  * Extrae xData/yData de los puntos del backend.
- * Lee `fieldName` primero; si no existe, busca el primer campo numérico.
  */
 function formatChartData(points, fieldName = 'value') {
   const SKIP = new Set(['timestamp', 'time', '_time', '_start', '_stop', 'result', 'table']);
@@ -173,9 +186,7 @@ function formatChartData(points, fieldName = 'value') {
   });
 
   const yData = points.map(d => {
-    // 1. Campo pedido explícitamente
     let raw = d[fieldName];
-    // 2. Fallback: primer campo numérico disponible
     if (raw === undefined || raw === null) {
       const entry = Object.entries(d).find(([k, v]) => !SKIP.has(k) && !isNaN(parseFloat(v)));
       if (entry) raw = entry[1];

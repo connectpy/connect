@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { useHistoricoContext } from './HistoricoContainer';
+import { useHistorico } from '../hooks/SensorContext';
 
 /** Normaliza a array sin importar el tipo de entrada. */
 function toArray(value) {
@@ -32,53 +33,37 @@ function fmtTime(ts) {
 }
 
 /**
- * Calcula los intervalos [xLabel_inicio, xLabel_fin] donde el campo booleano es verdadero (>= 1).
- * Devuelve el array de pairs para markArea.
- */
-function calcMarkAreas(points, fieldBool, xLabels) {
-  const areas = [];
-  let start = null;
-  points.forEach((pt, i) => {
-    const active = parseFloat(pt[fieldBool]) >= 1;
-    if (active && start === null) start = i;
-    if (!active && start !== null) {
-      areas.push([{ xAxis: xLabels[start] }, { xAxis: xLabels[i - 1] }]);
-      start = null;
-    }
-  });
-  if (start !== null) {
-    areas.push([{ xAxis: xLabels[start] }, { xAxis: xLabels[points.length - 1] }]);
-  }
-  return areas;
-}/**
  * LineAreaHistorico
  *
- * Gráfico de línea histórico con una o varias áreas sombreadas condicionales.
+ * Gráfico de línea histórico con áreas sombreadas condicionales.
  *
- * Modo simple (un solo área):
- *   fieldBool  = 'fan'
- *   areaColor  = '#f59e0b'
- *   areaLabel  = 'Ventilador activo'
+ * - La línea principal (fieldTemp) se muestra siempre sin relleno.
+ * - Por cada campo booleano (areas[].field), se crea una serie de área
+ *   separada que solo rellena los intervalos donde el valor >= 1.
+ * - Si ningún campo está activo, no hay sombreado (área transparente).
+ *
+ * Modo simple (un área):
+ *   fieldBool  = 'encendido'
+ *   areaColor  = '#ef4444'
+ *   areaLabel  = 'Encendido'
  *
  * Modo múltiple (varios áreas):
  *   areas = [
- *     { field: 'fan',      color: '#f59e0b', label: 'Ventilador activo' },
- *     { field: 'hayGrano', color: '#10b981', label: 'Hay grano' },
+ *     { field: 'encendido',  color: '#ef4444', label: 'Encendido' },
+ *     { field: 'automatico', color: '#06b6d4', label: 'Automático' },
  *   ]
  *
- * Si se proveen ambos, `areas` tiene prioridad.
- *
- * Props desde config JSON:
+ * Props:
  *   deviceIds   string | string[]  Dispositivo a consultar
  *   fieldTemp   string             Campo numérico para la línea
- *   areas       object[]           Array de { field, color, label } — múltiples áreas
- *   fieldBool   string             Campo booleano — modo simple (un área)
+ *   areas       object[]           Array de { field, color, label }
+ *   fieldBool   string             Campo booleano — modo simple
  *   areaColor   string             Color — modo simple
  *   areaLabel   string             Etiqueta — modo simple
  *   label       string             Título del gráfico
  *   sensorLabel string             Nombre legible en tooltip
  *   unit        string             Unidad
- *   color       string             Color de la línea
+ *   color       string             Color de la línea principal
  */
 export default function LineAreaHistorico({
   deviceIds: deviceIdsProp = [],
@@ -89,47 +74,56 @@ export default function LineAreaHistorico({
   fieldBool  = 'activo',
   areaColor  = '#f59e0b',
   areaLabel  = 'Activo',
-  // Estilo de la línea
+  // Estilo
   label       = 'Gráfico',
   sensorLabel,
   unit        = '°C',
   color       = '#06b6d4',
+  window: timeWindow = '1h',  // renombrado para no pisar el global window
 }) {
   const deviceIds = toArray(deviceIdsProp);
   const deviceId  = deviceIds[0];
 
-  // Normalizar la definición de áreas:
-  // si viene `areas`, la usamos; si no, construimos una desde las props simples
+  // Normalizar la definición de áreas
   const areaDefs = areasProp?.length
     ? areasProp
     : [{ field: fieldBool, color: areaColor, label: areaLabel }];
 
-  const { data, loading, error, registerSensors, registerFields, queried } = useHistoricoContext();
+  // Todos los fields que hay que pedir al backend: línea + áreas
+  const allFields = [fieldTemp, ...areaDefs.map(a => a.field)].filter(Boolean);
 
-  // Registrar dispositivo y TODOS los fields necesarios
-  useEffect(() => {
-    if (deviceIds.length) registerSensors(deviceIds);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(deviceIds)]);
+  // ── Estado y query propia ──────────────────────────────────────────────────
+  const { from, to, fn, queryCount } = useHistoricoContext();
+  const { query, data, loading, error } = useHistorico();
+  const [queried, setQueried] = useState(false);
 
+  // Lanzar query propia cuando el usuario presiona Consultar
   useEffect(() => {
-    const allFields = [fieldTemp, ...areaDefs.map(a => a.field)].filter(Boolean);
-    registerFields(allFields);
+    if (queryCount === 0 || !deviceIds.length) return;
+    query({
+      deviceIds,
+      desde:  `${from}T00:00:00Z`,
+      hasta:  `${to}T23:59:59Z`,
+      fields: allFields,
+      window: timeWindow,
+      fn,
+    });
+    setQueried(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fieldTemp, JSON.stringify(areaDefs)]);
+  }, [queryCount]);
 
   const rawData = data?.[deviceId] || [];
 
   // Debug
   useEffect(() => {
     if (!queried) return;
-    console.log(`[LineAreaHistorico] "${label}" deviceId="${deviceId}"`);
+    console.log(`[LineAreaHistorico] "${label}" deviceId="${deviceId}" fields:`, allFields);
     console.log(`[LineAreaHistorico] data keys:`, data ? Object.keys(data) : 'null');
     console.log(`[LineAreaHistorico] rawData (${rawData.length} pts):`, rawData.slice(0, 2));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queried, data]);
 
-  const chartRef = useRef(null);
+  const chartRef      = useRef(null);
   const chartInstance = useRef(null);
 
   // Init ECharts
@@ -156,14 +150,40 @@ export default function LineAreaHistorico({
 
     const seriesName = sensorLabel || label;
 
-    // Calcular intervalos activos para cada área
-    const computedAreas = areaDefs.map(def => ({
-      ...def,
-      intervals: calcMarkAreas(rawData, def.field, xData),
-    }));
+    // ── Series de área por cada campo booleano ─────────────────────────────
+    // Cada serie solo tiene valor donde el campo es >= 1, '-' (vacío) donde no.
+    // Así el relleno aparece ÚNICAMENTE en los intervalos activos.
+    const areaSeries = areaDefs.map(def => {
+      const areaData = rawData.map((pt, i) => {
+        const active = parseFloat(pt[def.field]) >= 1;
+        return active ? yData[i] : '-'; // '-' = punto inexistente en ECharts
+      });
 
-    // Series de la línea principal + una serie fantasma por área (para leyenda)
-    const legendNames = [seriesName, ...computedAreas.filter(a => a.intervals.length > 0).map(a => a.label)];
+      return {
+        name:        def.label,
+        type:        'line',
+        data:        areaData,
+        symbol:      'none',
+        silent:      true,
+        connectNulls: false,
+        z:           1, // debajo de la línea principal
+        lineStyle:   { width: 0, opacity: 0 },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: def.color + 'AA' },
+            { offset: 1, color: def.color + '22' },
+          ]),
+          origin: 'start',
+        },
+        itemStyle: { color: def.color },
+      };
+    });
+
+    // Áreas que tienen al menos un punto activo → se muestran en leyenda
+    const activeAreaDefs = areaDefs.filter(def =>
+      rawData.some(pt => parseFloat(pt[def.field]) >= 1)
+    );
+    const legendNames = [seriesName, ...activeAreaDefs.map(a => a.label)];
 
     chartInstance.current.setOption({
       backgroundColor: 'transparent',
@@ -176,7 +196,7 @@ export default function LineAreaHistorico({
         data: legendNames,
         bottom: 0,
         textStyle: { color: '#94a3b8', fontSize: 11 },
-        itemWidth: 14, itemHeight: 10,
+        itemWidth: 14, itemHeight: 8,
       },
       tooltip: {
         trigger: 'axis',
@@ -184,20 +204,25 @@ export default function LineAreaHistorico({
         borderColor: '#1e293b',
         textStyle: { color: '#f1f5f9', fontSize: 12 },
         formatter: params => {
-          const p = params[0];
-          const ptIdx = xData.indexOf(p.name);
-          const pt = ptIdx >= 0 ? rawData[ptIdx] : null;
+          // El primer params es el de la línea principal
+          const p     = params.find(s => s.seriesName === seriesName) || params[0];
+          const ptIdx = xData.indexOf(p.axisValueLabel || p.name);
+          const pt    = ptIdx >= 0 ? rawData[ptIdx] : null;
 
           let html = `<span style="color:#64748b;font-size:11px">${p.name}</span><br/>` +
                      `<span style="color:#94a3b8;font-size:11px">${seriesName}</span>: ` +
-                     `<b style="color:${color}">${p.value}${unit}</b>`;
+                     `<b style="color:${color}">${p.value ?? '—'}${unit}</b>`;
 
           if (pt) {
-            computedAreas.forEach(a => {
+            areaDefs.forEach(a => {
               const active = parseFloat(pt[a.field]) >= 1;
-              if (active) {
-                html += `<br/><span style="color:${a.color};font-size:11px">● ${a.label}</span>`;
-              }
+              html += `<br/><span style="
+                display:inline-flex;align-items:center;gap:4px;
+                margin-top:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;
+                background:${active ? a.color + '28' : 'rgba(100,116,139,0.1)'};
+                color:${active ? a.color : '#64748b'}">
+                ${active ? '●' : '○'} ${a.label}
+              </span>`;
             });
           }
           return html;
@@ -220,50 +245,23 @@ export default function LineAreaHistorico({
       },
       dataZoom: [{ type: 'inside', start: 0, end: 100 }],
       series: [
-        // ── Línea principal ──────────────────────────────────────────────
+        // ── Línea principal — sin areaStyle (el relleno lo dan las series de área) ──
         {
-          name: seriesName,
-          type: 'line',
-          data: yData,
-          smooth: true,
-          symbol: 'circle',
+          name:       seriesName,
+          type:       'line',
+          data:       yData,
+          smooth:     true,
+          symbol:     'circle',
           symbolSize: 4,
           showSymbol: rawData.length < 100,
-          lineStyle: { color, width: 2.5, shadowColor: color + '44', shadowBlur: 8 },
-          itemStyle: { color, borderColor: '#0f172a', borderWidth: 2 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: color + '33' },
-              { offset: 1, color: color + '03' },
-            ]),
-          },
-          // Todas las zonas sombreadas van en markArea de la misma serie
-          // ECharts no admite múltiples estilos por markArea en una sola serie,
-          // por eso cada área tiene su propia serie fantasma con su markArea.
+          z:          2,
+          lineStyle:  { color, width: 2.5, shadowColor: color + '44', shadowBlur: 8 },
+          itemStyle:  { color, borderColor: '#0f172a', borderWidth: 2 },
+          // Sin areaStyle: el fondo solo aparece desde las series booleanas
         },
 
-        // ── Serie fantasma por cada área (markArea + entrada en leyenda) ─
-        ...computedAreas.map(a => ({
-          name: a.label,
-          type: 'line',
-          data: [],
-          lineStyle: { color: a.color, type: 'dashed', width: 1.5 },
-          itemStyle: { color: a.color },
-          areaStyle: { color: a.color + '28' },
-          symbol: 'none',
-          silent: true,
-          markArea: {
-            silent: true,
-            label: { show: false },
-            itemStyle: {
-              color: a.color + '28',
-              borderColor: a.color + '66',
-              borderWidth: 1,
-              borderType: 'dashed',
-            },
-            data: a.intervals,
-          },
-        })),
+        // ── Una serie de área por cada campo booleano ─────────────────────
+        ...areaSeries,
       ],
     }, true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
