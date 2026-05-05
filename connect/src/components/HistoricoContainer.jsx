@@ -88,22 +88,23 @@ export function HistoricoProvider({
         <HistoricoControls onConsultar={handleQuery} />
         {children}
         {charts.length > 0 && (
-          <div className="historico-charts" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '16px' }}>
+          <div className="historico-charts" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
             {charts.map((chart, idx) => {
               const ChartComp = HISTORICO_RENDERERS[chart.tipo];
               if (!ChartComp) {
                 console.warn(`[HistoricoContainer] tipo desconocido: "${chart.tipo}". Disponibles:`, Object.keys(HISTORICO_RENDERERS));
                 return (
                   <div key={chartKey(chart, idx)} style={{
-                    flex: '1 1 300px', minWidth: 0, padding: 12,
+                    padding: 12,
                     color: '#ef4444', fontSize: 12, background: 'rgba(239,68,68,0.08)', borderRadius: 8,
                   }}>
                     Tipo histórico desconocido: <b>{chart.tipo}</b>
                   </div>
                 );
               }
+              const isHeatmap = chart.tipo === 'heatmap' || chart.tipo === 'HeatmapHistorico';
               return (
-                <div key={chartKey(chart, idx)} style={{ flex: '1 1 300px', minWidth: 0 }}>
+                <div key={chartKey(chart, idx)} style={isHeatmap ? { width: '100%' } : { flex: '1 1 300px', minWidth: 0 }}>
                   <ChartComp {...chart} />
                 </div>
               );
