@@ -28,13 +28,23 @@ function Navbar (){
                         <h1>connect</h1>
                     </div>
                     <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-                        <a href="#features" onClick={() => setMenuOpen(false)}>Características</a>
-                        <a href="#benefits" onClick={() => setMenuOpen(false)}>Beneficios</a>
                         <a href="#contact" onClick={() => setMenuOpen(false)}>Contacto</a>
+                        <a href="/registro" onClick={() => setMenuOpen(false)}>Registrarse</a>
                         <a href="/login" className="btn-primary">Ingresar</a>
                     </div>
-                    <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-                        {menuOpen ? '✕' : '☰'}
+                    <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+                        {menuOpen ? (
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        ) : (
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="3" y1="12" x2="21" y2="12"></line>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <line x1="3" y1="18" x2="21" y2="18"></line>
+                            </svg>
+                        )}
                     </button>
                 </div>
             </div>
@@ -308,8 +318,8 @@ function CTA() {
             <a href="https://wa.me/595985686844" className="btn-light btn-lg">
               Contactar Ventas
             </a>
-            <a href="https://app.connectparaguay.com" className="btn-outline btn-lg">
-              Iniciar Sesión
+            <a href="/login" className="btn-outline btn-lg">
+              Ingresar
             </a>
           </div>
         </div>
@@ -339,9 +349,8 @@ function Footer() {
           
           <div className="footer-links">
             <h4>Producto</h4>
-            <a href="#features">Características</a>
-            <a href="#benefits">Beneficios</a>
-            <a href="https://app.connectparaguay.com">Acceder</a>
+            <a href="/registro">Registrarse</a>
+            <a href="/login">Ingresar</a>
           </div>
           
           <div className="footer-links">
