@@ -155,8 +155,9 @@ export default function LineAreaHistorico({
     // Así el relleno aparece ÚNICAMENTE en los intervalos activos.
     const areaSeries = areaDefs.map(def => {
       const areaData = rawData.map((pt, i) => {
-        const active = parseFloat(pt[def.field]) >= 1;
-        return active ? yData[i] : '-'; // '-' = punto inexistente en ECharts
+        const val = pt[def.field];
+        const active = val === true || val === 1 || val === '1' || val === 'true' || parseFloat(val) >= 1;
+        return active ? yData[i] : '-';
       });
 
       return {
@@ -213,10 +214,11 @@ export default function LineAreaHistorico({
                      `<span style="color:#94a3b8;font-size:11px">${seriesName}</span>: ` +
                      `<b style="color:${color}">${p.value ?? '—'}${unit}</b>`;
 
-          if (pt) {
-            areaDefs.forEach(a => {
-              const active = parseFloat(pt[a.field]) >= 1;
-              html += `<br/><span style="
+            if (pt) {
+             areaDefs.forEach(a => {
+               const val = pt[a.field];
+               const active = val === true || val === 1 || val === '1' || val === 'true' || parseFloat(val) >= 1;
+               html += `<br/><span style="
                 display:inline-flex;align-items:center;gap:4px;
                 margin-top:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;
                 background:${active ? a.color + '28' : 'rgba(100,116,139,0.1)'};
