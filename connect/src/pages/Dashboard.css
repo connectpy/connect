@@ -1,4 +1,8 @@
 /* src/styles/Dashboard.css */
+:root {
+  --header-height: 102px;
+  --sidebar-width: 260px;
+}
 @font-face {
   font-family: 'OCR A Extended';
   src: url('../assets/fonts/OCRAEXT.TTF') format('truetype');
@@ -255,7 +259,7 @@
 /* ===== Sidebar ===== */
 .dashboard-sidebar {
   width: var(--sidebar-width);
-  background: rgba(30, 41, 59, 0.5);
+  background: rgba(30, 41, 59, 0.95); /* Más opaco para móvil */
   backdrop-filter: blur(10px);
   border-right: 1px solid var(--color-border);
   display: flex;
@@ -405,6 +409,9 @@
 }
 
 @media (max-width: 768px) {
+  :root {
+    --header-height: 82px; /* logo es más pequeño en móvil */
+  }
 
   .sidebar-toggle {
     display: block;
