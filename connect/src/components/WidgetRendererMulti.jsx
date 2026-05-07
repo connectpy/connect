@@ -291,12 +291,17 @@ function ChartRenderer({ chart }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function ContainerWidget({ widget }) {
   return (
-    <div style={{ display:'flex', flexDirection:'row', gap:16, width:'100%', flexWrap:'wrap' }}>
-      {(widget.charts || []).map(chart => (
-        <div key={chart.id} style={{ flex: '1 1 300px', minWidth: 0 }}>
-          <ChartRenderer chart={chart} />
-        </div>
-      ))}
+    <div style={{ display:'flex', flexWrap:'wrap', gap:'1.5rem', width:'100%' }}>
+      {(widget.charts || []).map(chart => {
+        const cols = chart.cols ? Math.min(12, Math.max(1, parseInt(chart.cols))) : 12;
+        const width = `calc(${(cols / 12) * 100}% - 1.5rem)`;
+
+        return (
+          <div key={chart.id} style={{ flex: `0 0 ${width}`, minWidth: 0 }}>
+            <ChartRenderer chart={chart} />
+          </div>
+        );
+      })}
     </div>
   );
 }

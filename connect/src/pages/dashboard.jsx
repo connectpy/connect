@@ -213,20 +213,37 @@ function DashboardInner({ user, config, companyName }) {
           </div>
 
           <div className="widgets-grid">
-            {activeTab?.widgets?.map((widget) => (
-              <div
-                key={widget.id}
-                className={`widget-card ${widget.size === 'half' ? 'half-width' : 'full-width'}`}
-              >
-                <div className="widget-header">
-                  <h3>{widget.label}</h3>
-                </div>
-                <div className="widget-content">
-                  <WidgetRendererMulti widget={widget} />
-                </div>
-              </div>
-            ))}
-          </div>
+             {activeTab?.widgets?.map((widget) => {
+               // Soporte para cols (1-12) o size ('quarter','third','half','full')
+               let widthClass = 'span-12';
+               if (widget.cols) {
+                 const cols = Math.min(12, Math.max(1, parseInt(widget.cols)));
+                 widthClass = `span-${cols}`;
+               } else {
+                 const sizeMap = {
+                   quarter: 'span-3',
+                   third: 'span-4',
+                   half: 'span-6',
+                   full: 'span-12',
+                 };
+                 widthClass = sizeMap[widget.size] || 'span-12';
+               }
+
+               return (
+                 <div
+                   key={widget.id}
+                   className={`widget-card ${widthClass}`}
+                 >
+                   <div className="widget-header">
+                     <h3>{widget.label}</h3>
+                   </div>
+                   <div className="widget-content">
+                     <WidgetRendererMulti widget={widget} />
+                   </div>
+                 </div>
+               );
+             })}
+           </div>
         </main>
       </div>
     </div>
