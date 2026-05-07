@@ -97,7 +97,7 @@ const DEMO_CONFIG = {
             ['silo-0-c2-s1.campos.temperatura','silo-0-c2-s1.campos.temperatura','silo-0-c2-s2.campos.temperatura','silo-0-c2-s3.campos.temperatura','silo-0-c2-s4.campos.temperatura','silo-0-c2-s5.campos.temperatura','silo-0-c2-s6.campos.temperatura'],
           ],
           device_hay_grano_matrix: [
-            ['silo-0-c0-s1.campos.hayGrano','silo-0-c0-s1.campos.hayGrano','silo-0-c0-s2.campos.hayGrano','silo-0-c0-s3.campos.hayGrano','silo-0-c0-s4 campos.hayGrano','silo-0-c0-s5 camos.hayGrano','silo-0-c0-s6 camos.hayGrano'],
+            ['silo-0-c0-s1.campos.hayGrano','silo-0-c0-s1.campos.hayGrano','silo-0-c0-s2.campos.hayGrano','silo-0-c0-s3.campos.hayGrano','silo-0-c0-s4 campos.hayGrano','silo-0-c0-s5 campos.hayGrano','silo-0-c0-s6 campos.hayGrano'],
             ['silo-0-c1-s1.campos.hayGrano','silo-0-c1-s1.campos.hayGrano','silo-0-c1-s2.campos.hayGrano','silo-0-c1-s3.campos.hayGrano','silo-0-c1-s4.campos.hayGrano','silo-0-c1-s5.campos.hayGrano','silo-0-c1-s6.campos.hayGrano'],
             ['silo-0-c2-s1.campos.hayGrano','silo-0-c2-s1.campos.hayGrano','silo-0-c2-s2.campos.hayGrano','silo-0-c2-s3.campos.hayGrano','silo-0-c2-s4.campos.hayGrano','silo-0-c2-s5.campos.hayGrano','silo-0-c2-s6.campos.hayGrano'],
           ],
