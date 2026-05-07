@@ -5,6 +5,7 @@ import SpatialHeatmapWidget from './SpatialHeatmapWidget';
 import HistoricoCabo   from './historicoCabo';
 import { HistoricoProvider } from './HistoricoContainer';
 import LineChartHistorico from './LineChartHistorico';
+import BooleanIndicator      from './BooleanIndicator';
 import WeatherCard          from './WeatherCArd';
 import SiloResumenCard      from './Siloresumencard';
 import SiloControlCard      from './Silocontrolcard';
@@ -230,12 +231,25 @@ function SensorLineRenderer({ sensor_id, label, color, showArea, timeRange }) {
   );
 }
 
+function SensorBooleanRenderer({ sensor_id, label, activeColor, inactiveColor, size }) {
+  return (
+    <BooleanIndicator
+      sensor_id={sensor_id}
+      label={label}
+      activeColor={activeColor}
+      inactiveColor={inactiveColor}
+      size={size}
+    />
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Mapas de tipos
 // ─────────────────────────────────────────────────────────────────────────────
 const SENSOR_RENDERERS = {
   gauge: SensorGaugeRenderer,
   line:  SensorLineRenderer,
+  boolean: SensorBooleanRenderer,
 };
 
 const COMPLEX_RENDERERS = {
