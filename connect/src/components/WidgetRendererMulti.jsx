@@ -266,7 +266,9 @@ const COMPLEX_RENDERERS = {
 function ChartRenderer({ chart }) {
   const { id, tipo, sensor_id, ...rest } = chart;
   const isMobile = useIsMobile();
-  const wrapStyle = { flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: 0 };
+  const wrapStyle = isMobile
+    ? { width: '100%', minWidth: 0 }
+    : { flex: '1 1 auto', minWidth: 0 };
 
   // sensor_id simple → gauge / line
   if (sensor_id && SENSOR_RENDERERS[tipo]) {
@@ -290,12 +292,24 @@ function ChartRenderer({ chart }) {
 // ContainerWidget — fila con wrap responsivo
 // ─────────────────────────────────────────────────────────────────────────────
 function ContainerWidget({ widget }) {
+  const isMobile = useIsMobile();
   return (
-    <div style={{ display:'flex', flexWrap:'wrap', gap:'1.5rem', width:'100%' }}>
+    <div style={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: isMobile ? '0.75rem' : '1.5rem',
+      width: '100%',
+    }}>
       {(widget.charts || []).map(chart => {
+        if (isMobile) {
+          return (
+            <div key={chart.id} style={{ width: '100%', minWidth: 0 }}>
+              <ChartRenderer chart={chart} />
+            </div>
+          );
+        }
         const cols = chart.cols ? Math.min(12, Math.max(1, parseInt(chart.cols))) : 12;
         const width = `calc(${(cols / 12) * 100}% - 1.5rem)`;
-
         return (
           <div key={chart.id} style={{ flex: `0 0 ${width}`, minWidth: 0 }}>
             <ChartRenderer chart={chart} />
