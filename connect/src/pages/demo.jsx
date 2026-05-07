@@ -33,9 +33,9 @@ const DEMO_CONFIG = {
           label: 'Estación Meteorológica',
           stationName: 'Planta Bella Vista',
           // Un mismo sensor puede exponer varios fields en tiempo real
-          sensor_temp:    'demo/estacion/E001/temperatura',
-          sensor_humedad: 'demo/estacion/E001/humedad',
-          sensor_rocio:   'demo/estacion/E001/rocio',
+          sensor_temp:    'estacion.campos.temperatura',
+          sensor_humedad: 'estacion.campos.humedad',
+          sensor_rocio:   'estacion.campos.rocio',
         },
 
         {
