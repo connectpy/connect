@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { useSensor }  from '../hooks/SensorContext';
 
@@ -39,15 +39,21 @@ export default function GaugeWidget({
 
   const chartRef      = useRef(null);
   const chartInstance = useRef(null);
+  const [compact, setCompact] = useState(false);
 
   useEffect(() => {
-    if (chartRef.current && !chartInstance.current) {
-      chartInstance.current = echarts.init(chartRef.current, null, { renderer: 'canvas' });
+    const el = chartRef.current;
+    if (!el) return;
+    if (!chartInstance.current) {
+      chartInstance.current = echarts.init(el, null, { renderer: 'canvas' });
     }
-    const onResize = () => chartInstance.current?.resize();
-    window.addEventListener('resize', onResize);
+    const ro = new ResizeObserver(([entry]) => {
+      setCompact(entry.contentRect.width < 320);
+      chartInstance.current?.resize();
+    });
+    ro.observe(el);
     return () => {
-      window.removeEventListener('resize', onResize);
+      ro.disconnect();
       chartInstance.current?.dispose();
       chartInstance.current = null;
     };
@@ -69,33 +75,32 @@ export default function GaugeWidget({
 
     chartInstance.current.setOption({
       backgroundColor: 'transparent',
-      title: {
-        text: label, left: 'center', top: '4%',
-        textStyle: { color: '#f1f5f9', fontSize: 14, fontWeight: 600 },
-      },
+      title: { show: false },
       series: [{
         type: 'gauge',
         min, max,
         startAngle: 210, endAngle: -30,
-        center: ['50%', '58%'], radius: '76%',
-        axisLine:  { lineStyle: { width: 20, color: axisColors } },
-        pointer:   { length: '70%', width: 6, itemStyle: { color: activeColor, shadowColor: activeColor + '88', shadowBlur: 12 } },
-        anchor:    { show: true, showAbove: true, size: 16, itemStyle: { color: activeColor, borderWidth: 2, borderColor: '#1e293b', shadowBlur: 8, shadowColor: activeColor + '88' } },
-        axisTick:  { distance: -28, length: 6, lineStyle: { color: '#334155', width: 2 } },
-        splitLine: { distance: -33, length: 12, lineStyle: { color: '#475569', width: 3 } },
+        center: ['50%', '58%'], radius: compact ? '68%' : '76%',
+        axisLine:  { lineStyle: { width: compact ? 12 : 20, color: axisColors } },
+        pointer:   { length: '70%', width: compact ? 4 : 6, itemStyle: { color: activeColor, shadowColor: activeColor + '88', shadowBlur: compact ? 6 : 12 } },
+        anchor:    { show: true, showAbove: true, size: compact ? 10 : 16, itemStyle: { color: activeColor, borderWidth: 2, borderColor: '#1e293b', shadowBlur: compact ? 4 : 8, shadowColor: activeColor + '88' } },
+        axisTick:  { distance: compact ? -20 : -28, length: compact ? 4 : 6, lineStyle: { color: '#334155', width: 2 } },
+        splitLine: { distance: compact ? -24 : -33, length: compact ? 8 : 12, lineStyle: { color: '#475569', width: 3 } },
         axisLabel: {
-          distance: -46, color: '#64748b', fontSize: 11,
+          distance: compact ? -34 : -46, color: '#64748b', fontSize: compact ? 10 : 11,
           formatter: v => {
             const mid = Math.round((min + max) / 2);
             return (v === min || v === max || v === mid) ? Math.round(v) : '';
           },
         },
         detail: {
-          valueAnimation: true, offsetCenter: [0, '72%'],
-          formatter: v => `{val|${v.toFixed(1)}}\n{unit|${unit}}`,
+          valueAnimation: true, offsetCenter: [0, compact ? '68%' : '72%'],
+          formatter: compact
+            ? v => `{val|${v.toFixed(1)}}`
+            : v => `{val|${v.toFixed(1)}}\n{unit|${unit}}`,
           rich: {
-            val:  { fontSize: 36, fontWeight: 'bold', color: '#f1f5f9', lineHeight: 44 },
-            unit: { fontSize: 14, color: '#94a3b8', padding: [6, 0, 0, 0] },
+            val:  { fontSize: compact ? 24 : 36, fontWeight: 'bold', color: '#f1f5f9', lineHeight: compact ? 32 : 44 },
+            ...(compact ? {} : { unit: { fontSize: 14, color: '#94a3b8', padding: [6, 0, 0, 0] } }),
           },
         },
         title: { show: false },
@@ -103,11 +108,20 @@ export default function GaugeWidget({
         animation: true, animationDuration: 800, animationEasing: 'elasticOut',
       }],
     }, true);
-  }, [rawValue, label, unit, min, max, thresholds]);
+  }, [rawValue, label, unit, min, max, thresholds, compact]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '300px' }}>
       {!hasValue && <WaitingPlaceholder text={sensor_id ? `Esperando ${sensor_id}…` : 'Sin datos'} />}
+      <div style={{
+        position: 'absolute', top: 8, left: 16, right: 16, zIndex: 1,
+        textAlign: 'center', fontSize: 14, fontWeight: 600, color: '#f1f5f9',
+        wordBreak: 'break-word', overflowWrap: 'break-word', lineHeight: 1.3,
+        maxHeight: 42, overflow: 'hidden',
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+      }}>
+        {label}
+      </div>
       <div ref={chartRef}
         style={{ width: '100%', height: '100%', opacity: hasValue ? 1 : 0, transition: 'opacity 0.4s' }} />
     </div>

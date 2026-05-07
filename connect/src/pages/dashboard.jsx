@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import whitelogo from '../assets/whitelogo.svg';
@@ -102,6 +102,26 @@ function DashboardInner({ user, config, companyName }) {
   const { status, lastUpdate } = useSensorStatus();
   const [activeTabId, setActiveTabId] = useState(config?.tabs?.[0]?.id || null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const lastScrollY = useRef(0);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (window.innerWidth > 768) return;
+    const el = contentRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const sy = el.scrollTop;
+      if (sy > 60 && sy > lastScrollY.current) {
+        setHeaderHidden(true);
+      } else if (sy < lastScrollY.current) {
+        setHeaderHidden(false);
+      }
+      lastScrollY.current = sy;
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -121,7 +141,7 @@ function DashboardInner({ user, config, companyName }) {
   return (
     <div className="dashboard-page">
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <header className="dashboard-header">
+      <header className={`dashboard-header ${headerHidden ? 'dashboard-header--hidden' : ''}`}>
         <div className="dashboard-container">
           <div className="header-content">
             <div className="header-logo">
@@ -179,7 +199,7 @@ function DashboardInner({ user, config, companyName }) {
         </div>
       </header>
 
-      <div className="dashboard-layout">
+      <div className={`dashboard-layout ${headerHidden ? 'dashboard-layout--expanded' : ''}`}>
         {sidebarOpen && (
           <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
         )}
@@ -203,7 +223,7 @@ function DashboardInner({ user, config, companyName }) {
         </aside>
 
         {/* ── Main ────────────────────────────────────────────────────────── */}
-        <main className="dashboard-content">
+        <main className="dashboard-content" ref={contentRef}>
           <div className="content-header">
             <h1>{activeTab?.name || 'Dashboard'}</h1>
             <p className="last-update">
