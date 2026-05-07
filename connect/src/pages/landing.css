@@ -992,7 +992,7 @@ body {
   }
 
   .menu-toggle {
-    display: block;
+    display: block !important;
     z-index: 1003;
     position: relative;
   }
