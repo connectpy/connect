@@ -9,34 +9,15 @@ export default function DaysWithoutAccident({
 }) {
   const [confirming, setConfirming] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [resetOk, setResetOk] = useState(false);
-  const [error, setError] = useState(null);
 
-  const handleReset = async () => {
+  const handleReset = () => {
     setConfirming(false);
     setResetting(true);
-    setResetOk(false);
-    setError(null);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    try {
-      const res = await fetch(`${apiBase}/api/accidentes/${clientId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sector_id }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setResetOk(true);
-      setTimeout(() => setResetOk(false), 3000);
-    } catch (err) {
-      clearTimeout(timeout);
-      setError(err.name === 'AbortError' ? 'Timeout' : err.message);
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setResetting(false);
-    }
+    fetch(`${apiBase}/api/accidentes/${clientId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sector_id }),
+    });
   };
 
   const days = value !== null && value !== undefined ? Number(value) : null;
@@ -127,7 +108,6 @@ export default function DaysWithoutAccident({
           </button>
           <button
             onClick={() => setConfirming(false)}
-            disabled={resetting}
             style={{
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.15)',
@@ -151,19 +131,11 @@ export default function DaysWithoutAccident({
           onClick={() => setConfirming(true)}
           disabled={resetting}
           style={{
-            background: resetOk
-              ? 'rgba(34,197,94,0.15)'
-              : error
-                ? 'rgba(239,68,68,0.15)'
-                : 'rgba(0,170,228,0.1)',
-            border: resetOk
-              ? '1px solid rgba(34,197,94,0.4)'
-              : error
-                ? '1px solid rgba(239,68,68,0.4)'
-                : '1px solid rgba(0,170,228,0.3)',
+            background: 'rgba(0,170,228,0.1)',
+            border: '1px solid rgba(0,170,228,0.3)',
             borderRadius: 12,
             padding: '10px 24px',
-            color: resetOk ? '#22c55e' : error ? '#ef4444' : '#00aae4',
+            color: resetting ? 'rgba(255,255,255,0.4)' : '#00aae4',
             fontSize: '0.8rem',
             fontWeight: 700,
             letterSpacing: '1px',
@@ -174,7 +146,7 @@ export default function DaysWithoutAccident({
             fontFamily: 'inherit',
           }}
         >
-          {resetting ? 'Reiniciando...' : resetOk ? 'Reiniciado ✓' : error ? `Error: ${error}` : 'Reiniciar'}
+          {resetting ? 'Reiniciando...' : 'Reiniciar'}
         </button>
       )}
     </div>
