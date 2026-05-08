@@ -7,11 +7,13 @@ export default function DaysWithoutAccident({
   clientId = 'demo',
   apiBase = 'https://nodered.connectparaguay.com',
 }) {
+  const [confirming, setConfirming] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [resetOk, setResetOk] = useState(false);
   const [error, setError] = useState(null);
 
   const handleReset = async () => {
+    setConfirming(false);
     setResetting(true);
     setResetOk(false);
     setError(null);
@@ -100,35 +102,81 @@ export default function DaysWithoutAccident({
         </div>
       )}
 
-      <button
-        onClick={handleReset}
-        disabled={resetting}
-        style={{
-          background: resetOk
-            ? 'rgba(34,197,94,0.15)'
-            : error
-              ? 'rgba(239,68,68,0.15)'
-              : 'rgba(0,170,228,0.1)',
-          border: resetOk
-            ? '1px solid rgba(34,197,94,0.4)'
-            : error
-              ? '1px solid rgba(239,68,68,0.4)'
-              : '1px solid rgba(0,170,228,0.3)',
-          borderRadius: 12,
-          padding: '10px 24px',
-          color: resetOk ? '#22c55e' : error ? '#ef4444' : '#00aae4',
-          fontSize: '0.8rem',
-          fontWeight: 700,
-          letterSpacing: '1px',
-          textTransform: 'uppercase',
-          cursor: resetting ? 'not-allowed' : 'pointer',
-          transition: 'all 0.3s',
-          opacity: resetting ? 0.6 : 1,
-          fontFamily: 'inherit',
-        }}
-      >
-        {resetting ? 'Reiniciando...' : resetOk ? 'Reiniciado ✓' : error ? `Error: ${error}` : 'Reiniciar'}
-      </button>
+      {confirming ? (
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <button
+            onClick={handleReset}
+            disabled={resetting}
+            style={{
+              background: 'rgba(239,68,68,0.15)',
+              border: '1px solid rgba(239,68,68,0.4)',
+              borderRadius: 12,
+              padding: '10px 20px',
+              color: '#ef4444',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '1px',
+              textTransform: 'uppercase',
+              cursor: resetting ? 'not-allowed' : 'pointer',
+              opacity: resetting ? 0.6 : 1,
+              fontFamily: 'inherit',
+              transition: 'all 0.3s',
+            }}
+          >
+            Sí, reiniciar
+          </button>
+          <button
+            onClick={() => setConfirming(false)}
+            disabled={resetting}
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 12,
+              padding: '10px 20px',
+              color: 'rgba(255,255,255,0.6)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '1px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              transition: 'all 0.3s',
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirming(true)}
+          disabled={resetting}
+          style={{
+            background: resetOk
+              ? 'rgba(34,197,94,0.15)'
+              : error
+                ? 'rgba(239,68,68,0.15)'
+                : 'rgba(0,170,228,0.1)',
+            border: resetOk
+              ? '1px solid rgba(34,197,94,0.4)'
+              : error
+                ? '1px solid rgba(239,68,68,0.4)'
+                : '1px solid rgba(0,170,228,0.3)',
+            borderRadius: 12,
+            padding: '10px 24px',
+            color: resetOk ? '#22c55e' : error ? '#ef4444' : '#00aae4',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+            cursor: resetting ? 'not-allowed' : 'pointer',
+            transition: 'all 0.3s',
+            opacity: resetting ? 0.6 : 1,
+            fontFamily: 'inherit',
+          }}
+        >
+          {resetting ? 'Reiniciando...' : resetOk ? 'Reiniciado ✓' : error ? `Error: ${error}` : 'Reiniciar'}
+        </button>
+      )}
     </div>
   );
 }
