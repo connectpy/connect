@@ -15,17 +15,22 @@ export default function DaysWithoutAccident({
     setResetting(true);
     setResetOk(false);
     setError(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     try {
       const res = await fetch(`${apiBase}/api/accidentes/${clientId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sector_id }),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setResetOk(true);
       setTimeout(() => setResetOk(false), 3000);
     } catch (err) {
-      setError(err.message);
+      clearTimeout(timeout);
+      setError(err.name === 'AbortError' ? 'Timeout' : err.message);
       setTimeout(() => setError(null), 3000);
     } finally {
       setResetting(false);
