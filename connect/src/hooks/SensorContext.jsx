@@ -19,7 +19,7 @@
  *   useHistorico()               → { query, data, loading, error }
  */
 
-const SensorContext = createContext(null);
+export const SensorContext = createContext(null);
 const POLL_INTERVAL = 5000;
 
 function normalizeFieldValue(value) {

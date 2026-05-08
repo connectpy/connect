@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import GaugeWidget          from './GaugeWidget';
 import LineChartWidget      from './LineChartWidget';
 import SpatialHeatmapWidget from './SpatialHeatmapWidget';
@@ -10,7 +10,8 @@ import WeatherCard          from './WeatherCArd';
 import SiloResumenCard      from './Siloresumencard';
 import SiloControlCard      from './Silocontrolcard';
 import SiloHeatmapWidget    from './SiloHeatmapWidget';
-import { useSensor, useSensors } from '../hooks/SensorContext';
+import DaysWithoutAccident  from './DaysWithoutAccident';
+import { useSensor, useSensors, SensorContext } from '../hooks/SensorContext';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -244,6 +245,28 @@ function SensorBooleanRenderer({ sensor_id, label, activeColor, inactiveColor, s
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DaysWithoutAccidentRenderer
+// Lee el sensor de días sin accidente y provee botón de reinicio.
+// El sector_id se configura en el widget, clientId/apiBase vienen del contexto.
+// ─────────────────────────────────────────────────────────────────────────────
+function DaysWithoutAccidentRenderer({ sensor_dsa, sector_id, label }) {
+  const ctx = useContext(SensorContext);
+  const clientId = ctx?.clientId || 'demo';
+  const apiBase = ctx?.apiBase || 'https://nodered.connectparaguay.com';
+  const days = useSensorValue(sensor_dsa);
+
+  return (
+    <DaysWithoutAccident
+      value={days}
+      label={label || 'Días sin accidentes'}
+      sector_id={sector_id || 'planta_norte'}
+      clientId={clientId}
+      apiBase={apiBase}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Mapas de tipos
 // ─────────────────────────────────────────────────────────────────────────────
 const SENSOR_RENDERERS = {
@@ -253,11 +276,12 @@ const SENSOR_RENDERERS = {
 };
 
 const COMPLEX_RENDERERS = {
-  WeatherCard:     WeatherCardRenderer,
-  SiloResumen:     SiloResumenRenderer,
-  SiloControl:     SiloControlRenderer,
-  SiloHeatmap:     SiloHeatmapRenderer,
-  SpatialHeatmap:  SpatialHeatmapRenderer,
+  WeatherCard:        WeatherCardRenderer,
+  SiloResumen:        SiloResumenRenderer,
+  SiloControl:        SiloControlRenderer,
+  SiloHeatmap:        SiloHeatmapRenderer,
+  SpatialHeatmap:     SpatialHeatmapRenderer,
+  DaysWithoutAccident: DaysWithoutAccidentRenderer,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
