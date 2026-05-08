@@ -172,9 +172,6 @@ function Register() {
                 <Link to="/login" className="btn-back-login">
                   Volver al Login
                 </Link>
-                <a href="mailto:admin@connectparaguay.com" className="btn-contact-admin">
-                  Contactar Administrador
-                </a>
               </div>
             </div>
           </div>
