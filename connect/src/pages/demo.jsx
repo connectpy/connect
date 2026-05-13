@@ -253,7 +253,7 @@ function DashboardInner({ config, companyName }) {
           <div className="widgets-grid">
             {activeTab?.widgets?.map(widget => (
               <div key={widget.id}
-                className={`widget-card ${widget.size === 'half' ? 'half-width' : 'full-width'}`}>
+                className={`widget-card ${widget.size === 'half' ? 'span-6' : 'span-12'}`}>
                 <div className="widget-header"><h3>{widget.label}</h3></div>
                 <div className="widget-content">
                   <WidgetRendererMulti widget={widget} />
