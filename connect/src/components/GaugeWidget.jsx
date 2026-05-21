@@ -84,14 +84,11 @@ export default function GaugeWidget({
         axisLine:  { lineStyle: { width: compact ? 12 : 20, color: axisColors } },
         pointer:   { length: '70%', width: compact ? 4 : 6, itemStyle: { color: activeColor, shadowColor: activeColor + '88', shadowBlur: compact ? 6 : 12 } },
         anchor:    { show: true, showAbove: true, size: compact ? 10 : 16, itemStyle: { color: activeColor, borderWidth: 2, borderColor: '#1e293b', shadowBlur: compact ? 4 : 8, shadowColor: activeColor + '88' } },
-        axisTick:  { distance: compact ? -20 : -28, length: compact ? 4 : 6, lineStyle: { color: '#334155', width: 2 } },
-        splitLine: { distance: compact ? -24 : -33, length: compact ? 8 : 12, lineStyle: { color: '#475569', width: 3 } },
+        axisTick:  { distance: compact ? -14 : -18, length: compact ? 4 : 6, lineStyle: { color: '#334155', width: 2 } },
+        splitLine: { distance: compact ? -18 : -24, length: compact ? 8 : 12, lineStyle: { color: '#475569', width: 3 } },
         axisLabel: {
-          distance: compact ? -34 : -46, color: '#64748b', fontSize: compact ? 10 : 11,
-          formatter: v => {
-            const mid = Math.round((min + max) / 2);
-            return (v === min || v === max || v === mid) ? Math.round(v) : '';
-          },
+          distance: compact ? -20 : -28, color: '#64748b', fontSize: compact ? 10 : 11,
+          formatter: v => Math.round(v),
         },
         detail: {
           valueAnimation: true, offsetCenter: [0, compact ? '68%' : '72%'],
