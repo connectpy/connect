@@ -46,7 +46,7 @@ const DEMO_CONFIG = {
           siloName:  'SILO CENTRAL N° 1',
           // sensor_ids que alimentan la card
           sensor_nivel:   'silo-0.campos.nivel',
-          sensor_temp:    'silo-0.campos.media',
+          sensor_temp:    'silo-0.campos.maximo',
           sensor_humedad: 'demo/silo/S001/humedad',
           sensor_fans:    'demo/silo/S001/fan',
           grano:          'SOJA',
@@ -72,9 +72,9 @@ const DEMO_CONFIG = {
           // sensor_ids del sistema de aireación
           nivel:      'silo-0.campos.nivel',
           hum_grano:  'demo/silo/S001/humedad',
-          temp_max:   'silo-0.campos.maxima',
+          temp_max:   'silo-0.campos.maximo',
           temp_avg:   'silo-0.campos.media',
-          temp_min:   'silo-0.campos.minima',
+          temp_min:   'silo-0.campos.minimo',
           activo:     'silo-0.campos.connected',
           fans:       'silo-0.campos.fan',
           mode:       'silo-0.campos.fanMode',
