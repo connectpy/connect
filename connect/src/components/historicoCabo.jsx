@@ -57,14 +57,15 @@ export default function historicoCabo({
     const rawFields = cfg.fields ?? cfg.field;
     const fields = rawFields
       ? (Array.isArray(rawFields) ? rawFields : [rawFields])
-      : ['value', 'hayGrano'];
+      : ['value'];
+    if (!fields.includes('hayGrano')) fields.push('hayGrano');
 
     await query({
       deviceIds: caboActivo.deviceIds || [],
       desde:     `${from}T00:00:00Z`,
       hasta:     `${to}T23:59:59Z`,
       fields,
-      window:    cfg.window || '1h',
+      window:    cfg.window || '12h',
       fn:        cfg.fn     || 'mean',
     });
     setQueried(true);
