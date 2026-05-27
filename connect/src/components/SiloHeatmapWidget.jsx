@@ -153,7 +153,7 @@ export default function SiloHeatmapWidget({ data: dataProp = {}, label = 'Termom
         textStyle: { color: 'rgba(255,255,255,0.5)', fontSize: 10 },
         formatter: (val) => val.toFixed(0) + '°C',
         inRange: {
-          color: ['#06b6d4', '#f59e0b', '#ef4444'],
+          color: ['#22c55e', '#eab308', '#f97316', '#ef4444'],
         },
       }],
 
