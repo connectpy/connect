@@ -66,7 +66,7 @@ const DEMO_CONFIG = {
         {
           id:       'silo1-control',
           tipo:     'SiloControl',
-          size:     'full',
+          size:     'half',
           label:    'Control de Aireación — Silo 1',
           siloName: 'Silo Nro. 1',
           // sensor_ids del sistema de aireación
@@ -87,7 +87,7 @@ const DEMO_CONFIG = {
          {
           id:    'silo1-heatmap',
           tipo:  'SiloHeatmap',
-          size:  'full',
+          size:  'half',
           label: 'Termometría — Silo 1',
           cabos:   ['Cabo 1', 'Cabo 2', 'Cabo 3'],
           niveles: ['1', '2', '3', '4', '5', '6', '7'],
