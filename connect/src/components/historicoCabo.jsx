@@ -37,6 +37,7 @@ export default function historicoCabo({
   unit   = '°C',
   min    = 15,
   max    = 40,
+  yAxisLabels,
 }) {
   const { query, data, loading, error } = useHistorico();
 
@@ -171,7 +172,7 @@ export default function historicoCabo({
           : heatmap.length === 0
             ? <Placeholder text="Sin datos para el rango seleccionado" height={200} />
             : <CaboHeatmap sensors={sensors} heatmap={heatmap} hayGrano={hayGrano}
-                unit={unit} min={min} max={max} />
+                unit={unit} min={min} max={max} yAxisLabels={yAxisLabels} />
         }
       </Card>
 
@@ -293,7 +294,8 @@ function transformData(data, deviceIds, tempField = 'value') {
 // ─────────────────────────────────────────────────────────────────────────────
 // CaboHeatmap — dos series: con grano (color temp) + sin grano (gris fijo)
 // ─────────────────────────────────────────────────────────────────────────────
-function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
+function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max, yAxisLabels }) {
+  const displayLabels = yAxisLabels ?? sensors;
   const ref = useRef(null);
   const ec  = useRef(null);
 
@@ -352,7 +354,7 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
           const tiene = p.data?.itemStyle == null;
           return `
             <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:4px">${fechas[fi]}</div>
-            <b style="color:#00aae4">${sensors[si]}</b><br/>
+            <b style="color:#00aae4">${displayLabels[si]}</b><br/>
             <b style="font-size:17px">${Number(val).toFixed(1)} ${unit}</b><br/>
             <span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:4px;
               font-size:10px;font-weight:700;
@@ -373,7 +375,7 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
         splitLine: { show:false },
       },
       yAxis: {
-        type:'category', data:sensors,
+        type:'category', data:displayLabels,
         axisLabel: { color:'rgba(255,255,255,0.6)', fontSize:11, fontWeight:700 },
         axisLine:  { lineStyle:{ color:'rgba(255,255,255,0.06)' } },
         splitLine: { show:false },
