@@ -65,7 +65,7 @@ export default function historicoCabo({
       desde:     `${from}T00:00:00Z`,
       hasta:     `${to}T23:59:59Z`,
       fields,
-      window:    cfg.window || '12h',
+      window:    '12h',
       fn:        cfg.fn     || 'mean',
     });
     setQueried(true);
