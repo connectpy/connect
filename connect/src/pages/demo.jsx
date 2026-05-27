@@ -29,7 +29,7 @@ const DEMO_CONFIG = {
         {
           id:    'widget-weather',
           tipo:  'WeatherCard',
-          size:  'full',
+          size:  'half',
           label: 'Estación Meteorológica',
           stationName: 'Planta Bella Vista',
           // Un mismo sensor puede exponer varios fields en tiempo real

@@ -380,7 +380,7 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
       },
       visualMap: {
         min, max, show: false,
-        inRange: { color: ['#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444'] },
+        inRange: { color: ['#22c55e','#eab308','#f97316','#ef4444'] },
       },
       series: [{
         name: 'Temperatura',
@@ -403,7 +403,7 @@ function CaboHeatmap({ sensors, heatmap, hayGrano, unit, min, max }) {
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
           <span style={{ fontSize:9, color:'rgba(255,255,255,0.25)' }}>{min}{unit}</span>
           <div style={{ width:72, height:7, borderRadius:4,
-            background:'linear-gradient(to right,#3b82f6,#06b6d4,#10b981,#f59e0b,#ef4444)' }} />
+            background:'linear-gradient(to right,#22c55e,#eab308,#f97316,#ef4444)' }} />
           <span style={{ fontSize:9, color:'rgba(255,255,255,0.25)' }}>{max}{unit}</span>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:5 }}>
