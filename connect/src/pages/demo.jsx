@@ -9,7 +9,7 @@ import WidgetRendererMulti from '../components/WidgetRendererMulti.jsx';
 // DEMO_CONFIG — Caaty
 //
 // Pestaña "Resumen" : WeatherCard + SiloResumenCard
-// Pestaña "Silo 1"  : SiloControlCard + SiloHeatmapWidget + HistoricoCabo
+// Pestaña "Silo 1"  : SiloDashboard (control + termometría + vista superior) + HistoricoCabo
 //
 // Todos los widgets de tiempo real usan sensor_id → SensorContext (polling HTTP)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -64,11 +64,12 @@ const DEMO_CONFIG = {
       widgets: [
 
         {
-          id:       'silo1-control',
-          tipo:     'SiloControl',
-          size:     'half',
-          label:    'Control de Aireación — Silo 1',
+          id:       'silo1-dashboard',
+          tipo:     'SiloDashboard',
+          size:     'full',
+          label:    'Silo 1 — Control y Termometría',
           siloName: 'Silo Nro. 1',
+          grano:    'SOJA',
           // sensor_ids del sistema de aireación
           nivel:      'silo-0.campos.nivel',
           hum_grano:  'demo/silo/S001/humedad',
@@ -81,14 +82,7 @@ const DEMO_CONFIG = {
           timer:      'silo-0.campos.fanTimer',
           start:      'silo-0.campos.fanTimerStart',
           end:        'silo-0.campos.fanTimerEnd',
-          grano:      'SOJA',
-        },
-
-         {
-          id:    'silo1-heatmap',
-          tipo:  'SiloHeatmap',
-          size:  'half',
-          label: 'Termometría — Silo 1',
+          // matriz de termometría
           cabos:   ['Cabo 1', 'Cabo 2', 'Cabo 3'],
           niveles: ['1', '2', '3', '4', '5', '6', '7'],
           device_matrix: [
@@ -101,8 +95,14 @@ const DEMO_CONFIG = {
             ['silo-0-c1-s0.campos.hayGrano','silo-0-c1-s1.campos.hayGrano','silo-0-c1-s2.campos.hayGrano','silo-0-c1-s3.campos.hayGrano','silo-0-c1-s4.campos.hayGrano','silo-0-c1-s5.campos.hayGrano','silo-0-c1-s6.campos.hayGrano'],
             ['silo-0-c2-s0.campos.hayGrano','silo-0-c2-s1.campos.hayGrano','silo-0-c2-s2.campos.hayGrano','silo-0-c2-s3.campos.hayGrano','silo-0-c2-s4.campos.hayGrano','silo-0-c2-s5.campos.hayGrano','silo-0-c2-s6.campos.hayGrano'],
           ],
-          temp_min: 15,
-          temp_max: 40,
+          heatmap_temp_min: 15,
+          heatmap_temp_max: 40,
+          // configuración de vista superior del silo
+          siloConfig: {
+            rings: 1,
+            cabos: [3],
+            rotation: 0,
+          },
         },
 
         {

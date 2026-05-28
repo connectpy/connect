@@ -10,6 +10,7 @@ import WeatherCard          from './WeatherCArd';
 import SiloResumenCard      from './Siloresumencard';
 import SiloControlCard      from './Silocontrolcard';
 import SiloHeatmapWidget    from './SiloHeatmapWidget';
+import SiloDashboard        from './SiloDashboard';
 import DaysWithoutAccident  from './DaysWithoutAccident';
 import { useSensor, useSensors, SensorContext } from '../hooks/SensorContext';
 
@@ -169,6 +170,84 @@ function SiloHeatmapRenderer({ device_matrix = [], device_hay_grano_matrix = [],
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SiloDashboardRenderer — Combina control + heatmap + vista superior
+// ─────────────────────────────────────────────────────────────────────────────
+function SiloDashboardRenderer({
+  nivel, hum_grano,
+  temp_max, temp_avg, temp_min,
+  activo, fans, mode,
+  timer, start, end,
+  siloName, label, grano,
+  device_matrix = [], device_hay_grano_matrix = [],
+  cabos = [], niveles = [],
+  heatmap_temp_min = 15, heatmap_temp_max = 40,
+  siloConfig = {},
+}) {
+  const nivelVal     = useSensorValue(nivel);
+  const humGranoVal  = useSensorValue(hum_grano);
+  const tempMaxVal   = useSensorValue(temp_max);
+  const tempAvgVal   = useSensorValue(temp_avg);
+  const tempMinVal   = useSensorValue(temp_min);
+  const activoVal    = useSensorValue(activo);
+  const fansVal      = useSensorValue(fans);
+  const modeVal      = useSensorValue(mode);
+  const timerVal     = useSensorValue(timer);
+  const startVal     = useSensorValue(start);
+  const endVal       = useSensorValue(end);
+
+  const tempIds = device_matrix.flat();
+  const granoIds = device_hay_grano_matrix.flat();
+  const allIds = [...tempIds, ...granoIds].filter(Boolean);
+  const sensors = useSensorsSafe(allIds);
+
+  const heatmapData = [];
+  const showColor = [];
+
+  device_matrix.forEach((caboSensors, caboIdx) => {
+    showColor[caboIdx] = [];
+    caboSensors.forEach((deviceId, nivelIdx) => {
+      const s = sensors[deviceId];
+      const granoId = device_hay_grano_matrix[caboIdx]?.[nivelIdx];
+      const g = granoId ? sensors[granoId] : null;
+      const hasTemp = s?.value !== null && s?.value !== undefined;
+      const hasGrano = g?.value !== null && g?.value !== undefined;
+      const showColorFlag = hasGrano ? g.value >= 1 : hasTemp;
+      if (hasTemp) heatmapData.push([caboIdx, nivelIdx, s.value]);
+      showColor[caboIdx][nivelIdx] = showColorFlag;
+    });
+  });
+
+  return (
+    <SiloDashboard
+      data={{
+        nivel: nivelVal ?? 0,
+        humedad_grano: humGranoVal ?? null,
+        temp_max: tempMaxVal ?? null,
+        temp_avg: tempAvgVal ?? null,
+        temp_min: tempMinVal ?? null,
+        grano: grano ?? 'S/D',
+        activo: activoVal ? activoVal > 0 : false,
+        fans_state: fansVal ? fansVal > 0 : false,
+        mode: modeVal ?? 'auto',
+        timer: timerVal ? timerVal > 0 : false,
+        start: startVal ?? '--:--',
+        end: endVal ?? '--:--',
+      }}
+      heatmap={{
+        labels: cabos,
+        days: niveles,
+        data: heatmapData,
+        showColor,
+        temp_max: heatmap_temp_max,
+        temp_min: heatmap_temp_min,
+      }}
+      siloConfig={siloConfig}
+      siloName={siloName || label || 'Silo'}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SpatialHeatmapRenderer
 // Grilla espacial de sensores con temperatura.
 // layout: string[][] | { sensor_id: string, label: string }[][]
@@ -280,6 +359,7 @@ const COMPLEX_RENDERERS = {
   SiloResumen:        SiloResumenRenderer,
   SiloControl:        SiloControlRenderer,
   SiloHeatmap:        SiloHeatmapRenderer,
+  SiloDashboard:      SiloDashboardRenderer,
   SpatialHeatmap:     SpatialHeatmapRenderer,
   DaysWithoutAccident: DaysWithoutAccidentRenderer,
 };
