@@ -1,6 +1,6 @@
 /* src/styles/Dashboard.css */
 :root {
-  --header-height: 102px;
+  --header-height: 64px;
   --sidebar-width: 260px;
 }
 @font-face {
@@ -151,7 +151,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
+  padding: 0.25rem 0;
 }
 .header-logo{
   display: flex;
@@ -189,7 +189,7 @@
   font-family: 'OCR A Extended';
   font-size: 1.1rem;
   font-weight: 400;
-  padding: 1rem 0;
+  padding: 0.35rem 0;
   padding-left: 1rem;
 }
 .empresa-logo {
@@ -207,7 +207,7 @@
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .user-info {
@@ -215,16 +215,16 @@
   align-items: center;
   gap: 0.5rem;
   color: #cbd5e1;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
 }
 
 .btn-logout {
   background: transparent;
   border: 1px solid #475569;
   color: #cbd5e1;
-  padding: 0.5rem 1rem;
+  padding: 0.35rem 0.75rem;
   border-radius: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -433,7 +433,7 @@
 
 @media (max-width: 768px) {
   :root {
-    --header-height: 82px; /* logo es más pequeño en móvil */
+    --header-height: 56px;
   }
 
   .sidebar-toggle {
@@ -445,16 +445,16 @@
   }
 
   .logo img {
-    height: 50px !important;
+    height: 32px !important;
   }
   .logo span {
-    font-size: 1rem;
+    font-size: 0.85rem;
   }
   .empresa-logo img {
-    height: 50px !important;
+    height: 32px !important;
   }
   .empresa-logo span {
-    font-size: 1rem;
+    font-size: 0.85rem;
   }
   
   .dashboard-header {
