@@ -181,8 +181,12 @@ function SiloDashboardRenderer({
   device_matrix = [], device_hay_grano_matrix = [],
   cabos = [], niveles = [],
   heatmap_temp_min = 15, heatmap_temp_max = 40,
-  siloConfig = {},
+  siloConfig = {}, comandoTopic,
 }) {
+  const ctx = useContext(SensorContext);
+  const apiBase = ctx?.apiBase || 'https://nodered.connectparaguay.com';
+  const clientId = ctx?.clientId || 'demo';
+
   const nivelVal     = useSensorValue(nivel);
   const humGranoVal  = useSensorValue(hum_grano);
   const tempMaxVal   = useSensorValue(temp_max);
@@ -243,6 +247,9 @@ function SiloDashboardRenderer({
       }}
       siloConfig={siloConfig}
       siloName={siloName || label || 'Silo'}
+      apiBase={apiBase}
+      clientId={clientId}
+      comandoTopic={comandoTopic}
     />
   );
 }

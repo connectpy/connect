@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import * as echarts from 'echarts';
 import { WaitingPlaceholder } from './GaugeWidget';
 
@@ -98,7 +98,11 @@ function SiloTopView({ config = {} }) {
   );
 }
 
-export default function SiloDashboard({ data = {}, heatmap: heatmapProp = {}, siloConfig = {}, siloName = 'Silo Nro. 1' }) {
+export default function SiloDashboard({
+  data = {}, heatmap: heatmapProp = {},
+  siloConfig = {}, siloName = 'Silo Nro. 1',
+  apiBase, clientId, comandoTopic,
+}) {
   const nivel = data.nivel ?? 0;
   const humGrano = data.humedad_grano ?? null;
   const tempMax = data.temp_max ?? null;
@@ -114,6 +118,36 @@ export default function SiloDashboard({ data = {}, heatmap: heatmapProp = {}, si
 
   const fmt = (v, d = 1) => v !== null && v !== undefined ? Number(v).toFixed(d) : '--';
   const isAuto = mode === 'auto';
+
+  /* ── Comandos ─────────────────────────────────────────── */
+  const [sendingMode, setSendingMode] = useState(null);
+  const [sendingTimer, setSendingTimer] = useState(false);
+
+  const sendCommand = useCallback(async (field, value) => {
+    if (!apiBase) return;
+    const topic = comandoTopic || `silo-0/comandos/${field}`;
+    try {
+      await fetch(`${apiBase}/api/comando`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, topic, payload: value }),
+      });
+    } catch (err) {
+      console.error('Error enviando comando:', err);
+    }
+  }, [apiBase, clientId, comandoTopic]);
+
+  const handleModeChange = (newMode) => {
+    if (newMode === mode || sendingMode) return;
+    setSendingMode(newMode);
+    sendCommand('fanMode', newMode).finally(() => setSendingMode(null));
+  };
+
+  const handleTimerToggle = () => {
+    if (sendingTimer) return;
+    setSendingTimer(true);
+    sendCommand('fanTimer', timer ? 0 : 1).finally(() => setSendingTimer(null));
+  };
 
   /* ── Heatmap ─────────────────────────────────────────── */
   const chartRef = useRef(null);
@@ -312,14 +346,17 @@ export default function SiloDashboard({ data = {}, heatmap: heatmapProp = {}, si
               border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)',
             }}>
               {['manual', 'auto'].map((m) => (
-                <div key={m} style={{
-                  flex: 1, padding: '5px 0', textAlign: 'center',
-                  fontWeight: 700, fontSize: '0.65rem', letterSpacing: '1px',
-                  background: mode === m ? '#00aae4' : 'transparent',
-                  color: mode === m ? '#fff' : 'rgba(255,255,255,0.25)',
-                  transition: 'all 0.3s',
-                }}>
-                  {m.toUpperCase()}
+                <div key={m} onClick={() => handleModeChange(m)}
+                  style={{
+                    flex: 1, padding: '5px 0', textAlign: 'center',
+                    fontWeight: 700, fontSize: '0.65rem', letterSpacing: '1px',
+                    cursor: sendingMode === m ? 'wait' : apiBase ? 'pointer' : 'default',
+                    background: mode === m ? '#00aae4' : 'transparent',
+                    color: mode === m ? '#fff' : 'rgba(255,255,255,0.25)',
+                    transition: 'all 0.3s',
+                    opacity: sendingMode === m ? 0.5 : 1,
+                  }}>
+                  {sendingMode === m ? '...' : m.toUpperCase()}
                 </div>
               ))}
             </div>
@@ -336,13 +373,16 @@ export default function SiloDashboard({ data = {}, heatmap: heatmapProp = {}, si
                 <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.5)' }}>
                   Programación
                 </span>
-                <span style={{
-                  fontSize: '0.55rem', fontWeight: 700, padding: '2px 8px', borderRadius: 50,
-                  background: timer ? 'rgba(0,170,228,0.15)' : 'rgba(255,255,255,0.06)',
-                  color: timer ? '#00aae4' : 'rgba(255,255,255,0.3)',
-                  border: timer ? '1px solid rgba(0,170,228,0.3)' : '1px solid transparent',
-                }}>
-                  {timer ? 'ACTIVA' : 'INACTIVA'}
+                <span onClick={handleTimerToggle}
+                  style={{
+                    fontSize: '0.55rem', fontWeight: 700, padding: '2px 8px', borderRadius: 50,
+                    cursor: sendingTimer ? 'wait' : apiBase ? 'pointer' : 'default',
+                    background: timer ? 'rgba(0,170,228,0.15)' : 'rgba(255,255,255,0.06)',
+                    color: timer ? '#00aae4' : 'rgba(255,255,255,0.3)',
+                    border: timer ? '1px solid rgba(0,170,228,0.3)' : '1px solid transparent',
+                    opacity: sendingTimer ? 0.5 : 1,
+                  }}>
+                  {sendingTimer ? '...' : timer ? 'ACTIVA' : 'INACTIVA'}
                 </span>
               </div>
               <div style={{

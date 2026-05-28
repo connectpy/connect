@@ -98,6 +98,7 @@ const DEMO_CONFIG = {
           heatmap_temp_min: 15,
           heatmap_temp_max: 40,
           // configuración de vista superior del silo
+          comandoTopic: 'silo-0/comandos',
           siloConfig: {
             rings: 1,
             cabos: [3],
