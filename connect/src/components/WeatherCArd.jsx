@@ -1,9 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 
-// ── Mini Sparkline SVG sin dependencias ────────────────────────────────────
-function Sparkline({ data = [], color = "#ff9800", height = 30 }) {
-  if (data.length < 2) return null;
-  const w = 120, h = height, pad = 3;
+function Sparkline({ data = [], color = "#ff9800", height = 80, unit = "" }) {
+  const containerRef = useRef(null);
+  const [width, setWidth] = useState(200);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  if (data.length < 2) return <div ref={containerRef} style={{ width: "100%" }} />;
+
+  const w = width, h = height, pad = 6;
   const min = Math.min(...data), max = Math.max(...data);
   const range = max - min || 1;
   const pts = data.map((v, i) => {
@@ -17,20 +27,33 @@ function Sparkline({ data = [], color = "#ff9800", height = 30 }) {
     " L " + (w - pad) + "," + (h - pad) + " L " + pad + "," + (h - pad) + " Z";
   const gradId = "sg" + color.replace("#", "");
   const last = pts[pts.length - 1];
+  const minIdx = data.indexOf(min);
+  const maxIdx = data.indexOf(max);
+  const minPt = pts[minIdx];
+  const maxPt = pts[maxIdx];
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: "visible" }}>
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      <path d={areaPath} fill={`url(#${gradId})`} />
-      <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={last[0]} cy={last[1]} r="3" fill={color}
-        style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
-    </svg>
+    <div ref={containerRef} style={{ width: "100%", marginTop: 6 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.6rem", color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>
+        <span>Min: <span style={{ color, fontWeight: 600 }}>{min.toFixed(1)}{unit}</span></span>
+        <span>Max: <span style={{ color, fontWeight: 600 }}>{max.toFixed(1)}{unit}</span></span>
+        <span>Actual: <span style={{ color, fontWeight: 600 }}>{data[data.length - 1].toFixed(1)}{unit}</span></span>
+      </div>
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: "visible" }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill={`url(#${gradId})`} />
+        <path d={linePath} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={minPt[0]} cy={minPt[1]} r="3" fill={color} opacity="0.6" />
+        <circle cx={maxPt[0]} cy={maxPt[1]} r="3" fill={color} opacity="0.6" />
+        <circle cx={last[0]} cy={last[1]} r="4" fill={color}
+          style={{ filter: `drop-shadow(0 0 6px ${color})` }} />
+      </svg>
+    </div>
   );
 }
 
@@ -158,9 +181,7 @@ export default function WeatherCard({
             </span>
             <span style={{ fontSize: "0.8rem", color: "#ff9800", marginLeft: 2 }}>°C</span>
           </div>
-          {isWide && (
-            <Sparkline data={temp !== null ? [...tempHist, temp] : tempHist} color="#ff9800" />
-          )}
+          <Sparkline data={temp !== null ? [...tempHist, temp] : tempHist} color="#ff9800" unit="°C" />
         </div>
 
         {/* Humedad */}
@@ -183,9 +204,7 @@ export default function WeatherCard({
             </span>
             <span style={{ fontSize: "0.8rem", color: "#00aae4", marginLeft: 2 }}>%</span>
           </div>
-          {isWide && (
-            <Sparkline data={humedad !== null ? [...humHist, humedad] : humHist} color="#00aae4" />
-          )}
+          <Sparkline data={humedad !== null ? [...humHist, humedad] : humHist} color="#00aae4" unit="%" />
         </div>
       </div>
 
