@@ -132,6 +132,9 @@ export default function WeatherCard({
       gap: 16,
       fontFamily: "'DM Sans','Segoe UI',sans-serif",
       boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+      width: "100%",
+      boxSizing: "border-box",
+      overflow: "hidden",
     }}>
 
       {/* ── SECCIÓN 1: CABECERA ──────────────────────────────────────────── */}
@@ -159,6 +162,7 @@ export default function WeatherCard({
       <div style={{
         display: "flex", gap: 12,
         flex: isWide ? 1 : undefined,
+        minWidth: 0, overflow: "hidden",
         padding: isWide ? "0 16px" : 0,
       }}>
         {/* Temperatura */}
