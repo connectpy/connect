@@ -39,7 +39,7 @@ function Sparkline({ data = [], color = "#ff9800", height = 80, unit = "" }) {
         <span>Max: <span style={{ color, fontWeight: 600 }}>{max.toFixed(1)}{unit}</span></span>
         <span>Actual: <span style={{ color, fontWeight: 600 }}>{data[data.length - 1].toFixed(1)}{unit}</span></span>
       </div>
-      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: "visible" }}>
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity="0.35" />
@@ -163,7 +163,8 @@ export default function WeatherCard({
       }}>
         {/* Temperatura */}
         <div style={{
-          flex: 1, background: "rgba(255,255,255,0.04)", padding: 12,
+          flex: 1, minWidth: 0, overflow: "hidden",
+          background: "rgba(255,255,255,0.04)", padding: 12,
           borderRadius: 14, border: "1px solid rgba(255,255,255,0.06)",
           display: "flex", flexDirection: "column", gap: 4,
         }}>
@@ -186,7 +187,8 @@ export default function WeatherCard({
 
         {/* Humedad */}
         <div style={{
-          flex: 1, background: "rgba(255,255,255,0.04)", padding: 12,
+          flex: 1, minWidth: 0, overflow: "hidden",
+          background: "rgba(255,255,255,0.04)", padding: 12,
           borderRadius: 14, border: "1px solid rgba(255,255,255,0.06)",
           display: "flex", flexDirection: "column", gap: 4,
         }}>
